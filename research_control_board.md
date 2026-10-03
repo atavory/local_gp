@@ -284,6 +284,29 @@ Current local-GP state:
   E008-E010 bed, then a real-path gate only if that survives tuned scalar scale
   and server/time secants.
 
+E015 ran that CPU gate and returned
+`DYNAMICS_AWARE_PROBES_SURVIVE_NONLINEAR_BED`.
+
+Summary on the nonlinear/heterogeneous bed:
+
+- N=8: tuned scalar 1.069, random probe 1.306, coordinate probe 1.134;
+- N=32: tuned scalar 1.053, random probe 1.445, coordinate probe 1.424;
+- N=128: tuned scalar 1.101, random probe 2.009, coordinate probe 2.034.
+
+Server/time secants remain weak (0.911/0.974/1.113), and path-only centered
+trajectory pairs select gamma zero and tie FedAvg. The CPU-positive mechanism is
+therefore probe-fed local-map correction, not plain worker-scatter
+multisecants.
+
+This makes the near-term work CPU-heavy:
+
+1. rotate / densify the nonlinear bed so diagonal coordinate probes stop being
+   privileged;
+2. replace pilot-selected gamma with a risk-aware shrinkage rule based on probe
+   residuals or nonlinearity;
+3. add the elitist best-worker fallback baseline;
+4. only then spend GPU time on a real-path gate.
+
 ## Success Labels
 
 - `PATH_SIGNAL_CONFIRMED`: GP/kernel predictor beats round-only and path-norm

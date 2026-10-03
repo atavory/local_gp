@@ -136,3 +136,19 @@ This updates the theory target. The first theorem should not assume the spatial
 bank is useful; it should derive the SNR threshold under which spatial
 multisecants beat scalar/time secants, and the update theorem should be written
 for \([I-(I-\eta H)^K]^{-1}\Delta_K\), not for \(H^{-1}g\).
+
+E015 moved the corrected operator to the nonlinear/heterogeneous CPU bed. The
+probe-fed arms survived the tuned scalar null:
+
+- N=8: random probe 1.306 vs scalar 1.069;
+- N=32: random probe 1.445 vs scalar 1.053;
+- N=128: random probe 2.009 vs scalar 1.101.
+
+Path-only centered trajectory pairs selected zero and tied FedAvg, while
+server/time secants stayed weak. The useful architecture is therefore not
+"worker drift alone"; it is controller-owned probing or noise-controlled local
+geometry plus a dynamics-aware map correction.
+
+The next event-triggered CPU gate should replace the diagonal nonlinear bed with
+rotated / low-rank nonlinear curvature and add an elitist best-worker fallback.
+This must happen before a real-path GPU gate.

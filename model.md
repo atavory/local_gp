@@ -37,6 +37,11 @@ the operator tested in E014. Plain BB/L-BFGS consolidation is a useful null
 control, but it is not the live product unless it is written against the
 K-step dynamics.
 
+E015 adds the first nonlinear/heterogeneous CPU check of this operator. The
+positive source was not path-only worker scatter; it was noise-controlled probe
+geometry around the round start. For now, the model should treat free local
+drift as one possible probe design, not as the whole method.
+
 ## Latent Object
 
 The latent is not a scalar momentum coefficient. It is a local function:

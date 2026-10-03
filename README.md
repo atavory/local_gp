@@ -110,7 +110,18 @@ applied to the FedAvg displacement, not \(H^{-1}g\). With noise-controlled
 tuned scalar FedAvg scale by roughly 0.25-0.30 improvement-ratio points.
 
 This is a corrected Stage-0 mechanism positive, not a product claim. It still
-needs to survive the nonlinear/heterogeneous bed and then a real-path gate.
+needs to survive broader synthetic beds and then a real-path gate.
+
+E015 moved the corrected operator to the E008-E010 nonlinear/heterogeneous CPU
+bed. Probe-fed dynamics-aware shape survived the tuned scalar FedAvg-scale null:
+
+- N=8: random probe 1.306x vs scalar 1.069x;
+- N=32: random probe 1.445x vs scalar 1.053x;
+- N=128: random probe 2.009x vs scalar 1.101x.
+
+Path-only trajectory scatter still failed, selecting gamma zero. The live CPU
+mechanism is therefore noise-controlled probing of the local update map, not
+plain worker drift.
 
 The first milestone is an offline prediction gate:
 
@@ -156,6 +167,8 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e013_block_lbfgs_multisecant_result_20261003.md`: E013 result.
 - `experiments/lgp_e014_dynamics_aware_correction.py`: dynamics-aware local-map correction.
 - `experiments/lgp_e014_dynamics_aware_correction_result_20261003.md`: E014 result.
+- `experiments/lgp_e015_dynamics_aware_nonlinear_probe.py`: corrected probes on nonlinear bed.
+- `experiments/lgp_e015_dynamics_aware_nonlinear_probe_result_20261003.md`: E015 result.
 - `ops/devvm23211_gpu_buck2_result_20261003.md`: confirmed GPU/Buck2 invocation.
 - `wanger_duality_reply.md`: review of the local-GP duality theory note.
 - `wanger_e002_e007_review.md`: gamma-collapse and E007 gate review.
