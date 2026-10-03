@@ -68,6 +68,22 @@ Operational note: `devvm23211` can run GPU code if tasks use Buck2
 `-c fbcode.enable_gpu_sections=true`. Bare `nvidia-smi` can fail even when the
 Buck2 GPU path works.
 
+E002 has run locally and returned `TUNED_GAMMA_EXPLAINS`.
+
+Summary:
+
+- the diagonal-quadratic local-trajectory curvature headroom is real;
+- oracle-C remains around 1.20x tuned-scale FedAvg;
+- the measured within-round readout is 1.124/1.141/1.167x at N=8/32/128;
+- a one-scalar tuned gamma control applied to the same measured correction
+  shape scores 1.127/1.146/1.172x.
+
+Interpretation: intermediate local points expose a useful correction shape, but
+the current posterior readout is explained by tuned shrinkage. This blocks a
+closed-loop method claim from the current readout. The next gate must show that
+a principled Bayesian/GP evidence rule can set shrinkage at least as well as
+tuned gamma without target tuning.
+
 ## Success Labels
 
 - `PATH_SIGNAL_CONFIRMED`: GP/kernel predictor beats round-only and path-norm
@@ -90,8 +106,11 @@ Buck2 GPU path works.
 ## Near-Term Plan
 
 1. Do not run a closed-loop optimizer from E001.
-2. If continuing, design E002 around richer observations, not a new regressor
-   over the same scalar descriptors.
-3. E002 should target residual-over-round-only directly and include a shuffled
-   feature control.
-4. Do not run a closed-loop optimizer before a held-out prediction gate passes.
+2. Do not run a closed-loop optimizer from E002's measured readout.
+3. If continuing, design E003 around principled shrinkage selection:
+   marginal-likelihood/type-II ML, source-fit prior, or an analytic debiasing
+   rule that must beat tuned gamma on held-out seeds.
+4. Richer real-data logging remains needed: full per-worker paths or
+   shared-probe function-space features, not only scalar endpoint summaries.
+5. Do not run a closed-loop optimizer before a held-out prediction/control gate
+   passes.
