@@ -37,6 +37,12 @@ aggregator to test.
 E004 was invalid because the worker could not access the repository / Mr.
 Gitties path. It did not run workload code.
 
+E007 replaced it with a self-contained bundle and produced one completed
+real-path shard: `FEDAVG_SCALE_EXPLAINS`. On CUDA MNIST local-SGD paths
+(N=8, K=8), source-tuned FedAvg scale had lower held-out one-step validation
+loss than tuned gamma, auto-gamma, full gamma, and raw FedAvg. This is a
+negative for the gamma aggregator on a real path.
+
 E005 added source-free shrinkage: `LocalGPConfig(gamma=None)` estimates the
 correction shrinkage from split-half reliability on each round. On the same
 synthetic bed it matches pilot-tuned gamma:
@@ -112,6 +118,8 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e005_auto_gamma_gate_result_20261003.md`: auto-gamma result.
 - `experiments/lgp_e006_group_gamma_gate.py`: small action-space gate.
 - `experiments/lgp_e006_group_gamma_gate_result_20261003.md`: group-gamma result.
+- `experiments/lgp_e007_real_path_auto_gamma_result_20261003.md`: real-path
+  auto-gamma result, one shard.
 - `experiments/lgp_e008_secant_gap_nonlinear.py`: nonlinear secant-gap bed.
 - `experiments/lgp_e008_secant_gap_nonlinear_result_20261003.md`: E008 result.
 - `experiments/lgp_e009_nonlinear_gamma_sweep.py`: conservative gamma sweep.

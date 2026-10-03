@@ -105,6 +105,25 @@ against the optimizer. The replacement real-path gate must be self-contained,
 for example via a Manifold source bundle, and must not depend on worker GitHub
 access.
 
+E007 has one completed real-path shard and returned `FEDAVG_SCALE_EXPLAINS`.
+
+Summary:
+
+- workload: CUDA MNIST local-SGD paths, N=8, K=8, eta=0.2, linear classifier;
+- selected source gamma: 0.050;
+- selected source FedAvg scale: 1.900;
+- target one-step validation loss:
+  - FedAvg scale: 0.396898;
+  - tuned gamma: 0.430577;
+  - auto gamma: 0.456850;
+  - full gamma: 0.506164;
+  - raw FedAvg: 0.431406.
+
+Interpretation: synthetic auto-gamma did not transfer. More strongly, tuned
+FedAvg scale beat the gamma arms on held-out target loss. This is a one-shard
+real-path gate, not a closed-loop verdict; the remaining E007 worker is still
+running at time of recording.
+
 E005 has run locally and returned `GAMMA_FLAT_ON_SYNTHETIC`.
 
 Summary:
