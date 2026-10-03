@@ -49,7 +49,7 @@ over path/probe descriptors may predict:
 
 The first claim is prediction. The optimizer claim comes later.
 
-Current paper hypothesis, after E014-E021: local path/probe observations should
+Current paper hypothesis, after E014-E023: local path/probe observations should
 be treated as a noisy estimate of the K-step update map, not as a fresh Newton
 step and not as a GP over all parameters. The corrected quadratic operator is
 \[
