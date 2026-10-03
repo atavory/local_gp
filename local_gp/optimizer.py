@@ -20,8 +20,9 @@ The implemented rule is deliberately conservative:
    the other half's endpoint displacement, then symmetrise.
 
 The gamma shrinkage is not cosmetic. LGP-E002 showed that the current measured
-posterior readout is explained by this exact tuned-gamma control. Until a
-principled evidence rule beats it, this is the honest optimizer candidate.
+posterior readout is explained by this exact tuned-gamma control. Set
+`gamma=None` to use the built-in split-half empirical-Bayes shrinkage rule
+instead of a tuned scalar.
 """
 
 from __future__ import annotations
@@ -48,7 +49,11 @@ class LocalGPConfig:
         eta: Local worker learning rate used inside each K-step trajectory.
         local_steps: Number of local steps K.
         gamma: Scalar shrinkage toward FedAvg. `0` is FedAvg; `1` applies the
-            full displacement-law correction.
+            full displacement-law correction. `None` estimates the shrinkage
+            from split-half reliability of the correction vector on each round.
+        shrinkage_groups: Number of reliability bins when `gamma=None`. `1`
+            gives one scalar shrinkage; larger values give a small group-wise
+            action layer over coefficient-magnitude bins.
         ridge: Small denominator ridge for the within-round slope fit.
         min_curvature: Curvatures at or below this value are treated as
             untrusted and receive coefficient 1.
@@ -62,7 +67,8 @@ class LocalGPConfig:
 
     eta: float
     local_steps: int
-    gamma: float = 0.8
+    gamma: float | None = 0.8
+    shrinkage_groups: int = 1
     ridge: float = 1e-12
     min_curvature: float = 1e-9
     max_correction: float = 25.0
@@ -82,6 +88,7 @@ class LocalGPResult:
     rms_coefficient: float
     fallback_fraction: float
     negative_or_unstable_fraction: float
+    gamma: float
 
 
 class LocalGPAggregator:
@@ -92,8 +99,10 @@ class LocalGPAggregator:
             raise ValueError("eta must be positive")
         if config.local_steps <= 0:
             raise ValueError("local_steps must be positive")
-        if config.gamma < 0:
+        if config.gamma is not None and config.gamma < 0:
             raise ValueError("gamma must be nonnegative")
+        if config.shrinkage_groups <= 0:
+            raise ValueError("shrinkage_groups must be positive")
         if config.gain_normalization not in ("none", "mean", "rms"):
             raise ValueError("gain_normalization must be one of: none, mean, rms")
         if config.readout not in ("posterior_ratio", "plug_in"):
@@ -132,8 +141,43 @@ class LocalGPAggregator:
             split = n_workers // 2
             idx_a = list(range(split))
             idx_b = list(range(split, n_workers))
-            coeff_a, diag_a = self._fit_coefficients(step_displacements, step_gradients, idx_a, dim)
-            coeff_b, diag_b = self._fit_coefficients(step_displacements, step_gradients, idx_b, dim)
+            if self.config.gamma is None:
+                raw_a, diag_a = self._fit_coefficients(
+                    step_displacements,
+                    step_gradients,
+                    idx_a,
+                    dim,
+                    gamma_override=1.0,
+                )
+                raw_b, diag_b = self._fit_coefficients(
+                    step_displacements,
+                    step_gradients,
+                    idx_b,
+                    dim,
+                    gamma_override=1.0,
+                )
+                gamma_by_dim = _split_half_group_gammas(
+                    raw_a,
+                    raw_b,
+                    self.config.shrinkage_groups,
+                )
+                gamma = sum(gamma_by_dim) / len(gamma_by_dim)
+                coeff_a = self._shrink_coefficients(raw_a, gamma_by_dim)
+                coeff_b = self._shrink_coefficients(raw_b, gamma_by_dim)
+            else:
+                gamma = self.config.gamma
+                coeff_a, diag_a = self._fit_coefficients(
+                    step_displacements,
+                    step_gradients,
+                    idx_a,
+                    dim,
+                )
+                coeff_b, diag_b = self._fit_coefficients(
+                    step_displacements,
+                    step_gradients,
+                    idx_b,
+                    dim,
+                )
             end_a = _mean_rows([endpoint_displacements[i] for i in idx_a])
             end_b = _mean_rows([endpoint_displacements[i] for i in idx_b])
             update = [0.5 * (ca * db + cb * da) for ca, cb, da, db in zip(coeff_a, coeff_b, end_a, end_b)]
@@ -143,11 +187,13 @@ class LocalGPAggregator:
                 diag_a["negative_or_unstable_fraction"] + diag_b["negative_or_unstable_fraction"]
             )
         else:
+            gamma = self.config.gamma if self.config.gamma is not None else 1.0
             coeff, diag = self._fit_coefficients(
                 step_displacements,
                 step_gradients,
                 list(range(n_workers)),
                 dim,
+                gamma_override=gamma,
             )
             update = [c * u for c, u in zip(coeff, fedavg)]
             fallback = diag["fallback_fraction"]
@@ -164,6 +210,7 @@ class LocalGPAggregator:
             rms_coefficient=rms_c,
             fallback_fraction=fallback,
             negative_or_unstable_fraction=unstable,
+            gamma=gamma,
         )
 
     def _fit_coefficients(
@@ -172,6 +219,7 @@ class LocalGPAggregator:
         step_gradients: Tensor3,
         worker_indices: Sequence[int],
         dim: int,
+        gamma_override: float | None = None,
     ) -> tuple[Vector, dict[str, float]]:
         slopes: Vector = []
         slope_vars: Vector = []
@@ -198,21 +246,33 @@ class LocalGPAggregator:
         else:
             base_correction = [self._plug_in_correction(lam, max_lam) for lam in slopes]
 
-        coeff = []
-        for c0 in base_correction:
-            if (not isfinite(c0)) or c0 <= 0:
-                c = 1.0
-            else:
-                c0 = min(max(c0, 1.0), self.config.max_correction)
-                c = 1.0 + self.config.gamma * (c0 - 1.0)
+        gamma = self.config.gamma if gamma_override is None else gamma_override
+        if gamma is None:
+            gamma = 1.0
+        coeff = self._shrink_coefficients(base_correction, gamma)
+        for c in coeff:
             if c == 1.0:
                 fallback += 1
-            coeff.append(c)
 
         return coeff, {
             "fallback_fraction": fallback / dim,
             "negative_or_unstable_fraction": unstable / dim,
         }
+
+    def _shrink_coefficients(self, base_correction: Sequence[float], gamma: float | Sequence[float]) -> Vector:
+        if isinstance(gamma, float) or isinstance(gamma, int):
+            gammas: Iterable[float] = [float(gamma)] * len(base_correction)
+        else:
+            gammas = gamma
+        coeff = []
+        for c0, gj in zip(base_correction, gammas):
+            if (not isfinite(c0)) or c0 <= 0:
+                c = 1.0
+            else:
+                c0 = min(max(c0, 1.0), self.config.max_correction)
+                c = 1.0 + gj * (c0 - 1.0)
+            coeff.append(c)
+        return coeff
 
     def _plug_in_correction(self, lam: float, max_lam: float) -> float:
         if (not isfinite(lam)) or lam <= self.config.min_curvature or lam >= max_lam:
@@ -321,3 +381,52 @@ def _normalise_gain(update: Vector, reference: Vector, mode: GainNormalization) 
         return update
     scale = num / den
     return [scale * x for x in update]
+
+
+def _split_half_gamma(coeff_a: Sequence[float], coeff_b: Sequence[float]) -> float:
+    """Estimate scalar shrinkage toward coefficient 1 from split-half agreement.
+
+    Let x = coeff - 1 be the correction beyond FedAvg. Two independent worker
+    halves give x_a = theta + eps_a and x_b = theta + eps_b. The average
+    y=(x_a+x_b)/2 has noise energy E[(eps_a+eps_b)^2]/4, estimated by
+    E[(x_a-x_b)^2]/4. Shrink by signal/(signal+noise).
+    """
+
+    if len(coeff_a) != len(coeff_b):
+        raise ValueError("split-half coefficient length mismatch")
+    if not coeff_a:
+        return 0.0
+    ys = [0.5 * ((a - 1.0) + (b - 1.0)) for a, b in zip(coeff_a, coeff_b)]
+    noise = sum(((a - 1.0) - (b - 1.0)) ** 2 for a, b in zip(coeff_a, coeff_b))
+    noise /= 4.0 * len(coeff_a)
+    total = sum(y * y for y in ys) / len(ys)
+    signal = max(0.0, total - noise)
+    denom = signal + noise
+    if denom <= 0 or not isfinite(denom):
+        return 0.0
+    return min(1.0, max(0.0, signal / denom))
+
+
+def _split_half_group_gammas(
+    coeff_a: Sequence[float],
+    coeff_b: Sequence[float],
+    groups: int,
+) -> Vector:
+    if groups <= 1 or len(coeff_a) < 2 * groups:
+        g = _split_half_gamma(coeff_a, coeff_b)
+        return [g] * len(coeff_a)
+    order = sorted(
+        range(len(coeff_a)),
+        key=lambda j: 0.5 * ((coeff_a[j] - 1.0) + (coeff_b[j] - 1.0)),
+    )
+    gamma_by_dim = [0.0] * len(coeff_a)
+    for group in range(groups):
+        lo = group * len(order) // groups
+        hi = (group + 1) * len(order) // groups
+        idx = order[lo:hi]
+        if not idx:
+            continue
+        g = _split_half_gamma([coeff_a[j] for j in idx], [coeff_b[j] for j in idx])
+        for j in idx:
+            gamma_by_dim[j] = g
+    return gamma_by_dim

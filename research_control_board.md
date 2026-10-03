@@ -97,6 +97,46 @@ Interpretation: the aggregator is now concrete and positive on the synthetic
 bed, but it remains gamma-tuned and synthetic. It is an object to test, not a
 real-data method claim.
 
+E004 returned `INVALID`.
+
+The worker did not run workload code: the external repository / Mr. Gitties
+legitimacy gate failed on the worker. This is a plumbing failure, not evidence
+against the optimizer. The replacement real-path gate must be self-contained,
+for example via a Manifold source bundle, and must not depend on worker GitHub
+access.
+
+E005 has run locally and returned `AUTO_GAMMA_LIVE_ON_SYNTHETIC`.
+
+Summary:
+
+- `gamma=None` now estimates shrinkage from split-half reliability of the
+  correction vector on each round;
+- held-out synthetic ratios over FedAvg:
+  - N=8: tuned gamma 1.045, auto-gamma 1.065, oracle 1.171;
+  - N=32: tuned gamma 1.143, auto-gamma 1.142, oracle 1.247;
+  - N=128: tuned gamma 1.168, auto-gamma 1.163, oracle 1.248.
+
+Interpretation: the first promising small Bayesian object is not a full GP over
+parameters. It is a low-dimensional decision layer over aggregation actions:
+start with scalar `gamma`, then maybe move to a small number of group-wise
+gammas. On the synthetic bed, source-free auto-gamma removes the pilot grid
+without losing the effect.
+
+E006 has run locally and returned `SCALAR_ACTION_MVP`.
+
+Summary:
+
+- compared scalar auto-gamma to 4-bin and 8-bin group-wise auto-gamma;
+- held-out synthetic ratios over FedAvg:
+  - N=8: tuned 1.054, auto1 1.072, auto4 1.081, auto8 1.084;
+  - N=32: tuned 1.129, auto1 1.129, auto4 1.127, auto8 1.126;
+  - N=128: tuned 1.138, auto1 1.135, auto4 1.135, auto8 1.135.
+
+Interpretation: group-wise shrinkage gives a small low-N bump, but the clean
+MVP is scalar action-space Bayes. High-dimensional worker paths estimate a
+correction shape; a one-dimensional reliability posterior decides how much to
+trust it.
+
 ## Success Labels
 
 - `PATH_SIGNAL_CONFIRMED`: GP/kernel predictor beats round-only and path-norm
@@ -120,12 +160,15 @@ real-data method claim.
 
 1. Do not run a closed-loop optimizer from E001.
 2. Do not run a closed-loop optimizer from E002's measured readout.
-3. If continuing, design E003 around principled shrinkage selection:
-   marginal-likelihood/type-II ML, source-fit prior, or an analytic debiasing
-   rule that must beat tuned gamma on held-out seeds.
-4. E003 has produced a concrete aggregator; next revise this item as E004:
-   principled shrinkage or real-data trajectory logging.
-5. Richer real-data logging remains needed: full per-worker paths or
+3. Do not attempt a full parameter-space GP. Use the scalar action-space
+   Bayesian layer first: source-free auto-gamma from split-half reliability.
+   Group-wise gamma is a secondary low-N variant only.
+4. Replace E004 with a self-contained real-path gate that does not depend on
+   worker GitHub/Mr. Gitties access.
+5. In the real-path gate, compare FedAvg/source-tuned scale, pilot-tuned gamma,
+   and source-free auto-gamma. A tie with tuned gamma is already useful because
+   it reduces tuning cost; a win is an adaptation claim.
+6. Richer real-data logging remains needed: full per-worker paths or
    shared-probe function-space features, not only scalar endpoint summaries.
-6. Do not run a closed-loop optimizer before a held-out prediction/control gate
+7. Do not run a closed-loop optimizer before a held-out prediction/control gate
    passes.

@@ -34,9 +34,33 @@ smoke test it improves over FedAvg by 1.063x, 1.132x, and 1.148x at
 N=8/32/128. This is still synthetic and gamma-tuned, but now there is a concrete
 aggregator to test.
 
-The next useful experiment must either collect richer path/probe information or
-show that a principled Bayesian/GP evidence rule sets shrinkage better than the
-tuned gamma control. A closed loop is not justified from E001 or E002.
+E004 was invalid because the worker could not access the repository / Mr.
+Gitties path. It did not run workload code.
+
+E005 added source-free shrinkage: `LocalGPConfig(gamma=None)` estimates the
+correction shrinkage from split-half reliability on each round. On the same
+synthetic bed it matches pilot-tuned gamma:
+
+- N=8: tuned 1.045x, auto 1.065x over FedAvg;
+- N=32: tuned 1.143x, auto 1.142x;
+- N=128: tuned 1.168x, auto 1.163x.
+
+This shifts the plausible product from "full GP over high-dimensional weights"
+to "small Bayesian action layer over a local-SGD aggregation correction." The
+first action is scalar gamma; a later version can try group-wise gammas or
+probe-space actions.
+
+E006 tested that next step. Group-wise gamma gave a small N=8 bump but no
+benefit at N=32/128, so the MVP should stay scalar:
+
+- estimate a high-dimensional correction shape from local worker paths;
+- estimate one source-free reliability shrinkage scalar;
+- apply the corrected FedAvg update.
+
+The next useful experiment must run the actual aggregator on real local-SGD
+paths with a self-contained source bundle, because E004 failed before workload
+execution. The key comparison is FedAvg/source-tuned scale vs pilot-tuned gamma
+vs source-free auto-gamma. A closed loop is not justified from E001 or E002.
 
 The first milestone is an offline prediction gate:
 
@@ -60,4 +84,8 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `local_gp/optimizer.py`: local-SGD trajectory aggregator prototype.
 - `experiments/lgp_e003_optimizer_smoke.py`: public optimizer smoke test.
 - `experiments/lgp_e003_optimizer_smoke_result_20261003.md`: smoke result.
+- `experiments/lgp_e005_auto_gamma_gate.py`: source-free gamma gate.
+- `experiments/lgp_e005_auto_gamma_gate_result_20261003.md`: auto-gamma result.
+- `experiments/lgp_e006_group_gamma_gate.py`: small action-space gate.
+- `experiments/lgp_e006_group_gamma_gate_result_20261003.md`: group-gamma result.
 - `ops/devvm23211_gpu_buck2_result_20261003.md`: confirmed GPU/Buck2 invocation.
