@@ -8,7 +8,46 @@ aai_research_tlv/tree/local_gp/cpu_pings/20261003/
 
 ## CPU-1
 
-Next run E020:
+Next run E022:
+
+```text
+experiments/lgp_e022_cpu_worker_prompt_20261003.md
+```
+
+Purpose: dense trust-layer gate. Decide whether held-out validation can prevent
+the destructive learned low-rank-plus-diagonal update from E021 and recover any
+dense-geometry headroom.
+
+Fetch:
+
+```bash
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e022_cpu_worker_prompt_20261003.md \
+  /tmp/lgp_e022_cpu_worker_prompt_20261003.md
+```
+
+## CPU-2
+
+Next run E023:
+
+```text
+experiments/lgp_e023_cpu_worker_prompt_20261003.md
+```
+
+Purpose: random-probe budget confirmation. Decide whether `2N` random probes
+are enough for `N >= 32`, and whether `probe_reps=1` changes the cost story.
+
+Fetch:
+
+```bash
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e023_cpu_worker_prompt_20261003.md \
+  /tmp/lgp_e023_cpu_worker_prompt_20261003.md
+```
+
+## Completed: CPU-1 / E020
+
+Run E020:
 
 ```text
 experiments/lgp_e020_cpu_worker_prompt_20261003.md
@@ -49,9 +88,9 @@ ROSETTA_DISABLE_AOT=1 manifold get \
   /tmp/lgp_e020_probe_budget_active_design_run_20261003.txt
 ```
 
-## CPU-2
+## Completed: CPU-2 / E021
 
-Next run E021:
+Run E021:
 
 ```text
 experiments/lgp_e021_cpu_worker_prompt_20261003.md
@@ -98,8 +137,8 @@ Fetch:
 
 ```bash
 ROSETTA_DISABLE_AOT=1 manifold get \
-  aai_research_tlv/tree/local_gp/cpu_pings/20261003/local_gp_cpu_source_20261003.tgz \
-  /tmp/local_gp_cpu_source_20261003.tgz
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/local_gp_cpu_source_20261003_e022_e023.tgz \
+  /tmp/local_gp_cpu_source_20261003_e022_e023.tgz
 ```
 
 ## Completed: CPU-1 / E016

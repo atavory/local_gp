@@ -5,8 +5,15 @@
 Do not repeat the Double Fan failure mode.
 
 The goal is not to invent another controller and then explain away a loss. The
-goal is first to ask whether local worker paths contain held-out predictive
-information that simple schedules and scalar baselines do not contain.
+old same-point cloud-momentum line is frozen in
+`double_fan_freeze_20261003.md`: reliable measurements, no surviving optimizer
+product. The live paper starts from the different observation available in
+K>1 local SGD: workers move through a neighborhood and thereby produce local
+map data.
+
+The first question is whether local worker paths or explicit probe pairs contain
+held-out predictive information that simple schedules, scalar FedAvg-scale
+baselines, server/time secants, and best-worker fallback do not contain.
 
 ## Project Boundary
 
@@ -22,6 +29,14 @@ Those branches produced useful diagnostics but no optimizer product. Local GP
 gets a clean board because it uses different observations: K-step worker paths,
 not only same-point gradient scatter.
 
+The one sentence bridge is:
+
+```text
+alignment estimates noise; misalignment can estimate curvature.
+```
+
+That bridge is motivation only. It is not evidence for an optimizer claim.
+
 ## Hypothesis
 
 For K>1 local SGD, worker paths reveal local geometry. A GP or kernel predictor
@@ -33,6 +48,15 @@ over path/probe descriptors may predict:
 - whether a round-only schedule is about to fail.
 
 The first claim is prediction. The optimizer claim comes later.
+
+Current paper hypothesis, after E014-E021: local path/probe observations should
+be treated as a noisy estimate of the K-step update map, not as a fresh Newton
+step and not as a GP over all parameters. The corrected quadratic operator is
+\[
+  [I-(I-\eta H)^K]^{-1}\Delta_K.
+\]
+The outside controller is a stochastic trust-region method with a ratio test,
+not Optuna/TPE over high-dimensional actions.
 
 ## Evidence Required
 
@@ -427,3 +451,11 @@ Updated local-GP state:
     gate before applying the combined update.
 12. Do not run a closed-loop optimizer before a held-out real-path/control gate
    passes against tuned scalar scale and best-worker fallback.
+13. Rewrite the paper around the reset thesis:
+    - Double Fan / same-point cloud momentum is archived as a failed approach;
+    - FedAvg is the infinite-lengthscale / averaging baseline;
+    - local drift/probes estimate local-map curvature unavailable to
+      server/time secants;
+    - the product path is dynamics-aware local-map correction plus a
+      trust-region controller;
+    - dense correlated geometry is the current failure boundary.

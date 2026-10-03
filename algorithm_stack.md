@@ -16,6 +16,13 @@ optimization with derivative observations. The expensive object is not "which
 hyperparameter trial should I run next"; it is "how do I use noisy local
 geometry without overcorrecting?"
 
+This is the data-rich regime. BO exists for expensive black boxes where one
+evaluation returns one scalar. Here, one event from `m` workers returns `m`
+gradients, i.e. `m*d` derivative observations against `O(d)` diagonal or block
+surrogate parameters. The acquisition function should not search parameter
+space. The outer loop manages staleness, trust-region size, batching, and
+asynchrony.
+
 ## Layer 1: Empirical Bayes / Type-II ML For Coefficients
 
 The per-coordinate or block correction coefficients should be estimated by
@@ -85,6 +92,21 @@ Closest named families:
 - TuRBO-style radius adaptation, but with gradients replacing black-box
   function-only GP fitting.
 
+The intended import from BO-like systems is narrow:
+
+- TuRBO-style radius adaptation: expand after accepted events, shrink after
+  rejected events;
+- batch/asynchronous bookkeeping: handle in-flight workers without changing the
+  scientific object;
+- pruners: reset or yank unpromising local trajectories.
+
+The intended non-imports are equally important:
+
+- no TPE over optimizer parameters;
+- no qEI search in `d` dimensions;
+- no SAASBO/ALEBO as the primary model. Random sketches may be used as
+  compression, not as the explanation of the optimizer.
+
 The controller maintains a trust region around the current synchronized state:
 
 ```text
@@ -119,6 +141,25 @@ This has an interior peak, so a norm-only drift budget is not the right
 statistic. Norm is often dominated by flat motion, where curvature is hardest
 to measure. The trigger should weight drift/probe information by predicted
 correction value and model risk.
+
+Under the current pay-by-wire cost model, directed probing is not a new wire
+round. Assignments can be fused into the event broadcast/scatter. For random
+or seeded probes, the controller broadcasts a seed and shared scale; each worker
+generates its direction locally and the controller reconstructs it exactly. On
+the uplink, additive sufficient statistics can be all-reduced:
+
+```text
+sum s, sum s^2, sum s*g, sum g.
+```
+
+This changes bits, not wires. The method should be judged on information value
+and event count, not on whether a coordinate list was transmitted.
+
+Pure async is also not automatically cheaper. Without collectives, each worker
+report and controller reply becomes a separate wire use. The first practical
+architecture is bounded-staleness semi-sync: quorum events, vintage-tagged
+pairs, and late-pair integration only while the trust region still validates
+them.
 
 ## Layer 5: If We Learn A Policy, Use Bilevel Gradients
 

@@ -10,6 +10,12 @@ controller. This project starts from a different object:
 > local paths from the same synchronized point. Those paths are observations of
 > a local update field.
 
+The old Double Fan direction is frozen in
+`double_fan_freeze_20261003.md`. Its useful lesson is negative and precise:
+same-point alignment estimates noise, but it does not estimate curvature or
+provide an optimizer action by itself. The new paper should not be a rescue of
+that line.
+
 The central question is whether those path observations can predict which
 proposal, trust action, or synchronization update will work on held-out rounds
 and seeds, before paying for a target-setting grid search.
@@ -17,6 +23,21 @@ and seeds, before paying for a target-setting grid search.
 ## Current Claim Status
 
 No optimizer claim.
+
+Paper reset, 2026-10-03: the manuscript is now built around local SGD drift as
+curvature-probe data. The live mechanism is not "GP over parameters" and not
+Optuna over a sync threshold. It is:
+
+```text
+local/probe gradient pairs
+    -> dynamics-aware estimate of the K-step update map
+    -> residual or held-out trust gate
+    -> stochastic trust-region consolidation
+```
+
+The system is data-rich, not data-poor: one event can produce many gradient
+observations. We therefore import the trust-region, batching, pruning, and async
+ideas from BO-like systems, but not their high-dimensional black-box samplers.
 
 E001 returned `SCHEDULE_EXPLAINS`: on the existing E78 local-SGD ledger, an RBF
 kernel model over scalar path descriptors matched the round-only baseline
@@ -173,6 +194,8 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 
 ## Key Files
 
+- `double_fan_freeze_20261003.md`: frozen negative record for the old
+  cloud-momentum direction.
 - `research_control_board.md`: live project map and stop rules.
 - `model.md`: first-principles model for local GP over worker paths.
 - `event_triggered_multisecant_plan.md`: pay-by-wire event-triggered
