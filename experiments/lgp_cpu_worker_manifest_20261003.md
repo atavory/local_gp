@@ -134,8 +134,9 @@ experiments/lgp_e022_dense_trust_validation_run_20261003.txt
 
 Decision: `TRUST_LAYER_RECOVERS_DENSE`.
 
-`CPU_1_NEXT.md` should now be a hold note rather than a runnable prompt, to
-avoid duplicate E022 launches while GPU E018/E019 remain pending.
+`lgp_cpu1_hold_after_e022_20261003.md` is now only an archival hold note. The
+current `CPU_1_NEXT.md` alias points to E025; do not treat the archived hold
+note as current dispatch.
 
 Fetch:
 
@@ -182,8 +183,9 @@ experiments/lgp_e023_random_probe_budget_confirm_run_20261003.txt
 
 Decision: `TWO_N_RANDOM_CONFIRMED`.
 
-`CPU_2_NEXT.md` should now be a hold note rather than a runnable prompt, to
-avoid duplicate E023 launches while GPU E018/E019 remain pending.
+`lgp_cpu2_hold_after_e023_20261003.md` is now only an archival hold note. The
+current `CPU_2_NEXT.md` alias points to E026; do not treat the archived hold
+note as current dispatch.
 
 Fetch:
 
