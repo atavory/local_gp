@@ -99,14 +99,40 @@ E013 tested actual spatial L-BFGS multisecants on a rotated block quadratic.
 With ordinary stochastic gradients, spatial L-BFGS selected zero damping and
 lost. With noiseless secants, it beat one-pair time L-BFGS at N=32 and N=128.
 
-The architecture is therefore conditional:
+E014 corrected the consolidation operator. Plain quasi-Newton consolidation
+double-applies curvature, because K local steps have already interpolated
+between a gradient step and a Newton step. On a quadratic with no momentum,
+\[
+  \Delta_K=-H^{-1}[I-(I-\eta H)^K]g_0,
+\]
+so the remaining correction is
+\[
+  [I-(I-\eta H)^K]^{-1}\Delta_K.
+\]
+
+With this dynamics-aware operator, noise-controlled probe estimates beat a tuned
+scalar FedAvg scale on the rotated-block quadratic:
+
+- N=8: directed probe 1.332 vs scalar 1.054;
+- N=32: directed probe 1.301 vs scalar 1.047;
+- N=128: directed probe 1.326 vs scalar 1.051.
+
+The path-only centered trajectory estimate is weaker (1.061/1.097/1.214),
+which keeps the rank/noise critique live. The successful probe arms use an
+`N*K` probe budget and repeated gradients, so this is a corrected Stage-0
+mechanism result, not a product claim.
+
+The architecture is therefore conditional and more specific:
 
 - worker spread can provide useful multi-direction secant information;
 - but ordinary independent stochastic gradients make the secant equations too
   noisy;
+- the consolidation must model the K-step local dynamics rather than applying a
+  fresh quasi-Newton step;
 - the next viable version must control secant noise using same-batch probes,
   repeated event gradients, a shared probe set, or large-batch/large-N regimes.
 
 This updates the theory target. The first theorem should not assume the spatial
 bank is useful; it should derive the SNR threshold under which spatial
-multisecants beat scalar/time secants.
+multisecants beat scalar/time secants, and the update theorem should be written
+for \([I-(I-\eta H)^K]^{-1}\Delta_K\), not for \(H^{-1}g\).

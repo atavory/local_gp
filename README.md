@@ -95,10 +95,22 @@ controls. A closed loop is not justified from E001 or E002.
 A separate event-triggered multisecant branch is now recorded. Under a
 pay-by-wire cost model, workers run silently until a drift/quorum event, then
 send full positions and gradients. The controller forms centered secant pairs
-and chooses the consolidation step. Stage-0 results are conditional: spatial
-multisecants work in a noiseless rotated-block sanity check, but ordinary
-independent stochastic gradients make the secant bank too noisy. The next test
-must use same-batch or otherwise noise-controlled secants.
+and chooses the consolidation step. E011-E013 showed that plain spatial
+L-BFGS/BB consolidation is not the product: ordinary independent stochastic
+gradients make the secant bank too noisy, and a fresh quasi-Newton step
+double-applies curvature already used by the K local steps.
+
+E014 fixed that operator. For K-step local GD on a quadratic, the right
+remaining correction is
+\[
+  [I-(I-\eta H)^K]^{-1}\Delta_K,
+\]
+applied to the FedAvg displacement, not \(H^{-1}g\). With noise-controlled
+`N*K` probes on the rotated-block quadratic, that dynamics-aware shape beat
+tuned scalar FedAvg scale by roughly 0.25-0.30 improvement-ratio points.
+
+This is a corrected Stage-0 mechanism positive, not a product claim. It still
+needs to survive the nonlinear/heterogeneous bed and then a real-path gate.
 
 The first milestone is an offline prediction gate:
 
@@ -142,6 +154,8 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e012_seeded_probe_multisecant_result_20261003.md`: E012 result.
 - `experiments/lgp_e013_block_lbfgs_multisecant.py`: rotated-block L-BFGS secants.
 - `experiments/lgp_e013_block_lbfgs_multisecant_result_20261003.md`: E013 result.
+- `experiments/lgp_e014_dynamics_aware_correction.py`: dynamics-aware local-map correction.
+- `experiments/lgp_e014_dynamics_aware_correction_result_20261003.md`: E014 result.
 - `ops/devvm23211_gpu_buck2_result_20261003.md`: confirmed GPU/Buck2 invocation.
 - `wanger_duality_reply.md`: review of the local-GP duality theory note.
 - `wanger_e002_e007_review.md`: gamma-collapse and E007 gate review.

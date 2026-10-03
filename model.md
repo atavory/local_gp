@@ -17,6 +17,26 @@ throws away the geometry of the worker path cloud.
 The local-GP idea is to model the local update field around `x_t`, using worker
 paths as observations.
 
+## Local-Map Correction
+
+For K-step local SGD, the correction target is the local update map, not a
+fresh Newton step. On a quadratic with no momentum,
+
+```text
+Delta_K = x_K - x_0 = -H^{-1} [I - (I - eta H)^K] g_0.
+```
+
+Therefore a curvature estimate should correct the FedAvg displacement by
+
+```text
+[I - (I - eta H)^K]^{-1} Delta_K
+```
+
+rather than applying `H^{-1} g` after the workers have already moved. This is
+the operator tested in E014. Plain BB/L-BFGS consolidation is a useful null
+control, but it is not the live product unless it is written against the
+K-step dynamics.
+
 ## Latent Object
 
 The latent is not a scalar momentum coefficient. It is a local function:

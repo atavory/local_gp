@@ -248,6 +248,42 @@ bank too noisy. The next event-triggered experiment must use noise-controlled
 secants: same-batch probes, repeated event gradients, a shared probe set, or a
 large-batch/large-N regime.
 
+E014 corrected the event-branch operator and returned
+`DYNAMICS_AWARE_PROBES_WIN_ON_EXACT_QUADRATIC`.
+
+E013's plain L-BFGS step was the wrong consolidation: K local steps already
+apply part of the Newton correction. On a quadratic with no momentum, the
+FedAvg displacement is
+\[
+  \Delta_K=-H^{-1}[I-(I-\eta H)^K]g_0,
+\]
+so the remaining correction is
+\[
+  [I-(I-\eta H)^K]^{-1}\Delta_K.
+\]
+
+Summary on the rotated-block quadratic with noise-controlled `N*K` probes:
+
+- N=8: tuned scalar 1.054, directed probe 1.332, random probe 1.358;
+- N=32: tuned scalar 1.047, directed probe 1.301, random probe 1.301;
+- N=128: tuned scalar 1.051, directed probe 1.326, random probe 1.326.
+
+The centered local-trajectory estimate is weaker but improves with worker count
+(1.061/1.097/1.214). This keeps the rank/noise concern active while validating
+the corrected operator. E014 is a Stage-0 mechanism positive, not a product
+claim: it relies on an exact quadratic, known 2D block structure, extra probe
+points, and repeated gradients.
+
+Current local-GP state:
+
+- gamma automation is dead;
+- plain BB/L-BFGS consolidation is dead;
+- local-path shape is live from E010;
+- dynamics-aware correction is live from E014;
+- the next useful gate is the corrected operator on the nonlinear/heterogeneous
+  E008-E010 bed, then a real-path gate only if that survives tuned scalar scale
+  and server/time secants.
+
 ## Success Labels
 
 - `PATH_SIGNAL_CONFIRMED`: GP/kernel predictor beats round-only and path-norm
