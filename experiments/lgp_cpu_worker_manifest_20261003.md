@@ -6,6 +6,20 @@ Manifold directory:
 aai_research_tlv/tree/local_gp/cpu_pings/20261003/
 ```
 
+Dispatch files in that directory:
+
+```text
+manifest.md
+lgp_cpu_worker_manifest_20261003.md
+CPU_1_NEXT.md
+CPU_2_NEXT.md
+local_gp_cpu_source_latest.tgz
+local_gp_cpu_source_20261003_e022_e023.tgz
+```
+
+The `CPU_1_NEXT.md` and `CPU_2_NEXT.md` aliases are deliberate. Some workers
+poll for direct next-task files rather than reading the long manifest.
+
 Status checked 2026-10-03 12:36 PDT: no E022/E023 result artifacts were visible
 in the CPU dropbox. The prefix contained the E022/E023 prompts, the source
 bundle, manifest, and previously imported E016/E017/E020/E021 artifacts.
