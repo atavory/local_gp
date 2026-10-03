@@ -104,8 +104,7 @@ experiments/lgp_e023_random_probe_budget_confirm_run_20261003.txt
 Decision: `TWO_N_RANDOM_CONFIRMED`.
 
 `CPU_2_NEXT.md` should now be a hold note rather than a runnable prompt, to
-avoid duplicate E023 launches while CPU-1/E022 and the GPU gates are still
-pending.
+avoid duplicate E023 launches while GPU E018/E019 remain pending.
 
 Fetch:
 
