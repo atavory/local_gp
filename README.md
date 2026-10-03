@@ -45,22 +45,34 @@ synthetic bed it matches pilot-tuned gamma:
 - N=32: tuned 1.143x, auto 1.142x;
 - N=128: tuned 1.168x, auto 1.163x.
 
-This shifts the plausible product from "full GP over high-dimensional weights"
-to "small Bayesian action layer over a local-SGD aggregation correction." The
-first action is scalar gamma; a later version can try group-wise gammas or
-probe-space actions.
+But this is now labeled `GAMMA_FLAT_ON_SYNTHETIC`, not a win: hardcoded
+`gamma=1` also ties the tuned and auto-gamma arms. The gamma knob is too flat on
+this bed to make auto-selection a contribution.
 
-E006 tested that next step. Group-wise gamma gave a small N=8 bump but no
-benefit at N=32/128, so the MVP should stay scalar:
+E006 tested group-wise gamma. It gave a small N=8 bump but no benefit at
+N=32/128, so it is also a flat-gamma result rather than a new action-space
+method.
 
-- estimate a high-dimensional correction shape from local worker paths;
-- estimate one source-free reliability shrinkage scalar;
-- apply the corrected FedAvg update.
+The durable positive signal is the secant gap from the theory note: intermediate
+local points carry curvature information that server-side secants did not
+capture. That is the next target.
 
-The next useful experiment must run the actual aggregator on real local-SGD
-paths with a self-contained source bundle, because E004 failed before workload
-execution. The key comparison is FedAvg/source-tuned scale vs pilot-tuned gamma
-vs source-free auto-gamma. A closed loop is not justified from E001 or E002.
+E008/E009 moved onto a nonlinear and heterogeneous synthetic bed. Full
+exact-quadratic correction fails badly there, but a conservative tuned gamma
+wins strongly:
+
+- tuned gamma/FedAvg: 1.460x, 1.473x, 1.501x at N=8/32/128;
+- server secant/FedAvg: 0.936x, 0.954x, 1.066x;
+- full gamma is destructive.
+
+So the useful signal is not gamma automation. It is the secant gap plus the need
+for bias-aware shrinkage: local paths expose a correction shape that server-side
+secants miss, but the correction must shrink when nonlinearity / heterogeneity
+violates the exact-quadratic model.
+
+The next useful experiment should build a bias-aware shrinkage rule for the
+nonlinear/heterogeneous bed, with `full_gamma` and server-side secants as null
+controls. A closed loop is not justified from E001 or E002.
 
 The first milestone is an offline prediction gate:
 
@@ -88,4 +100,9 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e005_auto_gamma_gate_result_20261003.md`: auto-gamma result.
 - `experiments/lgp_e006_group_gamma_gate.py`: small action-space gate.
 - `experiments/lgp_e006_group_gamma_gate_result_20261003.md`: group-gamma result.
+- `experiments/lgp_e008_secant_gap_nonlinear.py`: nonlinear secant-gap bed.
+- `experiments/lgp_e008_secant_gap_nonlinear_result_20261003.md`: E008 result.
+- `experiments/lgp_e009_nonlinear_gamma_sweep.py`: conservative gamma sweep.
+- `experiments/lgp_e009_nonlinear_gamma_sweep_result_20261003.md`: E009 result.
 - `ops/devvm23211_gpu_buck2_result_20261003.md`: confirmed GPU/Buck2 invocation.
+- `wanger_duality_reply.md`: review of the local-GP duality theory note.

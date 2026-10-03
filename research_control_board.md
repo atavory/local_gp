@@ -105,7 +105,7 @@ against the optimizer. The replacement real-path gate must be self-contained,
 for example via a Manifold source bundle, and must not depend on worker GitHub
 access.
 
-E005 has run locally and returned `AUTO_GAMMA_LIVE_ON_SYNTHETIC`.
+E005 has run locally and returned `GAMMA_FLAT_ON_SYNTHETIC`.
 
 Summary:
 
@@ -116,13 +116,11 @@ Summary:
   - N=32: tuned gamma 1.143, auto-gamma 1.142, oracle 1.247;
   - N=128: tuned gamma 1.168, auto-gamma 1.163, oracle 1.248.
 
-Interpretation: the first promising small Bayesian object is not a full GP over
-parameters. It is a low-dimensional decision layer over aggregation actions:
-start with scalar `gamma`, then maybe move to a small number of group-wise
-gammas. On the synthetic bed, source-free auto-gamma removes the pilot grid
-without losing the effect.
+Interpretation: auto-gamma matching tuned gamma is not a contribution on this
+bed because hardcoded `gamma=1` also ties. The gamma objective is flat enough
+that automating the knob is not meaningful evidence.
 
-E006 has run locally and returned `SCALAR_ACTION_MVP`.
+E006 has run locally and returned `GROUP_GAMMA_FLAT_ON_SYNTHETIC`.
 
 Summary:
 
@@ -132,10 +130,50 @@ Summary:
   - N=32: tuned 1.129, auto1 1.129, auto4 1.127, auto8 1.126;
   - N=128: tuned 1.138, auto1 1.135, auto4 1.135, auto8 1.135.
 
-Interpretation: group-wise shrinkage gives a small low-N bump, but the clean
-MVP is scalar action-space Bayes. High-dimensional worker paths estimate a
-correction shape; a one-dimensional reliability posterior decides how much to
-trust it.
+Interpretation: group-wise shrinkage also mostly inherits the flat gamma axis.
+It gives a small low-N bump but does not justify expanding the action layer.
+The gamma line should stop unless a real-path result shows that `full_gamma`
+fails.
+
+The durable positive signal is elsewhere: intermediate local points carry
+curvature information that server-side secants did not capture on the synthetic
+bed. That secant gap, not gamma automation, is the next target.
+
+E008 has run locally and returned `FULL_CORRECTION_UNSTABLE`.
+
+Summary on a nonlinear/heterogeneous synthetic bed:
+
+- local full correction/FedAvg:
+  - N=8: 0.019 +/- 0.282;
+  - N=32: -1.490 +/- 0.642;
+  - N=128: -8.054 +/- 3.262;
+- auto-gamma/FedAvg:
+  - N=8: 0.746 +/- 0.170;
+  - N=32: -0.134 +/- 0.337;
+  - N=128: -7.268 +/- 3.270;
+- server secant/FedAvg:
+  - N=8: 0.880 +/- 0.146;
+  - N=32: 1.002 +/- 0.114;
+  - N=128: 1.106 +/- 0.091.
+
+Interpretation: raw exact-quadratic correction does not survive nonlinearity /
+heterogeneity. It overcorrects badly.
+
+E009 has run locally and returned `CONSERVATIVE_GAMMA_NEEDED`.
+
+Summary on the same nonlinear/heterogeneous bed:
+
+- source-tuned conservative gamma is 0.40/0.35/0.30 at N=8/32/128;
+- tuned gamma/FedAvg is 1.460/1.473/1.501;
+- auto-gamma/FedAvg is 1.124/0.387/-4.449;
+- full gamma/FedAvg is 0.598/-0.398/-4.871;
+- server secant/FedAvg is 0.936/0.954/1.066.
+
+Interpretation: the secant gap is real on a bed that can tell actions apart.
+Intermediate local paths contain useful correction shape that server-side
+secants do not recover. But the current auto-gamma rule is wrong: it measures
+estimator agreement, not model-bias risk. The next method must shrink based on
+nonlinearity / heterogeneity risk, not only split-half reliability.
 
 ## Success Labels
 
@@ -160,15 +198,20 @@ trust it.
 
 1. Do not run a closed-loop optimizer from E001.
 2. Do not run a closed-loop optimizer from E002's measured readout.
-3. Do not attempt a full parameter-space GP. Use the scalar action-space
-   Bayesian layer first: source-free auto-gamma from split-half reliability.
-   Group-wise gamma is a secondary low-N variant only.
+3. Do not continue the gamma line unless `full_gamma` fails. Any E007 positive
+   must beat or at least improve over `full_gamma`, not merely tuned gamma.
 4. Replace E004 with a self-contained real-path gate that does not depend on
    worker GitHub/Mr. Gitties access.
 5. In the real-path gate, compare FedAvg/source-tuned scale, pilot-tuned gamma,
-   and source-free auto-gamma. A tie with tuned gamma is already useful because
-   it reduces tuning cost; a win is an adaptation claim.
-6. Richer real-data logging remains needed: full per-worker paths or
+   source-free auto-gamma, and full gamma. `FULL_GAMMA_EXPLAINS` is a null for
+   gamma estimation.
+6. Pivot the next synthetic/mechanism experiment to the secant gap on a bed
+   that can tell methods apart: non-quadratic curvature or worker
+   heterogeneity.
+7. E009 shows the next rule target: bias-aware shrinkage. Estimate path
+   nonlinearity / worker heterogeneity and shrink the correction aggressively
+   when exact-quadratic assumptions are violated.
+8. Richer real-data logging remains needed: full per-worker paths or
    shared-probe function-space features, not only scalar endpoint summaries.
-7. Do not run a closed-loop optimizer before a held-out prediction/control gate
+9. Do not run a closed-loop optimizer before a held-out prediction/control gate
    passes.

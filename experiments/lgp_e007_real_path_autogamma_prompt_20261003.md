@@ -80,19 +80,24 @@ Report paired target-seed deltas:
 
 Important scoring convention:
 
-- if auto-gamma ties tuned-gamma while using no pilot grid, that is a useful
-  tuning-reduction result;
+- if auto-gamma ties tuned-gamma while using no pilot grid, that is useful only
+  if it beats `full_gamma`;
+- if `full_gamma` ties the learned/tuned gamma arms, the gamma axis is flat and
+  this is a null for gamma estimation;
 - if auto-gamma beats tuned-gamma, that is an adaptation result;
 - if tuned-gamma beats auto-gamma, the synthetic auto-gamma result does not
   transfer.
 
 ## Decision Labels
 
-- `AUTO_GAMMA_REAL_TIES_TUNED`: auto-gamma statistically ties tuned-gamma and
-  beats FedAvg/source scale.
-- `AUTO_GAMMA_REAL_WINS`: auto-gamma beats tuned-gamma and FedAvg/source scale.
+- `AUTO_GAMMA_REAL_TIES_TUNED`: auto-gamma statistically ties tuned-gamma,
+  beats full-gamma, and beats FedAvg/source scale.
+- `AUTO_GAMMA_REAL_WINS`: auto-gamma beats tuned-gamma, full-gamma, and
+  FedAvg/source scale.
+- `FULL_GAMMA_EXPLAINS`: full-gamma ties or beats auto-gamma and tuned-gamma.
+  This is a null for gamma estimation.
 - `TUNED_GAMMA_REQUIRED`: tuned-gamma beats auto-gamma.
-- `FEDAVG_SCALE_EXPLAINS`: source-tuned FedAvg scale beats both gamma arms.
+- `FEDAVG_SCALE_EXPLAINS`: source-tuned FedAvg scale beats all gamma arms.
 - `NO_REAL_PATH_HARNESS`: bundle works but no usable real local-SGD path source
   exists on the worker.
 - `INVALID_BUNDLE`: bundle sanity checks fail.

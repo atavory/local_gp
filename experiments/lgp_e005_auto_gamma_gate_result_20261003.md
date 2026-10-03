@@ -2,7 +2,7 @@
 
 ## Decision
 
-`AUTO_GAMMA_LIVE_ON_SYNTHETIC`
+`GAMMA_FLAT_ON_SYNTHETIC`
 
 ## Question
 
@@ -30,24 +30,25 @@ Controls:
 
 ## Interpretation
 
-This is the first evidence that the optimizer can reduce the tuning burden:
-the source-free reliability shrinker matches the pilot-tuned scalar on the
-synthetic diagonal bed, and beats it at N=8 in this held-out split.
+The source-free reliability shrinker matches the pilot-tuned scalar on the
+synthetic diagonal bed, but this is not evidence of a useful auto-gamma method:
+the hardcoded `gamma=1` arm also ties both learned/tuned gamma arms.
 
-This is not yet a real-data claim. It says the right small Bayesian object is
-probably not a full GP over parameters. It is a low-dimensional decision layer
-over aggregation actions, starting with scalar `gamma` and later a small number
-of group-wise gammas.
+At N=8, auto-gamma chooses 0.527 while tuned gamma chooses 0.80, yet the scores
+move by only about two percent. That is a flat action axis, not a successful
+adaptive controller.
+
+This is not a real-data claim and not a tuning-reduction claim. It says the
+synthetic bed is too insensitive to gamma to adjudicate gamma selection.
 
 ## Consequence
 
-The next real-path gate should not attempt a full parameter-space GP. It should
-test three small-action arms:
+The next real-path gate must keep `full_gamma` as a null control:
 
 1. FedAvg/source-tuned scale;
 2. pilot-tuned scalar gamma;
 3. source-free auto-gamma from split-half reliability.
+4. full correction with `gamma=1`.
 
-If auto-gamma ties tuned gamma on real local paths, the contribution is reduced
-tuning/search cost. If it beats tuned gamma, the contribution is both tuning
-reduction and adaptation.
+If full gamma ties the other gamma arms, the gamma line is flat there too and
+should not be written as an auto-gamma win.

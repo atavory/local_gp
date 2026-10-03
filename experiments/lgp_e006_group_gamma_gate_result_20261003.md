@@ -2,7 +2,7 @@
 
 ## Decision
 
-`SCALAR_ACTION_MVP`
+`GROUP_GAMMA_FLAT_ON_SYNTHETIC`
 
 ## Question
 
@@ -30,21 +30,17 @@ Mean estimated gamma:
 
 ## Interpretation
 
-The action space should stay small.
+The group-wise gamma axis is also mostly flat. It gives a modest N=8 bump, but
+at N=32 and N=128 it provides no improvement over scalar auto-gamma, and E005
+already showed that hardcoded `gamma=1` is competitive on the same bed.
 
-Group-wise shrinkage gives a modest N=8 bump, but at N=32 and N=128 it provides
-no improvement over scalar auto-gamma. The clean MVP is therefore:
-
-1. estimate the local-SGD displacement-law correction from worker paths;
-2. choose one source-free shrinkage gamma from split-half reliability;
-3. apply the corrected FedAvg update.
-
-This is a smaller and more plausible Bayesian object than a full GP:
-high-dimensional worker paths estimate a correction shape, while the Bayesian
-layer only decides how much of that shape to trust.
+This should not be cited as evidence for group-wise action Bayes. It is evidence
+that this synthetic bed is poor for judging gamma selection.
 
 ## Consequence
 
-For the next real-path gate, do not spend complexity on a full parameter-space
-GP or many group-wise weights. Test scalar auto-gamma first. Group-wise gamma is
-a secondary low-N variant, not the product MVP.
+For the next gate, stop iterating on gamma unless `full_gamma` fails. The
+durable signal is the secant gap: intermediate local points expose curvature
+information that server-side secants did not capture in the original synthetic
+analysis. That is the direction to test on a bed with nonlinearity or worker
+heterogeneity.
