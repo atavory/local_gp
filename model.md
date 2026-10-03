@@ -54,6 +54,16 @@ FedAvg displacement -> [I - (I - eta Hhat)^K]^{-1} correction
 
 Path-only worker scatter is not currently sufficient.
 
+E020 and E021 put two constraints on this estimator:
+
+- Probe budget matters. Active probe design v1 did not reliably beat matched
+  random probes, so random probe budgets around `2N` to `N*K` remain the
+  working control.
+- Dense low-rank correlated geometry breaks the current estimator even though
+  an oracle dense-H correction has large headroom. A low-rank-plus-diagonal
+  representation needs a separate held-out validation or trust gate before its
+  correction is applied.
+
 ## Latent Object
 
 The latent is not a scalar momentum coefficient. It is a local function:

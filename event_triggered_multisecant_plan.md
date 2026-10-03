@@ -168,6 +168,18 @@ also fails in both gates. So the usable design is narrower but real:
 noise-controlled probes feed a dynamics-aware local-map correction, with
 residual shrinkage guarding model risk.
 
-The next event-triggered work is real-path plumbing plus harder synthetic stress:
-low-rank/dense curvature, non-diagonal noise, cheaper probe budgets, and
-function-space probes.
+E020 tested whether active design can reduce the probe budget. It did not:
+full random probes remain strong, current value-weighted probes often
+underperform matched random probes, and `uncertainty_value` only ties random
+in the stronger cases. For now, the practical rule is random probes near `2N`
+when `N >= 32` and full `N*K` for very small `N`.
+
+E021 tested dense low-rank curvature with correlated low-rank noise. Oracle
+dense-H correction has large headroom, but diagonal, low-rank, and combined
+estimated corrections do not clear tuned scalar. The learned combined update is
+destructive under E017-style residual shrinkage, so dense geometry requires a
+held-out validation or trust layer before applying a low-rank-plus-diagonal
+correction.
+
+The next event-triggered work is real-path plumbing plus trust-gated dense
+geometry, cheaper random-probe budget confirmation, and function-space probes.

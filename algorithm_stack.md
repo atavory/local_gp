@@ -43,6 +43,13 @@ with shrinkage determined from the likelihood or held-out probe residuals.
 E017 is the first crude version of this idea: split probes estimate residual
 risk and turn it into a shrinkage gamma.
 
+E020/E021 add two guardrails. First, active probe selection is not yet a reliable
+budget reducer, so the default should remain random probes with an explicit
+budget curve. Second, residual shrinkage alone can miss dense low-rank
+correlated failure modes; low-rank-plus-diagonal fits need a held-out
+validation layer that can zero or damp the combined correction before it reaches
+the event action.
+
 ## Layer 2: Direct Differentiation Of The One-Step Surrogate
 
 When the objective is the one-event improvement surrogate, the action
@@ -83,6 +90,12 @@ The controller maintains a trust region around the current synchronized state:
 ```text
 fit local map -> propose corrected update -> compare predicted vs observed value
 ```
+
+For the dense-geometry branch, the comparison should include a held-out
+probe/loss proxy, not only fit residuals from the same representation. E021
+showed that a combined low-rank-plus-diagonal update can look plausible enough
+to get nonzero residual shrinkage while being destructive on held-out objective
+decrease.
 
 Then:
 

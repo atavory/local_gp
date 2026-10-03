@@ -141,6 +141,19 @@ explain the gain, and the oracle best-worker fallback loses. The live claim is
 now precise: probe-fed dynamics-aware local-map correction is a real CPU
 mechanism. It still needs a real-path gate.
 
+E020 returned `RANDOM_BUDGET_REQUIRED`. Full `N*K` random probes still beat
+tuned scalar scale under residual shrinkage, but the current active policies do
+not robustly reduce the probe budget. The cheapest plausible rule from this gate
+is residual-shrunk random probes around `2N` for `N >= 32`, with full `N*K`
+still needed for very small worker counts.
+
+E021 returned `DENSE_GEOMETRY_BREAKS_METHOD`. The true dense Hessian correction
+has large headroom, but the current diagonal, sketched low-rank, and combined
+low-rank-plus-diagonal estimators do not safely capture it under correlated
+low-rank noise. The next dense-geometry direction is not a larger blind update;
+it is low-rank-plus-diagonal estimation with a stricter held-out validation or
+trust layer that can reject the combined correction.
+
 The algorithmic stack is not Optuna/TPE. The working plan is empirical-Bayes
 local-map estimation inside each event, residual shrinkage from held-out probes,
 and a stochastic trust-region controller outside the event. Optuna remains
@@ -200,6 +213,12 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e016_rotated_nonlinear_probe_run_20261003.txt`: E016 run log.
 - `experiments/lgp_e017_risk_shrinkage_fallback.py`: residual shrinkage and fallback gate.
 - `experiments/lgp_e017_risk_shrinkage_fallback_result_20261003.md`: E017 result.
+- `experiments/lgp_e020_probe_budget_active_design.py`: probe-budget and active-design gate.
+- `experiments/lgp_e020_probe_budget_active_design_result_20261003.md`: E020 result.
+- `experiments/lgp_e020_probe_budget_active_design_run_20261003.txt`: E020 run log.
+- `experiments/lgp_e021_dense_lowrank_correlated_stress.py`: dense low-rank correlated stress.
+- `experiments/lgp_e021_dense_lowrank_correlated_stress_result_20261003.md`: E021 result.
+- `experiments/lgp_e021_dense_lowrank_correlated_stress_run_20261003.txt`: E021 run log.
 - `ops/devvm23211_gpu_buck2_result_20261003.md`: confirmed GPU/Buck2 invocation.
 - `wanger_duality_reply.md`: review of the local-GP duality theory note.
 - `wanger_e002_e007_review.md`: gamma-collapse and E007 gate review.

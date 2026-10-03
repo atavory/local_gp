@@ -25,6 +25,30 @@ ROSETTA_DISABLE_AOT=1 manifold get \
   /tmp/lgp_e020_cpu_worker_prompt_20261003.md
 ```
 
+Completed artifacts:
+
+```text
+experiments/lgp_e020_probe_budget_active_design.py
+experiments/lgp_e020_probe_budget_active_design_result_20261003.md
+experiments/lgp_e020_probe_budget_active_design_run_20261003.txt
+```
+
+Fetch:
+
+```bash
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e020_probe_budget_active_design.py \
+  /tmp/lgp_e020_probe_budget_active_design.py
+
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e020_probe_budget_active_design_result_20261003.md \
+  /tmp/lgp_e020_probe_budget_active_design_result_20261003.md
+
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e020_probe_budget_active_design_run_20261003.txt \
+  /tmp/lgp_e020_probe_budget_active_design_run_20261003.txt
+```
+
 ## CPU-2
 
 Next run E021:
@@ -42,6 +66,30 @@ Fetch:
 ROSETTA_DISABLE_AOT=1 manifold get \
   aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e021_cpu_worker_prompt_20261003.md \
   /tmp/lgp_e021_cpu_worker_prompt_20261003.md
+```
+
+Completed artifacts:
+
+```text
+experiments/lgp_e021_dense_lowrank_correlated_stress.py
+experiments/lgp_e021_dense_lowrank_correlated_stress_result_20261003.md
+experiments/lgp_e021_dense_lowrank_correlated_stress_run_20261003.txt
+```
+
+Fetch:
+
+```bash
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e021_dense_lowrank_correlated_stress.py \
+  /tmp/lgp_e021_dense_lowrank_correlated_stress.py
+
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e021_dense_lowrank_correlated_stress_result_20261003.md \
+  /tmp/lgp_e021_dense_lowrank_correlated_stress_result_20261003.md
+
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e021_dense_lowrank_correlated_stress_run_20261003.txt \
+  /tmp/lgp_e021_dense_lowrank_correlated_stress_run_20261003.txt
 ```
 
 ## Source Bundle

@@ -325,6 +325,46 @@ grid, and stays within roughly 5%, 6%, and 13% of the tuned-gamma probe arm. Ful
 gamma is destructive at N=8, so the residual rule is doing real shrinkage. The
 best-worker oracle fallback again loses.
 
+E020 ran the probe-budget / active-design gate and returned
+`RANDOM_BUDGET_REQUIRED`.
+
+Summary on the rotated nonlinear block bed with residual shrinkage:
+
+- full `N*K` random probes still beat tuned scalar scale:
+  - N=8: full random 1.252 vs scalar 1.061;
+  - N=32: full random 1.480 vs scalar 1.072;
+  - N=128: full random 1.941 vs scalar 1.115.
+- the current `value_weighted` active policy usually underperforms matched
+  random probes;
+- `uncertainty_value` is the better active variant and sometimes ties matched
+  random, but it does not provide a robust budget reduction;
+- the cheapest plausible policy is still random probes, around `2N` when
+  `N >= 32`, with full `N*K` for very small `N`.
+
+Interpretation: random probe budget is a real product cost. The live mechanism
+does not require active design v1, and active design v1 should not replace
+random probes.
+
+E021 ran the dense low-rank / correlated-noise stress and returned
+`DENSE_GEOMETRY_BREAKS_METHOD`.
+
+Summary:
+
+- tuned scalar remains near 1.04-1.05 on the dense bed;
+- oracle dense-H correction reaches 2.658/3.304/2.778 at N=8/32/128, so the
+  bed has large non-scalar headroom;
+- diagonal, random low-rank, learned low-rank, and true-subspace low-rank arms
+  do not beat tuned scalar with positive confidence;
+- learned low-rank-plus-diagonal with E017 shrinkage is unsafe and can be
+  destructive;
+- pilot-tuned combined gamma nearly zeros the combined learned update, which is
+  itself evidence that the representation needs a stricter trust gate.
+
+Interpretation: dense low-rank-plus-diagonal geometry is the next hard problem.
+The current residual shrinkage is not enough under correlated low-rank noise.
+Do not ship the combined estimator without held-out loss/probe validation or an
+equivalent trust layer that can reject the correction.
+
 Updated local-GP state:
 
 - gamma automation from the old aggregator line is dead;
@@ -334,11 +374,14 @@ Updated local-GP state:
   nonlinear, and rotated nonlinear CPU beds;
 - risk-aware residual shrinkage has replaced target gamma tuning on the current
   CPU bed;
+- random probe budget remains material; active design v1 is not enough to cut
+  it reliably;
+- dense low-rank-plus-diagonal geometry has oracle headroom, but current
+  estimators need a trust/validation layer before they are safe;
 - the controller should use empirical-Bayes local-map fitting plus stochastic
   trust-region adaptation, not Optuna/TPE over high-dimensional actions;
-- the next useful work is real-path plumbing (E018) and then harder synthetic
-  stress: low-rank/dense curvature, non-diagonal noise, and cheaper probe
-  budgets.
+- the next useful work is real-path plumbing (E018/E019) and CPU trust-layer /
+  budget follow-ups from E020/E021.
 
 ## Success Labels
 
@@ -378,5 +421,9 @@ Updated local-GP state:
 8. Event-triggered multisecant branch: stop plain BB/L-BFGS consolidation; use
    the K-step local-map operator.
 9. Run E018 as a real-path readiness smoke, not a product claim.
-10. Do not run a closed-loop optimizer before a held-out real-path/control gate
+10. Use residual-shrunk random probes as the default budget policy for now:
+    around `2N` when `N >= 32`, full `N*K` for very small `N`.
+11. For dense low-rank-plus-diagonal geometry, add a held-out validation/trust
+    gate before applying the combined update.
+12. Do not run a closed-loop optimizer before a held-out real-path/control gate
    passes against tuned scalar scale and best-worker fallback.
