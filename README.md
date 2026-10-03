@@ -188,6 +188,14 @@ modest and still far below oracle-H, so dense geometry stays behind a trust
 layer while the next work improves subspace/model identification and prices the
 validation budget.
 
+E024 added the cheap causal delayed-gamma control for E022 and returned
+`DELAYED_GAMMA_WEAK`. Applying round `t`'s validation-selected gamma to round
+`t+1` weakens the E022 result: N=32 remains positive, N=8 is tiny, and N=128 is
+null. This does not kill dense geometry, because the delayed arm still prevents
+the E021 crash, but it means E022 is not yet a finalized dense-method claim.
+The next CPU checks are a higher-rep delayed/stale/shuffled replication and
+matched-compute pricing for the validation proxy.
+
 The algorithmic stack is not Optuna/TPE. The working plan is empirical-Bayes
 local-map estimation inside each event, residual shrinkage from held-out probes,
 and a stochastic trust-region controller outside the event. Optuna remains
@@ -259,12 +267,15 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e022_dense_trust_validation.py`: E022 dense trust validation.
 - `experiments/lgp_e022_dense_trust_validation_result_20261003.md`: E022 result.
 - `experiments/lgp_e022_dense_trust_validation_run_20261003.txt`: E022 run log.
-- `experiments/lgp_cpu1_hold_after_e022_20261003.md`: CPU-1 hold note after E022.
 - `experiments/lgp_e023_cpu_worker_prompt_20261003.md`: completed random-probe budget CPU gate.
 - `experiments/lgp_e023_random_probe_budget_confirm.py`: E023 random budget confirmation.
 - `experiments/lgp_e023_random_probe_budget_confirm_result_20261003.md`: E023 result.
 - `experiments/lgp_e023_random_probe_budget_confirm_run_20261003.txt`: E023 run log.
-- `experiments/lgp_cpu2_hold_after_e023_20261003.md`: CPU-2 hold note after E023.
+- `experiments/lgp_e024_delayed_trust_validation.py`: delayed-gamma control for E022.
+- `experiments/lgp_e024_delayed_trust_validation_result_20261003.md`: E024 result.
+- `experiments/lgp_e024_delayed_trust_validation_run_20261003.txt`: E024 run log.
+- `experiments/lgp_e025_validation_cost_pricing_prompt_20261003.md`: CPU-1 next task.
+- `experiments/lgp_e026_delayed_gamma_replication_prompt_20261003.md`: CPU-2 next task.
 - `experiments/lgp_cpu_worker_manifest_20261003.md`: CPU worker dropbox manifest.
 - `experiments/lgp_gpu_worker_manifest_20261003.md`: GPU worker dropbox manifest.
 - `ops/devvm23211_gpu_buck2_result_20261003.md`: confirmed GPU/Buck2 invocation.

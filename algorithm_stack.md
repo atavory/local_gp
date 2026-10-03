@@ -121,6 +121,12 @@ showed that a combined low-rank-plus-diagonal update can look plausible enough
 to get nonzero residual shrinkage while being destructive on held-out objective
 decrease.
 
+E022 showed that a held-out mini-loss proxy can recover a small same-round gain
+on the dense bed, but E024 weakened that gain under delayed application. Treat
+same-round validation as a candidate trust layer, not a settled method. Two
+extra gates are required before citing it: delayed/stale validation to bound
+winner's curse, and matched-compute pricing for the validation forward passes.
+
 Then:
 
 - accept and expand the radius on successful events;

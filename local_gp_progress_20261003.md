@@ -153,27 +153,37 @@ E022:
 - the recovery is modest versus oracle-H, so dense work now needs better
   subspace/model identification plus validation-budget accounting.
 
+E024:
+
+- returned `DELAYED_GAMMA_WEAK`;
+- applying round `t`'s selected gamma to round `t+1` only clearly preserved a
+  gain at N=32;
+- N=8 was tiny and N=128 was null, so E022 is not yet a settled dense-method
+  claim;
+- the E022 validation grid costs roughly 17.23 full-forward equivalents, so
+  validation cost must be priced against matched compute.
+
 ## Current Worker Tasks
 
 CPU-1:
 
 ```text
 CPU_1_NEXT.md
-experiments/lgp_cpu1_hold_after_e022_20261003.md
+experiments/lgp_e025_validation_cost_pricing_prompt_20261003.md
 ```
 
-Status: E022 is complete. `CPU_1_NEXT.md` should be a hold note to avoid a
-duplicate E022 launch until the coordinator assigns a fresh CPU-1 task.
+Status: active E025 task. Price E022 validation cost and compare against
+matched-compute alternatives.
 
 CPU-2:
 
 ```text
 CPU_2_NEXT.md
-experiments/lgp_cpu2_hold_after_e023_20261003.md
+experiments/lgp_e026_delayed_gamma_replication_prompt_20261003.md
 ```
 
-Status: E023 is complete. `CPU_2_NEXT.md` should be a hold note to avoid a
-duplicate E023 launch until the coordinator assigns a fresh CPU-2 task.
+Status: active E026 task. Replicate delayed/stale/shuffled gamma controls with
+more held-out power.
 
 GPU:
 
@@ -191,7 +201,8 @@ For ushmoo:
 
 - Is the operator story right?
 - Does E021 kill the representation, the trust layer, or the whole mechanism?
-- Is E022's validation gate enough to distinguish those?
+- Does E024's delayed-gamma weakness mean E022 was same-round selection noise,
+  or just underpowered causal validation?
 
 For wanger:
 
@@ -204,7 +215,7 @@ For wanger:
 For Merkle:
 
 - CPU workers should read `CPU_1_NEXT.md` and `CPU_2_NEXT.md` directly from
-  Manifold if the long manifest is not being polled.
+  Manifold. They now point to E025 and E026, not hold notes.
 - Use `local_gp_cpu_source_latest.tgz` unless a dated source bundle is required.
 
 ## Current Claim Boundary
@@ -223,6 +234,6 @@ Claim we cannot make yet:
 this is a working optimizer on real workloads.
 ```
 
-The next decisive result is the real-path GPU gate. E022 shows trust-gated
-dense geometry can recover a small safe gain, but the project still needs
-real-path survival and better dense representation before any optimizer claim.
+The next decisive results are E025/E026 for dense trust validity/cost and the
+real-path GPU gate. E022 shows trust-gated dense geometry can recover a small
+same-round safe gain, but E024 says that claim is not settled yet.

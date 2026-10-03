@@ -432,6 +432,25 @@ Interpretation: dense geometry is not intrinsically dead, but it is only safe
 behind rowwise held-out validation. The next dense work should improve
 subspace/model identification and explicitly account for validation-proxy cost.
 
+E024 ran the causal delayed-gamma control and returned `DELAYED_GAMMA_WEAK`.
+
+Summary:
+
+- same-round `combo_val_gamma` reproduced E022's table;
+- applying round `t`'s selected gamma to round `t+1` weakened the effect:
+  - N=8: delayed - scalar `+0.010 +/- 0.012`;
+  - N=32: delayed - scalar `+0.048 +/- 0.036`;
+  - N=128: delayed - scalar `-0.003 +/- 0.080`;
+- delayed gamma still avoids the E021 destructive combo, but it does not yet
+  preserve the same-round gain across all N;
+- the E022 validation grid costs about 17.23 full-forward equivalents per row,
+  or 5.74 full-gradient-call equivalents if one backward costs two forwards.
+
+Interpretation: E022 remains a quality positive for same-round validation, but
+winner's curse is now an active gate. Do not cite E022 as a settled
+dense-method or efficiency claim until E026 delayed/stale/shuffled validation
+and E025 matched-cost pricing land.
+
 Updated local-GP state:
 
 - gamma automation from the old aggregator line is dead;
@@ -445,8 +464,9 @@ Updated local-GP state:
   it reliably, but E023 confirms `2N` random probes as the default for
   `N >= 32` on the rotated CPU bed;
 - dense low-rank-plus-diagonal geometry has oracle headroom; E022 shows a
-  held-out validation-gamma layer can recover a small safe gain, but the
-  representation still misses most oracle-H benefit;
+  held-out validation-gamma layer can recover a small same-round safe gain, but
+  E024 weakens that gain under delayed application and the representation still
+  misses most oracle-H benefit;
 - the controller should use empirical-Bayes local-map fitting plus stochastic
   trust-region adaptation, not Optuna/TPE over high-dimensional actions;
 - the next useful work is real-path plumbing (E018/E019), better dense
@@ -493,8 +513,9 @@ Updated local-GP state:
 9. Run E018 as a real-path readiness smoke, not a product claim.
 10. Use residual-shrunk random probes as the default budget policy for now:
     around `2N` when `N >= 32`, full `N*K` for very small `N`.
-11. For dense low-rank-plus-diagonal geometry, add a held-out validation/trust
-    gate before applying the combined update.
+11. For dense low-rank-plus-diagonal geometry, keep the held-out validation
+    gate, but do not claim it until the delayed-gamma and validation-cost gates
+    land.
 12. Do not run a closed-loop optimizer before a held-out real-path/control gate
    passes against tuned scalar scale and best-worker fallback.
 13. Rewrite the paper around the reset thesis:

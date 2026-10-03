@@ -14,16 +14,95 @@ lgp_cpu_worker_manifest_20261003.md
 CPU_1_NEXT.md
 CPU_2_NEXT.md
 local_gp_cpu_source_latest.tgz
+local_gp_cpu_source_20261003_e024_e026.tgz
 local_gp_cpu_source_20261003_e022_e023.tgz
 ```
 
 The `CPU_1_NEXT.md` and `CPU_2_NEXT.md` aliases are deliberate. Some workers
 poll for direct next-task files rather than reading the long manifest.
 
-Status checked 2026-10-03 13:44 PDT: E022 and E023 completed. E023 artifacts
-and CPU-2 hold note were uploaded by the local loop; E022 script, result note,
-and run log were visible in the CPU dropbox and imported. CPU aliases should
-now be hold notes to avoid duplicate launches.
+Status checked 2026-10-03 14:15 PDT: E022 and E023 completed and were imported.
+E024 was run locally and returned `DELAYED_GAMMA_WEAK`. CPU aliases now point
+to the next two follow-ups:
+
+- `CPU_1_NEXT.md`: E025 validation-cost pricing.
+- `CPU_2_NEXT.md`: E026 delayed-gamma replication with stale/shuffled controls.
+
+Do not rerun E022/E023 unless the coordinator explicitly asks for replication.
+
+## Active: CPU-1 / E025
+
+Run E025:
+
+```text
+experiments/lgp_e025_validation_cost_pricing_prompt_20261003.md
+```
+
+Purpose: price E022's held-out mini-loss validation cost and compare the
+validation-gamma gain against matched-compute alternatives.
+
+Fetch:
+
+```bash
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/CPU_1_NEXT.md \
+  /tmp/CPU_1_NEXT.md
+```
+
+Expected artifacts:
+
+```text
+experiments/lgp_e025_validation_cost_pricing.py
+experiments/lgp_e025_validation_cost_pricing_result_20261003.md
+experiments/lgp_e025_validation_cost_pricing_run_20261003.txt
+```
+
+## Active: CPU-2 / E026
+
+Run E026:
+
+```text
+experiments/lgp_e026_delayed_gamma_replication_prompt_20261003.md
+```
+
+Purpose: resolve whether E022's same-round validation-gamma survives lagged
+application, or whether same-round selection noise explains it.
+
+Fetch:
+
+```bash
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/CPU_2_NEXT.md \
+  /tmp/CPU_2_NEXT.md
+```
+
+Expected artifacts:
+
+```text
+experiments/lgp_e026_delayed_gamma_replication.py
+experiments/lgp_e026_delayed_gamma_replication_result_20261003.md
+experiments/lgp_e026_delayed_gamma_replication_run_20261003.txt
+```
+
+## Completed: local / E024
+
+Run E024:
+
+```text
+experiments/lgp_e024_delayed_trust_validation.py
+```
+
+Purpose: cheap delayed-gamma control for E022 winner's-curse risk.
+
+Completed artifacts:
+
+```text
+experiments/lgp_e024_delayed_trust_validation.py
+experiments/lgp_e024_delayed_trust_validation_result_20261003.md
+experiments/lgp_e024_delayed_trust_validation_run_20261003.txt
+```
+
+Decision: `DELAYED_GAMMA_WEAK`.
 
 ## Completed: CPU-1 / E022
 
