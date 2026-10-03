@@ -28,6 +28,12 @@ intermediate local points exposed a real curvature correction shape, but a
 one-scalar tuned gamma shrinkage matched or slightly beat the measured posterior
 readout. This means the current readout is not yet a method.
 
+E003 built the first actual optimizer artifact:
+`local_gp.optimizer.LocalGPAggregator`. On the synthetic diagonal-quadratic
+smoke test it improves over FedAvg by 1.063x, 1.132x, and 1.148x at
+N=8/32/128. This is still synthetic and gamma-tuned, but now there is a concrete
+aggregator to test.
+
 The next useful experiment must either collect richer path/probe information or
 show that a principled Bayesian/GP evidence rule sets shrinkage better than the
 tuned gamma control. A closed loop is not justified from E001 or E002.
@@ -51,4 +57,7 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e001_result_20261003.md`: first experiment result.
 - `experiments/lgp_e002_gamma_control.py`: tuned-gamma control script.
 - `experiments/lgp_e002_gamma_control_result_20261003.md`: tuned-gamma result.
+- `local_gp/optimizer.py`: local-SGD trajectory aggregator prototype.
+- `experiments/lgp_e003_optimizer_smoke.py`: public optimizer smoke test.
+- `experiments/lgp_e003_optimizer_smoke_result_20261003.md`: smoke result.
 - `ops/devvm23211_gpu_buck2_result_20261003.md`: confirmed GPU/Buck2 invocation.

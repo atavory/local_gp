@@ -84,6 +84,19 @@ closed-loop method claim from the current readout. The next gate must show that
 a principled Bayesian/GP evidence rule can set shrinkage at least as well as
 tuned gamma without target tuning.
 
+E003 built the first optimizer artifact:
+`local_gp.optimizer.LocalGPAggregator`.
+
+Synthetic diagonal-quadratic smoke:
+
+- N=8: local GP/base 1.063, oracle-C/base 1.190;
+- N=32: local GP/base 1.132, oracle-C/base 1.233;
+- N=128: local GP/base 1.148, oracle-C/base 1.207.
+
+Interpretation: the aggregator is now concrete and positive on the synthetic
+bed, but it remains gamma-tuned and synthetic. It is an object to test, not a
+real-data method claim.
+
 ## Success Labels
 
 - `PATH_SIGNAL_CONFIRMED`: GP/kernel predictor beats round-only and path-norm
@@ -110,7 +123,9 @@ tuned gamma without target tuning.
 3. If continuing, design E003 around principled shrinkage selection:
    marginal-likelihood/type-II ML, source-fit prior, or an analytic debiasing
    rule that must beat tuned gamma on held-out seeds.
-4. Richer real-data logging remains needed: full per-worker paths or
+4. E003 has produced a concrete aggregator; next revise this item as E004:
+   principled shrinkage or real-data trajectory logging.
+5. Richer real-data logging remains needed: full per-worker paths or
    shared-probe function-space features, not only scalar endpoint summaries.
-5. Do not run a closed-loop optimizer before a held-out prediction/control gate
+6. Do not run a closed-loop optimizer before a held-out prediction/control gate
    passes.
