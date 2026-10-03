@@ -6,10 +6,18 @@ Manifold directory:
 aai_research_tlv/tree/local_gp/gpu_pings/20261003/
 ```
 
-Status checked 2026-10-03 13:49 PDT: no E018/E019 result artifacts were visible
-in the GPU dropbox. The prefix contained only the E018/E019 prompts, source
-bundles, and manifest. Do not adjudicate GPU results until the worker uploads
-result notes and run logs.
+Status checked 2026-10-03 16:00 PDT: the GPU liveness deadline passed with no
+E018/E019 result artifacts visible in the GPU dropbox. The prefix contained
+only the E018/E019 prompts, source bundles, and manifest. Treat the GPU lane as
+requiring worker escalation or requeue through the Buck2 `keep_gpu_sections`
+path. Do not adjudicate GPU results until the worker uploads result notes and
+run logs.
+
+Liveness note:
+
+```text
+experiments/lgp_e018_e019_gpu_liveness_20261003.md
+```
 
 ## GPU-1
 
@@ -46,6 +54,31 @@ Fetch everything:
 ROSETTA_DISABLE_AOT=1 manifold getr \
   aai_research_tlv/tree/local_gp/gpu_pings/20261003 \
   /tmp/local_gp_gpu_pings_20261003
+```
+
+## Liveness Escalation
+
+The 2026-10-03 16:00 PDT liveness check found this exact GPU Manifold state:
+
+```text
+        3915 lgp_e018_gpu_worker_prompt_20261003.md
+        4834 lgp_e019_gpu_worker_prompt_20261003.md
+      104736 local_gp_e018_source_20261003.tgz
+      116159 local_gp_e019_source_20261003.tgz
+        1987 manifest.md
+```
+
+No E018/E019 result note, script, or run log was present. Requeue or escalate
+with:
+
+```text
+gpu_python_binary(..., keep_gpu_sections = True)
+```
+
+or:
+
+```bash
+buck2 run -c fbcode.enable_gpu_sections=true ...
 ```
 
 ## GPU-2

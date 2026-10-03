@@ -196,6 +196,11 @@ the E021 crash, but it means E022 is not yet a finalized dense-method claim.
 The next CPU checks are a higher-rep delayed/stale/shuffled replication and
 matched-compute pricing for the validation proxy.
 
+The E018/E019 GPU liveness deadline passed at 2026-10-03 16:00 PDT with the GPU
+dropbox still containing only prompts, source bundles, and its manifest. Treat
+the real-path GPU lane as requiring worker escalation or requeue through the
+Buck2 `keep_gpu_sections` path before adjudicating it.
+
 The algorithmic stack is not Optuna/TPE. The working plan is empirical-Bayes
 local-map estimation inside each event, residual shrinkage from held-out probes,
 and a stochastic trust-region controller outside the event. Optuna remains
@@ -276,6 +281,8 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e024_delayed_trust_validation_run_20261003.txt`: E024 run log.
 - `experiments/lgp_e025_validation_cost_pricing_prompt_20261003.md`: CPU-1 next task.
 - `experiments/lgp_e026_delayed_gamma_replication_prompt_20261003.md`: CPU-2 next task.
+- `experiments/lgp_e018_e019_gpu_liveness_20261003.md`: GPU liveness note after
+  the 16:00 PDT deadline.
 - `experiments/lgp_cpu_worker_manifest_20261003.md`: CPU worker dropbox manifest.
 - `experiments/lgp_gpu_worker_manifest_20261003.md`: GPU worker dropbox manifest.
 - `ops/devvm23211_gpu_buck2_result_20261003.md`: confirmed GPU/Buck2 invocation.

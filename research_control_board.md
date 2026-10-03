@@ -472,6 +472,9 @@ Updated local-GP state:
 - the next useful work is real-path plumbing (E018/E019), better dense
   subspace/model identification, validation-budget accounting, and
   function-space probes.
+- the E018/E019 GPU lane missed its 2026-10-03 16:00 PDT liveness deadline with
+  no result artifacts visible; it now requires worker escalation or requeue
+  through the Buck2 `keep_gpu_sections` path before adjudication.
 
 ## Success Labels
 
@@ -510,7 +513,8 @@ Updated local-GP state:
    function-space features, not only scalar endpoint summaries.
 8. Event-triggered multisecant branch: stop plain BB/L-BFGS consolidation; use
    the K-step local-map operator.
-9. Run E018 as a real-path readiness smoke, not a product claim.
+9. Requeue or escalate E018/E019 through the Buck2 `keep_gpu_sections` GPU path;
+   keep E018 as a real-path readiness smoke, not a product claim.
 10. Use residual-shrunk random probes as the default budget policy for now:
     around `2N` when `N >= 32`, full `N*K` for very small `N`.
 11. For dense low-rank-plus-diagonal geometry, keep the held-out validation

@@ -193,7 +193,9 @@ lgp_e019_gpu_worker_prompt_20261003.md
 ```
 
 Question: does the corrected operator and risk shrinkage survive real-path GPU
-plumbing? No GPU result note has landed yet.
+plumbing? The 2026-10-03 16:00 PDT liveness deadline passed with no GPU result
+note, script, or run log in the dropbox, so this lane now needs worker
+escalation or requeue through the Buck2 `keep_gpu_sections` path.
 
 ## What To Audit
 
@@ -217,6 +219,9 @@ For Merkle:
 - CPU workers should read `CPU_1_NEXT.md` and `CPU_2_NEXT.md` directly from
   Manifold. They now point to E025 and E026, not hold notes.
 - Use `local_gp_cpu_source_latest.tgz` unless a dated source bundle is required.
+- GPU workers should not be silently polled after the missed liveness deadline;
+  requeue or escalate E018/E019 through Buck2 with `keep_gpu_sections = True`
+  and preserve exact CUDA/Buck2 diagnostics if the result is `NO_GPU_HARNESS`.
 
 ## Current Claim Boundary
 
