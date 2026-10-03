@@ -45,6 +45,16 @@ GPU dropbox:
 aai_research_tlv/tree/local_gp/gpu_pings/20261003/
 ```
 
+Useful dispatch aliases in that dropbox after the GPU requeue:
+
+```text
+manifest.md
+lgp_gpu_worker_manifest_20261003.md
+GPU_1_NEXT.md
+GPU_2_NEXT.md
+local_gp_gpu_requeue_source_20261003.tgz
+```
+
 ## Reset
 
 Double Fan / same-point cloud momentum is frozen as a negative optimizer line.
@@ -195,7 +205,9 @@ lgp_e019_gpu_worker_prompt_20261003.md
 Question: does the corrected operator and risk shrinkage survive real-path GPU
 plumbing? The 2026-10-03 16:00 PDT liveness deadline passed with no GPU result
 note, script, or run log in the dropbox, so this lane now needs worker
-escalation or requeue through the Buck2 `keep_gpu_sections` path.
+escalation or requeue through the Buck2 `keep_gpu_sections` path. Direct
+`GPU_1_NEXT.md` and `GPU_2_NEXT.md` aliases now carry Buck2-specific requeue
+instructions.
 
 ## What To Audit
 
@@ -220,8 +232,9 @@ For Merkle:
   Manifold. They now point to E025 and E026, not hold notes.
 - Use `local_gp_cpu_source_latest.tgz` unless a dated source bundle is required.
 - GPU workers should not be silently polled after the missed liveness deadline;
-  requeue or escalate E018/E019 through Buck2 with `keep_gpu_sections = True`
-  and preserve exact CUDA/Buck2 diagnostics if the result is `NO_GPU_HARNESS`.
+  they should use `GPU_1_NEXT.md` / `GPU_2_NEXT.md`, run through Buck2 with
+  `keep_gpu_sections = True`, and preserve exact CUDA/Buck2 diagnostics if the
+  result is `NO_GPU_HARNESS`.
 
 ## Current Claim Boundary
 

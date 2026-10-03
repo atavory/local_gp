@@ -8,10 +8,26 @@ aai_research_tlv/tree/local_gp/gpu_pings/20261003/
 
 Status checked 2026-10-03 16:00 PDT: the GPU liveness deadline passed with no
 E018/E019 result artifacts visible in the GPU dropbox. The prefix contained
-only the E018/E019 prompts, source bundles, and manifest. Treat the GPU lane as
-requiring worker escalation or requeue through the Buck2 `keep_gpu_sections`
-path. Do not adjudicate GPU results until the worker uploads result notes and
-run logs.
+only the original E018/E019 prompts, source bundles, and manifest.
+
+Requeue prepared after the liveness note: workers should now poll
+`GPU_1_NEXT.md` and `GPU_2_NEXT.md` directly from this dropbox. Those aliases
+point to Buck2-specific requeue prompts that require the
+`gpu_python_binary(..., keep_gpu_sections = True)` path before any
+`NO_GPU_HARNESS` decision. Do not adjudicate GPU results until the worker
+uploads result notes and run logs.
+
+Dispatch files expected in that directory after the requeue upload:
+
+```text
+manifest.md
+lgp_gpu_worker_manifest_20261003.md
+GPU_1_NEXT.md
+GPU_2_NEXT.md
+lgp_e018_gpu_requeue_prompt_20261003.md
+lgp_e019_gpu_requeue_prompt_20261003.md
+local_gp_gpu_requeue_source_20261003.tgz
+```
 
 Liveness note:
 
@@ -21,7 +37,19 @@ experiments/lgp_e018_e019_gpu_liveness_20261003.md
 
 ## GPU-1
 
-Run E018:
+Run E018 via the direct alias:
+
+```text
+GPU_1_NEXT.md
+```
+
+Canonical requeue prompt:
+
+```text
+experiments/lgp_e018_gpu_requeue_prompt_20261003.md
+```
+
+Original prompt:
 
 ```text
 experiments/lgp_e018_gpu_worker_prompt_20261003.md
@@ -36,16 +64,16 @@ Fetch prompt:
 
 ```bash
 ROSETTA_DISABLE_AOT=1 manifold get \
-  aai_research_tlv/tree/local_gp/gpu_pings/20261003/lgp_e018_gpu_worker_prompt_20261003.md \
-  /tmp/lgp_e018_gpu_worker_prompt_20261003.md
+  aai_research_tlv/tree/local_gp/gpu_pings/20261003/GPU_1_NEXT.md \
+  /tmp/GPU_1_NEXT.md
 ```
 
 Fetch source bundle:
 
 ```bash
 ROSETTA_DISABLE_AOT=1 manifold get \
-  aai_research_tlv/tree/local_gp/gpu_pings/20261003/local_gp_e018_source_20261003.tgz \
-  /tmp/local_gp_e018_source_20261003.tgz
+  aai_research_tlv/tree/local_gp/gpu_pings/20261003/local_gp_gpu_requeue_source_20261003.tgz \
+  /tmp/local_gp_gpu_requeue_source_20261003.tgz
 ```
 
 Fetch everything:
@@ -83,7 +111,19 @@ buck2 run -c fbcode.enable_gpu_sections=true ...
 
 ## GPU-2
 
-Run E019:
+Run E019 via the direct alias:
+
+```text
+GPU_2_NEXT.md
+```
+
+Canonical requeue prompt:
+
+```text
+experiments/lgp_e019_gpu_requeue_prompt_20261003.md
+```
+
+Original prompt:
 
 ```text
 experiments/lgp_e019_gpu_worker_prompt_20261003.md
@@ -97,14 +137,14 @@ Fetch prompt:
 
 ```bash
 ROSETTA_DISABLE_AOT=1 manifold get \
-  aai_research_tlv/tree/local_gp/gpu_pings/20261003/lgp_e019_gpu_worker_prompt_20261003.md \
-  /tmp/lgp_e019_gpu_worker_prompt_20261003.md
+  aai_research_tlv/tree/local_gp/gpu_pings/20261003/GPU_2_NEXT.md \
+  /tmp/GPU_2_NEXT.md
 ```
 
 Fetch source bundle:
 
 ```bash
 ROSETTA_DISABLE_AOT=1 manifold get \
-  aai_research_tlv/tree/local_gp/gpu_pings/20261003/local_gp_e019_source_20261003.tgz \
-  /tmp/local_gp_e019_source_20261003.tgz
+  aai_research_tlv/tree/local_gp/gpu_pings/20261003/local_gp_gpu_requeue_source_20261003.tgz \
+  /tmp/local_gp_gpu_requeue_source_20261003.tgz
 ```
