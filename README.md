@@ -123,6 +123,30 @@ Path-only trajectory scatter still failed, selecting gamma zero. The live CPU
 mechanism is therefore noise-controlled probing of the local update map, not
 plain worker drift.
 
+CPU workers then ran the two follow-up gates:
+
+- E016 returned `DYNAMICS_AWARE_SURVIVES_ROTATION`. On rotated 2D nonlinear
+  blocks, random/directed probes still beat tuned scalar scale:
+  - N=8: random 1.254x vs scalar 1.032x;
+  - N=32: random 1.497x vs scalar 1.057x;
+  - N=128: random 2.124x vs scalar 1.132x.
+- E017 returned `RISK_SHRINKAGE_WORKS`. Split-probe residual shrinkage replaces
+  arbitrary target gamma tuning on the current CPU bed:
+  - N=8: risk probe 1.226x vs scalar 1.075x;
+  - N=32: risk probe 1.460x vs scalar 1.070x;
+  - N=128: risk probe 1.773x vs scalar 1.127x.
+
+In both gates, path-only worker scatter fails, server/time secants do not
+explain the gain, and the oracle best-worker fallback loses. The live claim is
+now precise: probe-fed dynamics-aware local-map correction is a real CPU
+mechanism. It still needs a real-path gate.
+
+The algorithmic stack is not Optuna/TPE. The working plan is empirical-Bayes
+local-map estimation inside each event, residual shrinkage from held-out probes,
+and a stochastic trust-region controller outside the event. Optuna remains
+useful only for pruning or experiment bookkeeping, not as the sampler that
+chooses high-dimensional actions.
+
 The first milestone is an offline prediction gate:
 
 1. collect local worker path/proposal summaries;
@@ -140,6 +164,8 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `model.md`: first-principles model for local GP over worker paths.
 - `event_triggered_multisecant_plan.md`: pay-by-wire event-triggered
   multisecant branch.
+- `algorithm_stack.md`: why this is empirical-Bayes / stochastic trust-region,
+  not Optuna.
 - `experiments/lgp_e001_path_prediction_gate.md`: first experiment spec.
 - `experiments/lgp_e001_result_20261003.md`: first experiment result.
 - `experiments/lgp_e002_gamma_control.py`: tuned-gamma control script.
@@ -169,6 +195,11 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e014_dynamics_aware_correction_result_20261003.md`: E014 result.
 - `experiments/lgp_e015_dynamics_aware_nonlinear_probe.py`: corrected probes on nonlinear bed.
 - `experiments/lgp_e015_dynamics_aware_nonlinear_probe_result_20261003.md`: E015 result.
+- `experiments/lgp_e016_rotated_nonlinear_probe.py`: rotated nonlinear CPU gate.
+- `experiments/lgp_e016_rotated_nonlinear_probe_result_20261003.md`: E016 result.
+- `experiments/lgp_e016_rotated_nonlinear_probe_run_20261003.txt`: E016 run log.
+- `experiments/lgp_e017_risk_shrinkage_fallback.py`: residual shrinkage and fallback gate.
+- `experiments/lgp_e017_risk_shrinkage_fallback_result_20261003.md`: E017 result.
 - `ops/devvm23211_gpu_buck2_result_20261003.md`: confirmed GPU/Buck2 invocation.
 - `wanger_duality_reply.md`: review of the local-GP duality theory note.
 - `wanger_e002_e007_review.md`: gamma-collapse and E007 gate review.

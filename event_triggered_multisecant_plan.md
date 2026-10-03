@@ -149,6 +149,25 @@ server/time secants stayed weak. The useful architecture is therefore not
 "worker drift alone"; it is controller-owned probing or noise-controlled local
 geometry plus a dynamics-aware map correction.
 
-The next event-triggered CPU gate should replace the diagonal nonlinear bed with
-rotated / low-rank nonlinear curvature and add an elitist best-worker fallback.
-This must happen before a real-path GPU gate.
+E016 replaced the diagonal nonlinear bed with rotated 2D nonlinear blocks. The
+probe-fed local-map correction still beat tuned scalar scale:
+
+- N=8: random probe 1.254 vs scalar 1.032;
+- N=32: random probe 1.497 vs scalar 1.057;
+- N=128: random probe 2.124 vs scalar 1.132.
+
+This rules out the simplest coordinate-artifact explanation. E017 then replaced
+target gamma tuning with split-probe residual shrinkage:
+
+- N=8: risk probe 1.226 vs scalar 1.075;
+- N=32: risk probe 1.460 vs scalar 1.070;
+- N=128: risk probe 1.773 vs scalar 1.127.
+
+The oracle best-worker fallback loses in both gates. Path-only worker scatter
+also fails in both gates. So the usable design is narrower but real:
+noise-controlled probes feed a dynamics-aware local-map correction, with
+residual shrinkage guarding model risk.
+
+The next event-triggered work is real-path plumbing plus harder synthetic stress:
+low-rank/dense curvature, non-diagonal noise, cheaper probe budgets, and
+function-space probes.

@@ -25,6 +25,30 @@ ROSETTA_DISABLE_AOT=1 manifold get \
   /tmp/lgp_e016_cpu_worker_prompt_20261003.md
 ```
 
+Completed artifacts:
+
+```text
+experiments/lgp_e016_rotated_nonlinear_probe.py
+experiments/lgp_e016_rotated_nonlinear_probe_result_20261003.md
+experiments/lgp_e016_rotated_nonlinear_probe_run_20261003.txt
+```
+
+Fetch:
+
+```bash
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e016_rotated_nonlinear_probe.py \
+  /tmp/lgp_e016_rotated_nonlinear_probe.py
+
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e016_rotated_nonlinear_probe_result_20261003.md \
+  /tmp/lgp_e016_rotated_nonlinear_probe_result_20261003.md
+
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e016_rotated_nonlinear_probe_run_20261003.txt \
+  /tmp/lgp_e016_rotated_nonlinear_probe_run_20261003.txt
+```
+
 ## CPU-2
 
 Run E017:
@@ -42,6 +66,25 @@ Fetch:
 ROSETTA_DISABLE_AOT=1 manifold get \
   aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e017_cpu_worker_prompt_20261003.md \
   /tmp/lgp_e017_cpu_worker_prompt_20261003.md
+```
+
+Completed artifacts:
+
+```text
+experiments/lgp_e017_risk_shrinkage_fallback.py
+experiments/lgp_e017_risk_shrinkage_fallback_result_20261003.md
+```
+
+Fetch:
+
+```bash
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e017_risk_shrinkage_fallback.py \
+  /tmp/lgp_e017_risk_shrinkage_fallback.py
+
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e017_risk_shrinkage_fallback_result_20261003.md \
+  /tmp/lgp_e017_risk_shrinkage_fallback_result_20261003.md
 ```
 
 ## Fetch Everything

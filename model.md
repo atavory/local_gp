@@ -42,6 +42,18 @@ positive source was not path-only worker scatter; it was noise-controlled probe
 geometry around the round start. For now, the model should treat free local
 drift as one possible probe design, not as the whole method.
 
+E016/E017 sharpen this. The corrected operator survives rotated nonlinear
+blocks, and split-probe residuals can set a useful shrinkage factor without
+target gamma tuning. The current live estimator is therefore:
+
+```text
+probe pairs -> Hhat or local-map estimate
+residual probe error -> shrinkage gamma
+FedAvg displacement -> [I - (I - eta Hhat)^K]^{-1} correction
+```
+
+Path-only worker scatter is not currently sufficient.
+
 ## Latent Object
 
 The latent is not a scalar momentum coefficient. It is a local function:

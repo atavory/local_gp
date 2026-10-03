@@ -298,14 +298,47 @@ trajectory pairs select gamma zero and tie FedAvg. The CPU-positive mechanism is
 therefore probe-fed local-map correction, not plain worker-scatter
 multisecants.
 
-This makes the near-term work CPU-heavy:
+E016 ran the rotation gate and returned
+`DYNAMICS_AWARE_SURVIVES_ROTATION`.
 
-1. rotate / densify the nonlinear bed so diagonal coordinate probes stop being
-   privileged;
-2. replace pilot-selected gamma with a risk-aware shrinkage rule based on probe
-   residuals or nonlinearity;
-3. add the elitist best-worker fallback baseline;
-4. only then spend GPU time on a real-path gate.
+Summary on rotated 2D nonlinear blocks:
+
+- N=8: tuned scalar 1.032, random probe 1.254, directed probe 1.268;
+- N=32: tuned scalar 1.057, random probe 1.497, directed probe 1.497;
+- N=128: tuned scalar 1.132, random probe 2.124, directed probe 2.122.
+
+The best-worker oracle fallback does not explain the result (0.729/0.799/0.876),
+server/time secants are unstable and strongly negative, and path-only pairs
+again select gamma zero. The E015 gain is therefore not a diagonal-coordinate
+artifact on this CPU bed.
+
+E017 ran the shrinkage/fallback gate and returned `RISK_SHRINKAGE_WORKS`.
+
+Summary on the E015 nonlinear/heterogeneous bed:
+
+- N=8: tuned scalar 1.075, tuned probe 1.288, risk probe 1.226;
+- N=32: tuned scalar 1.070, tuned probe 1.554, risk probe 1.460;
+- N=128: tuned scalar 1.127, tuned probe 2.039, risk probe 1.773.
+
+Risk-aware gamma is selected from split-probe residuals, not an arbitrary gamma
+grid, and stays within roughly 5%, 6%, and 13% of the tuned-gamma probe arm. Full
+gamma is destructive at N=8, so the residual rule is doing real shrinkage. The
+best-worker oracle fallback again loses.
+
+Updated local-GP state:
+
+- gamma automation from the old aggregator line is dead;
+- plain BB/L-BFGS consolidation is dead;
+- path-only worker scatter is not enough;
+- probe-fed dynamics-aware local-map correction is alive across exact,
+  nonlinear, and rotated nonlinear CPU beds;
+- risk-aware residual shrinkage has replaced target gamma tuning on the current
+  CPU bed;
+- the controller should use empirical-Bayes local-map fitting plus stochastic
+  trust-region adaptation, not Optuna/TPE over high-dimensional actions;
+- the next useful work is real-path plumbing (E018) and then harder synthetic
+  stress: low-rank/dense curvature, non-diagonal noise, and cheaper probe
+  budgets.
 
 ## Success Labels
 
@@ -337,16 +370,13 @@ This makes the near-term work CPU-heavy:
 5. In the real-path gate, compare FedAvg/source-tuned scale, pilot-tuned gamma,
    source-free auto-gamma, and full gamma. `FULL_GAMMA_EXPLAINS` is a null for
    gamma estimation.
-6. E010 shows the method target: local-path correction shape beats tuned scalar
-   scale on the nonlinear/heterogeneous bed. Build bias-aware shrinkage around
-   that shape.
-7. Estimate path nonlinearity / worker heterogeneity and shrink the correction
-   aggressively when exact-quadratic assumptions are violated.
-8. Richer real-data logging remains needed: full per-worker paths or
-   shared-probe function-space features, not only scalar endpoint summaries.
-9. Event-triggered multisecant branch: derive and test the secant-SNR threshold
-   before building a distributed optimizer. The next experiment should be
-   same-batch/noise-controlled secants, not ordinary independent worker
-   gradients.
-10. Do not run a closed-loop optimizer before a held-out prediction/control gate
-   passes.
+6. E010/E015-E017 show the method target: noise-controlled probes estimate a
+   dynamics-aware local-map correction that beats tuned scalar scale on CPU
+   synthetic beds.
+7. Richer real-data logging remains needed: probe gradients or shared-probe
+   function-space features, not only scalar endpoint summaries.
+8. Event-triggered multisecant branch: stop plain BB/L-BFGS consolidation; use
+   the K-step local-map operator.
+9. Run E018 as a real-path readiness smoke, not a product claim.
+10. Do not run a closed-loop optimizer before a held-out real-path/control gate
+   passes against tuned scalar scale and best-worker fallback.
