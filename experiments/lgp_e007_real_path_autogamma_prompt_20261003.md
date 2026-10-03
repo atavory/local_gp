@@ -80,6 +80,7 @@ Report paired target-seed deltas:
 
 Important scoring convention:
 
+- use paired 95% confidence intervals for all win/tie claims;
 - if auto-gamma ties tuned-gamma while using no pilot grid, that is useful only
   if it beats `full_gamma`;
 - if `full_gamma` ties the learned/tuned gamma arms, the gamma axis is flat and
@@ -90,8 +91,11 @@ Important scoring convention:
 
 ## Decision Labels
 
+- `GAMMA_FLAT_ON_REAL_PATH`: full-gamma ties both tuned-gamma and auto-gamma,
+  while at least one gamma arm beats FedAvg/source scale. This label takes
+  precedence over all auto-gamma tie labels.
 - `AUTO_GAMMA_REAL_TIES_TUNED`: auto-gamma statistically ties tuned-gamma,
-  beats full-gamma, and beats FedAvg/source scale.
+  beats full-gamma with paired CI excluding zero, and beats FedAvg/source scale.
 - `AUTO_GAMMA_REAL_WINS`: auto-gamma beats tuned-gamma, full-gamma, and
   FedAvg/source scale.
 - `FULL_GAMMA_EXPLAINS`: full-gamma ties or beats auto-gamma and tuned-gamma.

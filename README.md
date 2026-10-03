@@ -70,8 +70,20 @@ for bias-aware shrinkage: local paths expose a correction shape that server-side
 secants miss, but the correction must shrink when nonlinearity / heterogeneity
 violates the exact-quadratic model.
 
-The next useful experiment should build a bias-aware shrinkage rule for the
-nonlinear/heterogeneous bed, with `full_gamma` and server-side secants as null
+E010 added the missing tuned scalar-scale control on that same bed. The
+local-path shape still wins:
+
+- N=8: tuned scalar 1.089x, local-path shape 1.391x;
+- N=32: tuned scalar 1.100x, local-path shape 1.674x;
+- N=128: tuned scalar 1.066x, local-path shape 1.468x.
+
+This is the first clean positive: not full GP, not auto-gamma, not scalar LR,
+and not server-side secants. The live claim is that intermediate local worker
+paths contain useful correction shape unavailable to FedAvg-scale and
+across-round secants.
+
+The next useful experiment should build a bias-aware shrinkage rule for that
+shape, with tuned scalar scale, `full_gamma`, and server-side secants as null
 controls. A closed loop is not justified from E001 or E002.
 
 The first milestone is an offline prediction gate:
@@ -104,5 +116,9 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e008_secant_gap_nonlinear_result_20261003.md`: E008 result.
 - `experiments/lgp_e009_nonlinear_gamma_sweep.py`: conservative gamma sweep.
 - `experiments/lgp_e009_nonlinear_gamma_sweep_result_20261003.md`: E009 result.
+- `experiments/lgp_e010_shape_vs_scalar_nonlinear.py`: shape-vs-scalar control.
+- `experiments/lgp_e010_shape_vs_scalar_nonlinear_result_20261003.md`: E010 result.
 - `ops/devvm23211_gpu_buck2_result_20261003.md`: confirmed GPU/Buck2 invocation.
 - `wanger_duality_reply.md`: review of the local-GP duality theory note.
+- `wanger_e002_e007_review.md`: gamma-collapse and E007 gate review.
+- `wanger_gamma_line_reply.md`: gamma-flat pivot and secant-gap plan.

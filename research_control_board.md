@@ -175,6 +175,31 @@ secants do not recover. But the current auto-gamma rule is wrong: it measures
 estimator agreement, not model-bias risk. The next method must shrink based on
 nonlinearity / heterogeneity risk, not only split-half reliability.
 
+E010 has run locally and returned `LOCAL_PATH_SHAPE_BEATS_SCALAR`.
+
+Summary on the same nonlinear/heterogeneous bed:
+
+- N=8:
+  - tuned scalar/FedAvg: 1.089 +/- 0.052;
+  - local-path shape/FedAvg: 1.391 +/- 0.164;
+  - shape minus scalar: 0.302 +/- 0.115;
+  - server secant/FedAvg: 0.878 +/- 0.182.
+- N=32:
+  - tuned scalar/FedAvg: 1.100 +/- 0.032;
+  - local-path shape/FedAvg: 1.674 +/- 0.243;
+  - shape minus scalar: 0.574 +/- 0.211;
+  - server secant/FedAvg: 0.897 +/- 0.183.
+- N=128:
+  - tuned scalar/FedAvg: 1.066 +/- 0.026;
+  - local-path shape/FedAvg: 1.468 +/- 0.099;
+  - shape minus scalar: 0.402 +/- 0.074;
+  - server secant/FedAvg: 1.043 +/- 0.131.
+
+Interpretation: this is the first clean positive in the local-GP lane. The
+local-path correction shape beats both tuned scalar scale and server-side
+secants on a nonlinear/heterogeneous bed. The live method is not full GP and
+not auto-gamma. It is local-path shape plus conservative, bias-aware shrinkage.
+
 ## Success Labels
 
 - `PATH_SIGNAL_CONFIRMED`: GP/kernel predictor beats round-only and path-norm
@@ -205,12 +230,11 @@ nonlinearity / heterogeneity risk, not only split-half reliability.
 5. In the real-path gate, compare FedAvg/source-tuned scale, pilot-tuned gamma,
    source-free auto-gamma, and full gamma. `FULL_GAMMA_EXPLAINS` is a null for
    gamma estimation.
-6. Pivot the next synthetic/mechanism experiment to the secant gap on a bed
-   that can tell methods apart: non-quadratic curvature or worker
-   heterogeneity.
-7. E009 shows the next rule target: bias-aware shrinkage. Estimate path
-   nonlinearity / worker heterogeneity and shrink the correction aggressively
-   when exact-quadratic assumptions are violated.
+6. E010 shows the method target: local-path correction shape beats tuned scalar
+   scale on the nonlinear/heterogeneous bed. Build bias-aware shrinkage around
+   that shape.
+7. Estimate path nonlinearity / worker heterogeneity and shrink the correction
+   aggressively when exact-quadratic assumptions are violated.
 8. Richer real-data logging remains needed: full per-worker paths or
    shared-probe function-space features, not only scalar endpoint summaries.
 9. Do not run a closed-loop optimizer before a held-out prediction/control gate
