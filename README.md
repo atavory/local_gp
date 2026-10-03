@@ -92,6 +92,14 @@ The next useful experiment should build a bias-aware shrinkage rule for that
 shape, with tuned scalar scale, `full_gamma`, and server-side secants as null
 controls. A closed loop is not justified from E001 or E002.
 
+A separate event-triggered multisecant branch is now recorded. Under a
+pay-by-wire cost model, workers run silently until a drift/quorum event, then
+send full positions and gradients. The controller forms centered secant pairs
+and chooses the consolidation step. Stage-0 results are conditional: spatial
+multisecants work in a noiseless rotated-block sanity check, but ordinary
+independent stochastic gradients make the secant bank too noisy. The next test
+must use same-batch or otherwise noise-controlled secants.
+
 The first milestone is an offline prediction gate:
 
 1. collect local worker path/proposal summaries;
@@ -107,6 +115,8 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 
 - `research_control_board.md`: live project map and stop rules.
 - `model.md`: first-principles model for local GP over worker paths.
+- `event_triggered_multisecant_plan.md`: pay-by-wire event-triggered
+  multisecant branch.
 - `experiments/lgp_e001_path_prediction_gate.md`: first experiment spec.
 - `experiments/lgp_e001_result_20261003.md`: first experiment result.
 - `experiments/lgp_e002_gamma_control.py`: tuned-gamma control script.
@@ -126,6 +136,12 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e009_nonlinear_gamma_sweep_result_20261003.md`: E009 result.
 - `experiments/lgp_e010_shape_vs_scalar_nonlinear.py`: shape-vs-scalar control.
 - `experiments/lgp_e010_shape_vs_scalar_nonlinear_result_20261003.md`: E010 result.
+- `experiments/lgp_e011_event_multisecant_stage0.py`: passive event secants.
+- `experiments/lgp_e011_event_multisecant_stage0_result_20261003.md`: E011 result.
+- `experiments/lgp_e012_seeded_probe_multisecant.py`: seeded probe secants.
+- `experiments/lgp_e012_seeded_probe_multisecant_result_20261003.md`: E012 result.
+- `experiments/lgp_e013_block_lbfgs_multisecant.py`: rotated-block L-BFGS secants.
+- `experiments/lgp_e013_block_lbfgs_multisecant_result_20261003.md`: E013 result.
 - `ops/devvm23211_gpu_buck2_result_20261003.md`: confirmed GPU/Buck2 invocation.
 - `wanger_duality_reply.md`: review of the local-GP duality theory note.
 - `wanger_e002_e007_review.md`: gamma-collapse and E007 gate review.

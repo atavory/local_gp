@@ -219,6 +219,35 @@ local-path correction shape beats both tuned scalar scale and server-side
 secants on a nonlinear/heterogeneous bed. The live method is not full GP and
 not auto-gamma. It is local-path shape plus conservative, bias-aware shrinkage.
 
+E011-E013 opened a separate event-triggered multisecant branch.
+
+Motivation: under a pay-by-wire cost model, workers should run silently until a
+drift/quorum event, then send full useful state. The controller forms centered
+worker secant pairs
+\[
+  s_i=x_i-\bar x,\qquad y_i=g_i-\bar g
+\]
+and computes the consolidation step. No \(d^2\) object is formed.
+
+Results:
+
+- E011 (`PASSIVE_DRIFT_SECANTS_WEAK`): passive stochastic drift did not produce
+  useful spatial secants. One-pair server BB beat spatial arms.
+- E012 (`SEEDED_PROBES_NOT_ENOUGH_WITH_SCALAR_BB`): controller-seeded probe
+  offsets gave a small spatial-BB bump over scalar extrapolation, but still lost
+  to server BB.
+- E013 (`MULTISECANT_WORKS_WITH_LOW_NOISE_ONLY`): actual spatial L-BFGS
+  multisecants on a rotated block quadratic failed with ordinary stochastic
+  secants, but worked in the noiseless sanity check:
+  - N=32: space L-BFGS 1.170 vs time L-BFGS 1.098;
+  - N=128: space L-BFGS 1.259 vs time L-BFGS 1.103.
+
+Interpretation: the architecture is mechanically sound only when secant SNR is
+high enough. Ordinary independent stochastic gradients make the spatial secant
+bank too noisy. The next event-triggered experiment must use noise-controlled
+secants: same-batch probes, repeated event gradients, a shared probe set, or a
+large-batch/large-N regime.
+
 ## Success Labels
 
 - `PATH_SIGNAL_CONFIRMED`: GP/kernel predictor beats round-only and path-norm
@@ -256,5 +285,9 @@ not auto-gamma. It is local-path shape plus conservative, bias-aware shrinkage.
    aggressively when exact-quadratic assumptions are violated.
 8. Richer real-data logging remains needed: full per-worker paths or
    shared-probe function-space features, not only scalar endpoint summaries.
-9. Do not run a closed-loop optimizer before a held-out prediction/control gate
+9. Event-triggered multisecant branch: derive and test the secant-SNR threshold
+   before building a distributed optimizer. The next experiment should be
+   same-batch/noise-controlled secants, not ordinary independent worker
+   gradients.
+10. Do not run a closed-loop optimizer before a held-out prediction/control gate
    passes.
