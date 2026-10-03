@@ -47,9 +47,26 @@ Before closed loop, require an offline held-out prediction win:
 
 ## Current Status
 
-No experiments have been run in this repo yet.
+E001 has run and returned `SCHEDULE_EXPLAINS`.
 
-The first experiment is `experiments/lgp_e001_path_prediction_gate.md`.
+Summary:
+
+- existing E78 K>1 ledger only; no fresh training and no controller;
+- target K=8 oracle headroom over frozen source-selected constant:
+  0.001031 [0.000504, 0.001615];
+- selected `rbf_path_krr` regret: 0.001031 [0.000513, 0.001618];
+- round-only regret: 0.001031;
+- GP/KRR advantage over round-only: 0.000000 [0.000000, 0.000000].
+
+Interpretation: the cheap scalar path descriptors in E78 do not add held-out
+prediction over round shape. This blocks a closed-loop optimizer based on E001.
+The broader local-GP idea remains open only if we collect richer information:
+fuller per-worker path vectors or shared-probe function-space features.
+
+Operational note: `devvm23211` can run GPU code if tasks use Buck2
+`gpu_python_binary(..., keep_gpu_sections = True)` or
+`-c fbcode.enable_gpu_sections=true`. Bare `nvidia-smi` can fail even when the
+Buck2 GPU path works.
 
 ## Success Labels
 
@@ -72,8 +89,9 @@ The first experiment is `experiments/lgp_e001_path_prediction_gate.md`.
 
 ## Near-Term Plan
 
-1. Run E001 as an offline prediction gate.
-2. If E001 passes, design a tiny closed-loop action set.
-3. If E001 fails, inspect whether the failure is no headroom, wrong features,
-   or schedule/path-norm sufficiency.
-4. Do not run a closed-loop optimizer before the prediction gate passes.
+1. Do not run a closed-loop optimizer from E001.
+2. If continuing, design E002 around richer observations, not a new regressor
+   over the same scalar descriptors.
+3. E002 should target residual-over-round-only directly and include a shuffled
+   feature control.
+4. Do not run a closed-loop optimizer before a held-out prediction gate passes.
