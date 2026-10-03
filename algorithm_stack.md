@@ -53,10 +53,11 @@ risk and turn it into a shrinkage gamma.
 E020/E023 and E021 add two guardrails. First, active probe selection is not yet
 a reliable budget reducer; E023 confirms the default CPU-bed budget as `2N`
 random probes for `N >= 32`, with full `N*K` for very small N. Second,
-residual shrinkage alone can miss dense low-rank correlated failure modes;
-low-rank-plus-diagonal fits need a held-out
-validation layer that can zero or damp the combined correction before it reaches
-the event action.
+residual shrinkage alone can miss dense low-rank correlated failure modes.
+E022 shows that low-rank-plus-diagonal fits need rowwise held-out validation
+that can zero or damp the combined correction before it reaches the event
+action; this recovers a small safe gain but still leaves most oracle dense
+headroom unused.
 
 ## Layer 2: Direct Differentiation Of The One-Step Surrogate
 

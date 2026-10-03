@@ -409,6 +409,29 @@ The current residual shrinkage is not enough under correlated low-rank noise.
 Do not ship the combined estimator without held-out loss/probe validation or an
 equivalent trust layer that can reject the correction.
 
+E022 ran the dense trust-layer gate and returned
+`TRUST_LAYER_RECOVERS_DENSE`.
+
+Summary on the same dense low-rank correlated-noise bed:
+
+- the residual-shrunk learned combo remains destructive:
+  - N=8: -6.028 +/- 3.875;
+  - N=32: -5.464 +/- 8.616;
+  - N=128: -1.793 +/- 2.381.
+- rowwise `combo_val_gamma`, selected by held-out mini-loss proxy, beats tuned
+  scalar with positive CIs:
+  - N=8: +0.038 +/- 0.015;
+  - N=32: +0.103 +/- 0.039;
+  - N=128: +0.074 +/- 0.020.
+- the accept/reject gate mostly prevents harm but lands near scalar;
+- oracle-H is still much larger at 2.476/2.661/2.421, so most dense headroom is
+  not recovered by the current representation;
+- best-worker fallback and server/time secants do not explain the trusted gain.
+
+Interpretation: dense geometry is not intrinsically dead, but it is only safe
+behind rowwise held-out validation. The next dense work should improve
+subspace/model identification and explicitly account for validation-proxy cost.
+
 Updated local-GP state:
 
 - gamma automation from the old aggregator line is dead;
@@ -421,12 +444,14 @@ Updated local-GP state:
 - random probe budget remains material; active design v1 is not enough to cut
   it reliably, but E023 confirms `2N` random probes as the default for
   `N >= 32` on the rotated CPU bed;
-- dense low-rank-plus-diagonal geometry has oracle headroom, but current
-  estimators need a trust/validation layer before they are safe;
+- dense low-rank-plus-diagonal geometry has oracle headroom; E022 shows a
+  held-out validation-gamma layer can recover a small safe gain, but the
+  representation still misses most oracle-H benefit;
 - the controller should use empirical-Bayes local-map fitting plus stochastic
   trust-region adaptation, not Optuna/TPE over high-dimensional actions;
-- the next useful work is real-path plumbing (E018/E019) and the CPU
-  trust-layer follow-up from E021/E022.
+- the next useful work is real-path plumbing (E018/E019), better dense
+  subspace/model identification, validation-budget accounting, and
+  function-space probes.
 
 ## Success Labels
 

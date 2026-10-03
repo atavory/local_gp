@@ -20,15 +20,14 @@ local_gp_cpu_source_20261003_e022_e023.tgz
 The `CPU_1_NEXT.md` and `CPU_2_NEXT.md` aliases are deliberate. Some workers
 poll for direct next-task files rather than reading the long manifest.
 
-Status checked 2026-10-03 13:42 PDT: E023 completed locally and its script,
-result note, run log, and CPU-2 hold note were uploaded. E022 result artifacts
-were still not visible in the CPU dropbox. The prefix contained the E022/E023
-prompts, CPU aliases, source bundles, manifest, and previously imported
-E016/E017/E020/E021 artifacts.
+Status checked 2026-10-03 13:44 PDT: E022 and E023 completed. E023 artifacts
+and CPU-2 hold note were uploaded by the local loop; E022 script, result note,
+and run log were visible in the CPU dropbox and imported. CPU aliases should
+now be hold notes to avoid duplicate launches.
 
-## CPU-1
+## Completed: CPU-1 / E022
 
-Next run E022:
+Run E022:
 
 ```text
 experiments/lgp_e022_cpu_worker_prompt_20261003.md
@@ -44,6 +43,35 @@ Fetch:
 ROSETTA_DISABLE_AOT=1 manifold get \
   aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e022_cpu_worker_prompt_20261003.md \
   /tmp/lgp_e022_cpu_worker_prompt_20261003.md
+```
+
+Completed artifacts:
+
+```text
+experiments/lgp_e022_dense_trust_validation.py
+experiments/lgp_e022_dense_trust_validation_result_20261003.md
+experiments/lgp_e022_dense_trust_validation_run_20261003.txt
+```
+
+Decision: `TRUST_LAYER_RECOVERS_DENSE`.
+
+`CPU_1_NEXT.md` should now be a hold note rather than a runnable prompt, to
+avoid duplicate E022 launches while GPU E018/E019 remain pending.
+
+Fetch:
+
+```bash
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e022_dense_trust_validation.py \
+  /tmp/lgp_e022_dense_trust_validation.py
+
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e022_dense_trust_validation_result_20261003.md \
+  /tmp/lgp_e022_dense_trust_validation_result_20261003.md
+
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e022_dense_trust_validation_run_20261003.txt \
+  /tmp/lgp_e022_dense_trust_validation_run_20261003.txt
 ```
 
 ## Completed: CPU-2 / E023

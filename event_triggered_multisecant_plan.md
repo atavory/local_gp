@@ -186,5 +186,11 @@ destructive under E017-style residual shrinkage, so dense geometry requires a
 held-out validation or trust layer before applying a low-rank-plus-diagonal
 correction.
 
+E022 tested that trust layer. Rowwise validation-gamma selected by held-out
+mini-loss proxy prevents the E021 crash and beats tuned scalar on the dense bed,
+but the gain is small relative to oracle-H. Dense correction should therefore
+remain trust-gated while the representation and validation-budget accounting
+improve.
+
 The next event-triggered work is real-path plumbing plus trust-gated dense
-geometry and function-space probes.
+subspace/model identification and function-space probes.

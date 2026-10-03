@@ -145,17 +145,25 @@ Interpretation: dense geometry is not hopeless, but the current representation
 needs a stricter held-out validation / trust layer before applying the combined
 correction.
 
+E022:
+
+- returned `TRUST_LAYER_RECOVERS_DENSE`;
+- held-out mini-loss validation-gamma prevents the E021 crash and beats tuned
+  scalar at N=8/32/128;
+- the recovery is modest versus oracle-H, so dense work now needs better
+  subspace/model identification plus validation-budget accounting.
+
 ## Current Worker Tasks
 
-CPU-1 / E022:
+CPU-1:
 
 ```text
 CPU_1_NEXT.md
-experiments/lgp_e022_cpu_worker_prompt_20261003.md
+experiments/lgp_cpu1_hold_after_e022_20261003.md
 ```
 
-Question: can a non-oracle held-out trust layer prevent E021's destructive
-low-rank-plus-diagonal update and recover any dense-geometry headroom?
+Status: E022 is complete. `CPU_1_NEXT.md` should be a hold note to avoid a
+duplicate E022 launch until the coordinator assigns a fresh CPU-1 task.
 
 CPU-2:
 
@@ -215,6 +223,6 @@ Claim we cannot make yet:
 this is a working optimizer on real workloads.
 ```
 
-The next decisive result is E022. If trust-gated dense geometry works, the
-project has a credible route. If it only prevents harm, the method may still be
-useful but narrower. If it fails, E021 probably marks a much harder blocker.
+The next decisive result is the real-path GPU gate. E022 shows trust-gated
+dense geometry can recover a small safe gain, but the project still needs
+real-path survival and better dense representation before any optimizer claim.

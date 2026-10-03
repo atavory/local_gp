@@ -59,10 +59,11 @@ E020/E023 and E021 put two constraints on this estimator:
 - Probe budget matters. Active probe design v1 did not reliably beat matched
   random probes. E023 confirms `2N` random probes as the default for `N >= 32`
   on the rotated CPU bed, with full `N*K` still needed for very small N.
-- Dense low-rank correlated geometry breaks the current estimator even though
-  an oracle dense-H correction has large headroom. A low-rank-plus-diagonal
-  representation needs a separate held-out validation or trust gate before its
-  correction is applied.
+- Dense low-rank correlated geometry breaks residual shrinkage alone even
+  though an oracle dense-H correction has large headroom. E022 shows that a
+  low-rank-plus-diagonal representation needs rowwise held-out validation
+  before its correction is applied; the current trust layer recovers a small
+  safe gain but not the oracle headroom.
 
 ## Latent Object
 

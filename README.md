@@ -181,6 +181,13 @@ low-rank noise. The next dense-geometry direction is not a larger blind update;
 it is low-rank-plus-diagonal estimation with a stricter held-out validation or
 trust layer that can reject the combined correction.
 
+E022 returned `TRUST_LAYER_RECOVERS_DENSE`. On the same dense correlated bed,
+rowwise validation-gamma gating over a held-out mini-loss proxy prevents the
+E021 destructive update and beats tuned scalar at N=8/32/128. The gain is
+modest and still far below oracle-H, so dense geometry stays behind a trust
+layer while the next work improves subspace/model identification and prices the
+validation budget.
+
 The algorithmic stack is not Optuna/TPE. The working plan is empirical-Bayes
 local-map estimation inside each event, residual shrinkage from held-out probes,
 and a stochastic trust-region controller outside the event. Optuna remains
@@ -248,7 +255,11 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e021_dense_lowrank_correlated_stress.py`: dense low-rank correlated stress.
 - `experiments/lgp_e021_dense_lowrank_correlated_stress_result_20261003.md`: E021 result.
 - `experiments/lgp_e021_dense_lowrank_correlated_stress_run_20261003.txt`: E021 run log.
-- `experiments/lgp_e022_cpu_worker_prompt_20261003.md`: pending dense trust-layer CPU gate.
+- `experiments/lgp_e022_cpu_worker_prompt_20261003.md`: completed dense trust-layer CPU gate.
+- `experiments/lgp_e022_dense_trust_validation.py`: E022 dense trust validation.
+- `experiments/lgp_e022_dense_trust_validation_result_20261003.md`: E022 result.
+- `experiments/lgp_e022_dense_trust_validation_run_20261003.txt`: E022 run log.
+- `experiments/lgp_cpu1_hold_after_e022_20261003.md`: CPU-1 hold note after E022.
 - `experiments/lgp_e023_cpu_worker_prompt_20261003.md`: completed random-probe budget CPU gate.
 - `experiments/lgp_e023_random_probe_budget_confirm.py`: E023 random budget confirmation.
 - `experiments/lgp_e023_random_probe_budget_confirm_result_20261003.md`: E023 result.
