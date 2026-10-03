@@ -50,10 +50,11 @@ with shrinkage determined from the likelihood or held-out probe residuals.
 E017 is the first crude version of this idea: split probes estimate residual
 risk and turn it into a shrinkage gamma.
 
-E020/E021 add two guardrails. First, active probe selection is not yet a reliable
-budget reducer, so the default should remain random probes with an explicit
-budget curve. Second, residual shrinkage alone can miss dense low-rank
-correlated failure modes; low-rank-plus-diagonal fits need a held-out
+E020/E023 and E021 add two guardrails. First, active probe selection is not yet
+a reliable budget reducer; E023 confirms the default CPU-bed budget as `2N`
+random probes for `N >= 32`, with full `N*K` for very small N. Second,
+residual shrinkage alone can miss dense low-rank correlated failure modes;
+low-rank-plus-diagonal fits need a held-out
 validation layer that can zero or damp the combined correction before it reaches
 the event action.
 

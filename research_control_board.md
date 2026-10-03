@@ -369,6 +369,26 @@ Interpretation: random probe budget is a real product cost. The live mechanism
 does not require active design v1, and active design v1 should not replace
 random probes.
 
+E023 ran the random-probe budget confirmation gate and returned
+`TWO_N_RANDOM_CONFIRMED`.
+
+Summary on the same rotated nonlinear block bed, now with eight held-out reps
+and `probe_reps in {1, 4}`:
+
+- at N=32, `2N` random probes beat tuned scalar by 0.331 +/- 0.048 with
+  `probe_reps=1` and by 0.394 +/- 0.045 with `probe_reps=4`;
+- at N=128, `2N` random probes beat tuned scalar by 0.478 +/- 0.089 with
+  `probe_reps=1` and by 0.621 +/- 0.115 with `probe_reps=4`;
+- matched against full `N*K` random probes, the `2N` gaps are within the
+  requested 10-15% band for N=32/128;
+- at N=8, `2N` is still not clearly enough, while full `N*K` remains stable;
+- `probe_reps=1` does not fail, although `probe_reps=4` improves the absolute
+  ratio when extra gradient repeats are cheap.
+
+Interpretation: the default CPU-bed random budget is now `2N` for `N >= 32`,
+with full `N*K` reserved for very small worker counts. Probe repeats are a
+quality/variance knob, not a requirement for the basic budget result.
+
 E021 ran the dense low-rank / correlated-noise stress and returned
 `DENSE_GEOMETRY_BREAKS_METHOD`.
 
@@ -399,13 +419,14 @@ Updated local-GP state:
 - risk-aware residual shrinkage has replaced target gamma tuning on the current
   CPU bed;
 - random probe budget remains material; active design v1 is not enough to cut
-  it reliably;
+  it reliably, but E023 confirms `2N` random probes as the default for
+  `N >= 32` on the rotated CPU bed;
 - dense low-rank-plus-diagonal geometry has oracle headroom, but current
   estimators need a trust/validation layer before they are safe;
 - the controller should use empirical-Bayes local-map fitting plus stochastic
   trust-region adaptation, not Optuna/TPE over high-dimensional actions;
-- the next useful work is real-path plumbing (E018/E019) and CPU trust-layer /
-  budget follow-ups from E020/E021.
+- the next useful work is real-path plumbing (E018/E019) and the CPU
+  trust-layer follow-up from E021/E022.
 
 ## Success Labels
 

@@ -54,11 +54,11 @@ FedAvg displacement -> [I - (I - eta Hhat)^K]^{-1} correction
 
 Path-only worker scatter is not currently sufficient.
 
-E020 and E021 put two constraints on this estimator:
+E020/E023 and E021 put two constraints on this estimator:
 
 - Probe budget matters. Active probe design v1 did not reliably beat matched
-  random probes, so random probe budgets around `2N` to `N*K` remain the
-  working control.
+  random probes. E023 confirms `2N` random probes as the default for `N >= 32`
+  on the rotated CPU bed, with full `N*K` still needed for very small N.
 - Dense low-rank correlated geometry breaks the current estimator even though
   an oracle dense-H correction has large headroom. A low-rank-plus-diagonal
   representation needs a separate held-out validation or trust gate before its

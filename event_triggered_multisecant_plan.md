@@ -174,6 +174,11 @@ underperform matched random probes, and `uncertainty_value` only ties random
 in the stronger cases. For now, the practical rule is random probes near `2N`
 when `N >= 32` and full `N*K` for very small `N`.
 
+E023 confirmed that rule with more held-out reps and a direct probe-repeat
+check. `2N` random probes beat tuned scalar and stayed close to matched full
+random for N=32/128; `probe_reps=1` is usable when gradient-call budget binds,
+while `probe_reps=4` is a quality knob.
+
 E021 tested dense low-rank curvature with correlated low-rank noise. Oracle
 dense-H correction has large headroom, but diagonal, low-rank, and combined
 estimated corrections do not clear tuned scalar. The learned combined update is
@@ -182,4 +187,4 @@ held-out validation or trust layer before applying a low-rank-plus-diagonal
 correction.
 
 The next event-triggered work is real-path plumbing plus trust-gated dense
-geometry, cheaper random-probe budget confirmation, and function-space probes.
+geometry and function-space probes.

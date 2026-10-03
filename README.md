@@ -168,6 +168,12 @@ not robustly reduce the probe budget. The cheapest plausible rule from this gate
 is residual-shrunk random probes around `2N` for `N >= 32`, with full `N*K`
 still needed for very small worker counts.
 
+E023 returned `TWO_N_RANDOM_CONFIRMED`. With more held-out reps and an explicit
+`probe_reps=1` versus `probe_reps=4` check, `2N` random probes beat tuned scalar
+and stayed within the 10-15% band of matched full `N*K` random probes for
+N=32/128. The default CPU-bed budget is now `2N` random probes for `N >= 32`;
+use full `N*K` for very small N and treat repeat probes as a quality knob.
+
 E021 returned `DENSE_GEOMETRY_BREAKS_METHOD`. The true dense Hessian correction
 has large headroom, but the current diagonal, sketched low-rank, and combined
 low-rank-plus-diagonal estimators do not safely capture it under correlated
@@ -243,7 +249,11 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e021_dense_lowrank_correlated_stress_result_20261003.md`: E021 result.
 - `experiments/lgp_e021_dense_lowrank_correlated_stress_run_20261003.txt`: E021 run log.
 - `experiments/lgp_e022_cpu_worker_prompt_20261003.md`: pending dense trust-layer CPU gate.
-- `experiments/lgp_e023_cpu_worker_prompt_20261003.md`: pending random-probe budget CPU gate.
+- `experiments/lgp_e023_cpu_worker_prompt_20261003.md`: completed random-probe budget CPU gate.
+- `experiments/lgp_e023_random_probe_budget_confirm.py`: E023 random budget confirmation.
+- `experiments/lgp_e023_random_probe_budget_confirm_result_20261003.md`: E023 result.
+- `experiments/lgp_e023_random_probe_budget_confirm_run_20261003.txt`: E023 run log.
+- `experiments/lgp_cpu2_hold_after_e023_20261003.md`: CPU-2 hold note after E023.
 - `experiments/lgp_cpu_worker_manifest_20261003.md`: CPU worker dropbox manifest.
 - `experiments/lgp_gpu_worker_manifest_20261003.md`: GPU worker dropbox manifest.
 - `ops/devvm23211_gpu_buck2_result_20261003.md`: confirmed GPU/Buck2 invocation.

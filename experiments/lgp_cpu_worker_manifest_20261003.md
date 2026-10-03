@@ -20,9 +20,11 @@ local_gp_cpu_source_20261003_e022_e023.tgz
 The `CPU_1_NEXT.md` and `CPU_2_NEXT.md` aliases are deliberate. Some workers
 poll for direct next-task files rather than reading the long manifest.
 
-Status checked 2026-10-03 12:36 PDT: no E022/E023 result artifacts were visible
-in the CPU dropbox. The prefix contained the E022/E023 prompts, the source
-bundle, manifest, and previously imported E016/E017/E020/E021 artifacts.
+Status checked 2026-10-03 13:42 PDT: E023 completed locally and its script,
+result note, run log, and CPU-2 hold note were uploaded. E022 result artifacts
+were still not visible in the CPU dropbox. The prefix contained the E022/E023
+prompts, CPU aliases, source bundles, manifest, and previously imported
+E016/E017/E020/E021 artifacts.
 
 ## CPU-1
 
@@ -44,9 +46,9 @@ ROSETTA_DISABLE_AOT=1 manifold get \
   /tmp/lgp_e022_cpu_worker_prompt_20261003.md
 ```
 
-## CPU-2
+## Completed: CPU-2 / E023
 
-Next run E023:
+Run E023:
 
 ```text
 experiments/lgp_e023_cpu_worker_prompt_20261003.md
@@ -61,6 +63,36 @@ Fetch:
 ROSETTA_DISABLE_AOT=1 manifold get \
   aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e023_cpu_worker_prompt_20261003.md \
   /tmp/lgp_e023_cpu_worker_prompt_20261003.md
+```
+
+Completed artifacts:
+
+```text
+experiments/lgp_e023_random_probe_budget_confirm.py
+experiments/lgp_e023_random_probe_budget_confirm_result_20261003.md
+experiments/lgp_e023_random_probe_budget_confirm_run_20261003.txt
+```
+
+Decision: `TWO_N_RANDOM_CONFIRMED`.
+
+`CPU_2_NEXT.md` should now be a hold note rather than a runnable prompt, to
+avoid duplicate E023 launches while CPU-1/E022 and the GPU gates are still
+pending.
+
+Fetch:
+
+```bash
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e023_random_probe_budget_confirm.py \
+  /tmp/lgp_e023_random_probe_budget_confirm.py
+
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e023_random_probe_budget_confirm_result_20261003.md \
+  /tmp/lgp_e023_random_probe_budget_confirm_result_20261003.md
+
+ROSETTA_DISABLE_AOT=1 manifold get \
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e023_random_probe_budget_confirm_run_20261003.txt \
+  /tmp/lgp_e023_random_probe_budget_confirm_run_20261003.txt
 ```
 
 ## Completed: CPU-1 / E020
