@@ -6,6 +6,10 @@ Manifold directory:
 aai_research_tlv/tree/local_gp/cpu_pings/20261003/
 ```
 
+Status checked 2026-10-03 12:36 PDT: no E022/E023 result artifacts were visible
+in the CPU dropbox. The prefix contained the E022/E023 prompts, the source
+bundle, manifest, and previously imported E016/E017/E020/E021 artifacts.
+
 ## CPU-1
 
 Next run E022:

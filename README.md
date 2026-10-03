@@ -242,6 +242,10 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e021_dense_lowrank_correlated_stress.py`: dense low-rank correlated stress.
 - `experiments/lgp_e021_dense_lowrank_correlated_stress_result_20261003.md`: E021 result.
 - `experiments/lgp_e021_dense_lowrank_correlated_stress_run_20261003.txt`: E021 run log.
+- `experiments/lgp_e022_cpu_worker_prompt_20261003.md`: pending dense trust-layer CPU gate.
+- `experiments/lgp_e023_cpu_worker_prompt_20261003.md`: pending random-probe budget CPU gate.
+- `experiments/lgp_cpu_worker_manifest_20261003.md`: CPU worker dropbox manifest.
+- `experiments/lgp_gpu_worker_manifest_20261003.md`: GPU worker dropbox manifest.
 - `ops/devvm23211_gpu_buck2_result_20261003.md`: confirmed GPU/Buck2 invocation.
 - `wanger_duality_reply.md`: review of the local-GP duality theory note.
 - `wanger_e002_e007_review.md`: gamma-collapse and E007 gate review.
