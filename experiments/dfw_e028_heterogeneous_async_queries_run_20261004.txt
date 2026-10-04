@@ -1,0 +1,21 @@
+DFW-E028 heterogeneous async query channels
+d=18 workers=8 seeds=40 wall_clock=42.0 query_budget=176.0 eta=0.105 stale_limit=2
+
+REGIME homogeneous
+calibration tagged_corr=nan noise_corr=nan equal_l1=0.0000 tagged_l1=0.0000 oracle_weight_entropy=2.0794
+method                                       final_loss            improve          cost        done     waste_frac    updates        gain_vs_avg   win_vs_avg
+sync_homogeneous_average                0.0463+/-0.0114      0.996+/-0.001   176.0+/-0.0  176.0+/-0.0   0.000+/-0.000  22.0+/-0.0      0.000+/-0.000       0.000
+sync_weighted_by_reported_noise         0.0463+/-0.0114      0.996+/-0.001   176.0+/-0.0  176.0+/-0.0   0.000+/-0.000  22.0+/-0.0      0.000+/-0.000       0.000
+async_drop_stale                        0.0463+/-0.0114      0.996+/-0.001   176.0+/-0.0  176.0+/-0.0   0.000+/-0.000  22.0+/-0.0      0.000+/-0.000       0.000
+async_tagged_posterior                  0.0463+/-0.0114      0.996+/-0.001   176.0+/-0.0  176.0+/-0.0   0.000+/-0.000  22.0+/-0.0      0.000+/-0.000       0.000
+oracle_tags                             0.0449+/-0.0113      0.997+/-0.001   176.0+/-0.0  176.0+/-0.0   0.000+/-0.000  22.0+/-0.0      0.034+/-0.025       0.750
+
+REGIME heterogeneous
+calibration tagged_corr=0.9413 noise_corr=0.4869 equal_l1=0.7869 tagged_l1=0.2234 oracle_weight_entropy=1.6457
+method                                       final_loss            improve          cost        done     waste_frac    updates        gain_vs_avg   win_vs_avg
+sync_homogeneous_average                0.3374+/-0.0356      0.974+/-0.004   147.2+/-1.9  135.4+/-1.7   0.000+/-0.000  16.9+/-0.2      0.000+/-0.000       0.000
+sync_weighted_by_reported_noise         0.1325+/-0.0266      0.990+/-0.002   147.2+/-1.9  135.4+/-1.7   0.000+/-0.000  16.9+/-0.2      0.636+/-0.047       1.000
+async_drop_stale                        1.9084+/-0.1363      0.851+/-0.018   175.7+/-0.1  178.4+/-0.2   0.485+/-0.002  91.9+/-0.4     -4.922+/-0.316       0.000
+async_tagged_posterior                  0.0899+/-0.0129      0.993+/-0.001   175.7+/-0.1  178.4+/-0.2   0.393+/-0.005 178.4+/-0.2      0.721+/-0.043       1.000
+oracle_tags                             0.0516+/-0.0120      0.996+/-0.001   175.7+/-0.1  178.4+/-0.2   0.000+/-0.000 178.4+/-0.2      0.857+/-0.025       1.000
+
