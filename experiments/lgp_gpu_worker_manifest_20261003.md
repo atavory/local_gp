@@ -6,13 +6,15 @@ Manifold directory:
 aai_research_tlv/tree/local_gp/gpu_pings/20261003/
 ```
 
-Status checked 2026-10-03 16:00 PDT: the GPU liveness deadline passed with no
+Status checked 2026-10-03 22:15 PDT: the GPU liveness deadline passed with no
 E018/E019 result artifacts visible in the GPU dropbox. The prefix contained
-only the original E018/E019 prompts, source bundles, and manifest.
+the original E018/E019 prompts, source bundles, requeue prompts, and manifest,
+but still no result note, script, run log, or ACK from a GPU worker.
 
-Requeue prepared after the liveness note: workers should now poll
+Urgent ping prepared after the liveness note: workers should now poll
 `GPU_1_NEXT.md` and `GPU_2_NEXT.md` directly from this dropbox. Those aliases
-point to Buck2-specific requeue prompts that require the
+point to ping files that require ACK or result artifacts, and then route to
+Buck2-specific requeue prompts that require the
 `gpu_python_binary(..., keep_gpu_sections = True)` path before any
 `NO_GPU_HARNESS` decision. Do not adjudicate GPU results until the worker
 uploads result notes and run logs.
@@ -24,6 +26,8 @@ manifest.md
 lgp_gpu_worker_manifest_20261003.md
 GPU_1_NEXT.md
 GPU_2_NEXT.md
+lgp_gpu1_ping_20261003.md
+lgp_gpu2_ping_20261003.md
 lgp_e018_gpu_requeue_prompt_20261003.md
 lgp_e019_gpu_requeue_prompt_20261003.md
 local_gp_gpu_requeue_source_20261003.tgz
@@ -41,6 +45,12 @@ Run E018 via the direct alias:
 
 ```text
 GPU_1_NEXT.md
+```
+
+Current alias points to:
+
+```text
+experiments/lgp_gpu1_ping_20261003.md
 ```
 
 Canonical requeue prompt:
@@ -115,6 +125,12 @@ Run E019 via the direct alias:
 
 ```text
 GPU_2_NEXT.md
+```
+
+Current alias points to:
+
+```text
+experiments/lgp_gpu2_ping_20261003.md
 ```
 
 Canonical requeue prompt:
