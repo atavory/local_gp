@@ -1,10 +1,21 @@
-# Local GP
+# Beyond Averaging: Distributed Training as Sequential Experimental Design
 
-Local GP is a fresh research lane for worker-local SGD.
+This repository tracks the project formerly called Local GP. The better name is
+**Beyond Averaging: Distributed Training as Sequential Experimental Design**.
 
 The project is intentionally separate from Double Fan / cloud momentum. The old
 project tried to turn same-point worker variance into a first-moment optimizer
-controller. This project starts from a different object:
+controller. This project starts from a different object: a shared information
+state built from worker queries.
+
+In a single-worker optimizer, the time series naturally suggests momentum and
+acceleration. In distributed training, the naive move is to collapse all workers
+back into one synthetic trajectory by averaging. This project instead treats
+workers as adaptive query processes in a global experiment. After a minibatch or
+local path segment, a worker's next action should be chosen using all known
+information, not only that worker's private past.
+
+The first concrete setting is K>1 local SGD:
 
 > In local SGD, workers do not only produce noisy gradients. They trace short
 > local paths from the same synchronized point. Those paths are observations of
