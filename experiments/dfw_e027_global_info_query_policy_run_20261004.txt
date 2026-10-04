@@ -1,0 +1,52 @@
+dfw-e027 global information query policy: d=160 workers=24 rounds=36 budget=864 pilot_reps=5 heldout_reps=24 lambda_range=(0.04,18.0) probe_radius=0.22 h_prior=(1.0, prec=0.25) noise_prior_var=0.12249999999999998
+SELECTED_PARAMS {'fedavg_fixed': {'eta': 0.08}, 'private_momentum': {'eta': 0.055, 'beta': 0.85}, 'round_robin_probe': {'alpha': 0.95}, 'global_greedy_voI': {'alpha': 0.8}, 'oracle_policy': {'alpha': 0.35}}
+
+                policy             final_loss           progress/fed  exploit    probe  replicate            h_err        noise_err
+      private_momentum      0.4285+/-  0.0310      1.0054+/-  0.0008    1.000    0.000      0.000    0.9050+/-  0.0000    1.2321+/-  0.0000
+          fedavg_fixed      1.3790+/-  0.0903      1.0000+/-  0.0000    1.000    0.000      0.000    0.9050+/-  0.0000    0.0544+/-  0.0022
+     round_robin_probe      0.0360+/-  0.0032      1.0076+/-  0.0009    0.500    0.250      0.250    0.1910+/-  0.0045    0.0621+/-  0.0025
+     global_greedy_voI      0.0581+/-  0.0038      1.0075+/-  0.0009    0.175    0.492      0.333    0.4470+/-  0.0071    0.0731+/-  0.0029
+         oracle_policy      0.0175+/-  0.0019      1.0077+/-  0.0009    0.503    0.000      0.497    0.9050+/-  0.0000    0.0546+/-  0.0023
+
+                                  contrast   delta_progress_ratio
+          global_greedy_voI - fedavg_fixed      0.0075+/-  0.0009
+     global_greedy_voI - round_robin_probe     -0.0001+/-  0.0000
+              oracle_policy - fedavg_fixed      0.0077+/-  0.0009
+         oracle_policy - global_greedy_voI      0.0002+/-  0.0000
+          round_robin_probe - fedavg_fixed      0.0076+/-  0.0009
+
+                  final-objective contrast             loss_saved
+      global_greedy_voI beats fedavg_fixed      1.3210+/-  0.0899
+ global_greedy_voI beats round_robin_probe     -0.0221+/-  0.0049
+          oracle_policy beats fedavg_fixed      1.3616+/-  0.0908
+     oracle_policy beats global_greedy_voI      0.0406+/-  0.0045
+      round_robin_probe beats fedavg_fixed      1.3431+/-  0.0901
+
+DECISION FIXED_SCHEDULE_EXPLAINS
+
+SEED_PAIRS
+    seed      private       fedavg  round_robin       global       oracle
+  320000       1.0053       1.0000       1.0070       1.0070       1.0072
+  320001       1.0047       1.0000       1.0073       1.0071       1.0075
+  320002       1.0047       1.0000       1.0073       1.0072       1.0074
+  320003       1.0054       1.0000       1.0073       1.0072       1.0074
+  320004       1.0034       1.0000       1.0054       1.0052       1.0054
+  320005       1.0038       1.0000       1.0059       1.0058       1.0060
+  320006       1.0058       1.0000       1.0082       1.0081       1.0084
+  320007       1.0059       1.0000       1.0086       1.0084       1.0087
+  320008       1.0041       1.0000       1.0059       1.0058       1.0060
+  320009       1.0039       1.0000       1.0063       1.0061       1.0063
+  320010       1.0069       1.0000       1.0089       1.0089       1.0091
+  320011       1.0053       1.0000       1.0079       1.0078       1.0080
+  320012       1.0055       1.0000       1.0070       1.0070       1.0071
+  320013       1.0050       1.0000       1.0075       1.0073       1.0076
+  320014       1.0067       1.0000       1.0087       1.0085       1.0088
+  320015       1.0041       1.0000       1.0061       1.0060       1.0061
+  320016       1.0027       1.0000       1.0043       1.0042       1.0044
+  320017       1.0130       1.0000       1.0159       1.0157       1.0162
+  320018       1.0042       1.0000       1.0064       1.0062       1.0065
+  320019       1.0062       1.0000       1.0088       1.0087       1.0089
+  320020       1.0084       1.0000       1.0103       1.0101       1.0104
+  320021       1.0044       1.0000       1.0061       1.0060       1.0061
+  320022       1.0061       1.0000       1.0081       1.0081       1.0082
+  320023       1.0046       1.0000       1.0066       1.0065       1.0067
