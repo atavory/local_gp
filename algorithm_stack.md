@@ -126,6 +126,9 @@ on the dense bed, but E024 weakened that gain under delayed application. Treat
 same-round validation as a candidate trust layer, not a settled method. Two
 extra gates are required before citing it: delayed/stale validation to bound
 winner's curse, and matched-compute pricing for the validation forward passes.
+E025 passed the matched-compute pricing gate on the synthetic dense bed; E026
+still has to settle delayed/stale validation before this becomes a dense-method
+claim.
 
 Then:
 

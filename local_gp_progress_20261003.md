@@ -173,17 +173,28 @@ E024:
 - the E022 validation grid costs roughly 17.23 full-forward equivalents, so
   validation cost must be priced against matched compute.
 
+E025:
+
+- returned `VALIDATION_COST_SURVIVES`;
+- full 8-rep validation still beats tuned scalar and an `N+1` extra-worker
+  scalar rival at N=8/32/128;
+- extra fit probes do not explain the gain on the dense bed;
+- one or two validation reps already recover most same-round benefit;
+- this resolves the same-round cost objection, but E026 is still required
+  because E024 weakened delayed/casual persistence.
+
 ## Current Worker Tasks
 
 CPU-1:
 
 ```text
 CPU_1_NEXT.md
-experiments/lgp_e025_validation_cost_pricing_prompt_20261003.md
+experiments/lgp_cpu1_hold_after_e025_20261003.md
 ```
 
-Status: active E025 task. Price E022 validation cost and compare against
-matched-compute alternatives.
+Status: E025 result landed and was imported. `CPU_1_NEXT.md` should now be a
+hold note until the coordinator assigns another CPU-1 task; do not rerun E025
+unless asked.
 
 CPU-2:
 
@@ -229,7 +240,7 @@ For wanger:
 For Merkle:
 
 - CPU workers should read `CPU_1_NEXT.md` and `CPU_2_NEXT.md` directly from
-  Manifold. They now point to E025 and E026, not hold notes.
+  Manifold. CPU-1 is hold after E025; CPU-2 remains active on E026.
 - Use `local_gp_cpu_source_latest.tgz` unless a dated source bundle is required.
 - GPU workers should not be silently polled after the missed liveness deadline;
   they should use `GPU_1_NEXT.md` / `GPU_2_NEXT.md`, run through Buck2 with
@@ -252,6 +263,6 @@ Claim we cannot make yet:
 this is a working optimizer on real workloads.
 ```
 
-The next decisive results are E025/E026 for dense trust validity/cost and the
-real-path GPU gate. E022 shows trust-gated dense geometry can recover a small
-same-round safe gain, but E024 says that claim is not settled yet.
+The next decisive result is E026 for dense trust persistence, plus the real-path
+GPU gate. E025 priced the same-round validation cost; E024 still says the
+dense claim is not settled yet.

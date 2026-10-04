@@ -21,16 +21,16 @@ local_gp_cpu_source_20261003_e022_e023.tgz
 The `CPU_1_NEXT.md` and `CPU_2_NEXT.md` aliases are deliberate. Some workers
 poll for direct next-task files rather than reading the long manifest.
 
-Status checked 2026-10-03 14:15 PDT: E022 and E023 completed and were imported.
-E024 was run locally and returned `DELAYED_GAMMA_WEAK`. CPU aliases now point
-to the next two follow-ups:
+Status checked 2026-10-03 22:10 PDT: E022 and E023 completed and were imported.
+E024 was run locally and returned `DELAYED_GAMMA_WEAK`. E025 landed from CPU-1
+and returned `VALIDATION_COST_SURVIVES`. CPU-2/E026 is still pending.
 
-- `CPU_1_NEXT.md`: E025 validation-cost pricing.
+- `CPU_1_NEXT.md`: hold note after E025; do not rerun unless asked.
 - `CPU_2_NEXT.md`: E026 delayed-gamma replication with stale/shuffled controls.
 
 Do not rerun E022/E023 unless the coordinator explicitly asks for replication.
 
-## Active: CPU-1 / E025
+## Completed: CPU-1 / E025
 
 Run E025:
 
@@ -45,8 +45,8 @@ Fetch:
 
 ```bash
 ROSETTA_DISABLE_AOT=1 manifold get \
-  aai_research_tlv/tree/local_gp/cpu_pings/20261003/CPU_1_NEXT.md \
-  /tmp/CPU_1_NEXT.md
+  aai_research_tlv/tree/local_gp/cpu_pings/20261003/lgp_e025_validation_cost_pricing_prompt_20261003.md \
+  /tmp/lgp_e025_validation_cost_pricing_prompt_20261003.md
 ```
 
 Expected artifacts:
@@ -56,6 +56,8 @@ experiments/lgp_e025_validation_cost_pricing.py
 experiments/lgp_e025_validation_cost_pricing_result_20261003.md
 experiments/lgp_e025_validation_cost_pricing_run_20261003.txt
 ```
+
+Decision: `VALIDATION_COST_SURVIVES`.
 
 ## Active: CPU-2 / E026
 
@@ -135,8 +137,8 @@ experiments/lgp_e022_dense_trust_validation_run_20261003.txt
 Decision: `TRUST_LAYER_RECOVERS_DENSE`.
 
 `lgp_cpu1_hold_after_e022_20261003.md` is now only an archival hold note. The
-current `CPU_1_NEXT.md` alias points to E025; do not treat the archived hold
-note as current dispatch.
+current `CPU_1_NEXT.md` alias should point to the E025 hold note; do not treat
+the archived E022 hold note as current dispatch.
 
 Fetch:
 

@@ -196,6 +196,15 @@ the E021 crash, but it means E022 is not yet a finalized dense-method claim.
 The next CPU checks are a higher-rep delayed/stale/shuffled replication and
 matched-compute pricing for the validation proxy.
 
+E025 returned `VALIDATION_COST_SURVIVES`. It prices the E022 same-round
+validation grid and compares against matched-compute rivals. Full 8-rep
+validation beats scalar and an `N+1` extra-worker scalar rival at all tested
+worker counts, and spending the validation budget on extra fit probes does not
+explain the gain. One or two validation reps already recover most of the
+same-round benefit. This is still conditional on E026: E024's delayed-gamma
+weakness means E025 supports the same-round quality/efficiency story, not a
+settled causal dense optimizer claim.
+
 The E018/E019 GPU liveness deadline passed at 2026-10-03 16:00 PDT with the GPU
 dropbox still containing only prompts, source bundles, and its manifest. Treat
 the real-path GPU lane as requiring worker escalation or requeue through the
@@ -282,6 +291,9 @@ Only if the offline gate passes should we run a closed-loop optimizer.
 - `experiments/lgp_e024_delayed_trust_validation_result_20261003.md`: E024 result.
 - `experiments/lgp_e024_delayed_trust_validation_run_20261003.txt`: E024 run log.
 - `experiments/lgp_e025_validation_cost_pricing_prompt_20261003.md`: CPU-1 next task.
+- `experiments/lgp_e025_validation_cost_pricing.py`: validation-cost pricing.
+- `experiments/lgp_e025_validation_cost_pricing_result_20261003.md`: E025 result.
+- `experiments/lgp_e025_validation_cost_pricing_run_20261003.txt`: E025 run log.
 - `experiments/lgp_e026_delayed_gamma_replication_prompt_20261003.md`: CPU-2 next task.
 - `experiments/lgp_e018_e019_gpu_liveness_20261003.md`: GPU liveness note after
   the 16:00 PDT deadline.

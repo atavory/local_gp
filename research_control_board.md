@@ -49,7 +49,7 @@ over path/probe descriptors may predict:
 
 The first claim is prediction. The optimizer claim comes later.
 
-Current paper hypothesis, after E014-E024: local path/probe observations should
+Current paper hypothesis, after E014-E025: local path/probe observations should
 be treated as a noisy estimate of the K-step update map, not as a fresh Newton
 step and not as a GP over all parameters. The corrected quadratic operator is
 \[
@@ -448,8 +448,29 @@ Summary:
 
 Interpretation: E022 remains a quality positive for same-round validation, but
 winner's curse is now an active gate. Do not cite E022 as a settled
-dense-method or efficiency claim until E026 delayed/stale/shuffled validation
-and E025 matched-cost pricing land.
+dense-method claim until E026 delayed/stale/shuffled validation lands.
+
+E025 ran the validation-cost pricing gate and returned
+`VALIDATION_COST_SURVIVES`.
+
+Summary:
+
+- the full E022 8-rep validation grid costs about 17.23 full-forward
+  equivalents per row, or 5.74 gradient-call equivalents if one backward costs
+  two forwards;
+- same-round `combo_val_gamma_reps_8` beats tuned scalar and the `N+1`
+  extra-worker scalar rival:
+  - N=8: val8 - scalar `+0.049 +/- 0.033`;
+  - N=32: val8 - scalar `+0.116 +/- 0.023`;
+  - N=128: val8 - scalar `+0.134 +/- 0.021`;
+- spending the validation-equivalent budget on extra fit probes does not
+  explain the gain; that arm remains destructive on the dense bed;
+- one or two mini-loss validation reps recover most of the same-round benefit.
+
+Interpretation: the same-round trust gate is not merely buying its win by
+spending compute that scalar FedAvg or extra fit probes would use better. This
+settles the cost objection for the same-round synthetic bed. It does not settle
+winner's curse or causal persistence; E026 remains the binding dense gate.
 
 Updated local-GP state:
 
@@ -463,10 +484,10 @@ Updated local-GP state:
 - random probe budget remains material; active design v1 is not enough to cut
   it reliably, but E023 confirms `2N` random probes as the default for
   `N >= 32` on the rotated CPU bed;
-- dense low-rank-plus-diagonal geometry has oracle headroom; E022 shows a
-  held-out validation-gamma layer can recover a small same-round safe gain, but
-  E024 weakens that gain under delayed application and the representation still
-  misses most oracle-H benefit;
+- dense low-rank-plus-diagonal geometry has oracle headroom; E022/E025 show a
+  held-out validation-gamma layer can recover a small same-round safe gain at
+  priced cost, but E024 weakens that gain under delayed application and the
+  representation still misses most oracle-H benefit;
 - the controller should use empirical-Bayes local-map fitting plus stochastic
   trust-region adaptation, not Optuna/TPE over high-dimensional actions;
 - the next useful work is real-path plumbing (E018/E019), better dense
@@ -520,8 +541,8 @@ Updated local-GP state:
 10. Use residual-shrunk random probes as the default budget policy for now:
     around `2N` when `N >= 32`, full `N*K` for very small `N`.
 11. For dense low-rank-plus-diagonal geometry, keep the held-out validation
-    gate, but do not claim it until the delayed-gamma and validation-cost gates
-    land.
+    gate, but do not claim it until the delayed-gamma gate lands. E025 priced
+    the same-round validation cost; E026 still decides causal persistence.
 12. Do not run a closed-loop optimizer before a held-out real-path/control gate
    passes against tuned scalar scale and best-worker fallback.
 13. Rewrite the paper around the reset thesis:
