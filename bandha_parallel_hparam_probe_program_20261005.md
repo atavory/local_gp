@@ -176,6 +176,38 @@ The strongest practical default from this table is **4 slices of 48-96 examples
 per group**, depending on K.  That lives around `0.08%-0.67%` of a round in
 this setup.
 
+### E065: LR x Momentum Creates Headroom, Extraction Still Thin
+
+E065 added a second designed hyperparameter axis.  Worker groups ran the 9-arm
+grid:
+
+```text
+inner_lr_multiplier in {0.5, 1.0, 2.0}
+inner_momentum in {0.0, 0.5, 0.9}
+```
+
+All workers used the same `K`; only the optimizer hyperparameters varied.
+
+Decision: `SECOND_DIM_GROUP_PROBE_BEATS_PARALLEL_AVERAGE`.
+
+| K | arms | cost | fixed all | default only | oracle subset | raw | raw minus fixed | raw minus default | raw minus shuffled | capture |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 9 | 0.89% | 1.924+/-0.736 | 1.686+/-1.893 | 9.599+/-3.385 | 2.157+/-0.682 | 0.233+/-0.280 | 0.471+/-1.906 | 0.283+/-0.293 | 0.036+/-0.038 |
+| 16 | 9 | 0.45% | 1.127+/-0.220 | 1.296+/-1.131 | 9.366+/-3.923 | 1.445+/-0.282 | 0.318+/-0.274 | 0.150+/-1.215 | 0.400+/-0.316 | 0.041+/-0.026 |
+
+Read this carefully:
+
+- the 2D arm grid creates very large oracle headroom;
+- the frozen grouped-probe rule beats averaging the parallel arms;
+- the captured fraction is still only about 4%;
+- it does **not** cleanly beat the tuned default-only arm because that control
+  is very noisy and overlaps the raw arm.
+
+So the "use parallelism as hyperparameter search" idea is live, but the current
+extractor is still too primitive for the 2D case.  A GP/response model is now
+motivated by a measured failure mode: there is a smooth arm space with large
+oracle headroom, and same-round soft weighting captures only a thin slice.
+
 ## Current Interpretation
 
 The favorable result is:
@@ -190,14 +222,19 @@ The limitation is:
 > sensitive to K/regime.
 
 E062 says the first online tracker does not solve that limitation.  E064 says
-the frozen grouped-probe method is cheap enough to matter.  So the current live
-branch is narrower and firmer:
+the frozen grouped-probe method is cheap enough to matter.  E065 says a second
+hyperparameter dimension creates much more headroom but needs a better
+extractor.  So the current live branch is:
 
 > use parallel workers to create optimizer-arm non-exchangeability, probe
 > group-level candidate updates, and aggregate conservatively.
 
-The immediate next question is transfer: does the same grouped-arm probe rule
-survive outside this synthetic/stationary bed?
+The immediate next question is transfer and extraction:
+
+- transfer: does the same grouped-arm probe rule survive outside this
+  synthetic/stationary bed?
+- extraction: can a response-surface model capture more than 4% of E065's
+  large 2D oracle headroom?
 
 ## New Program: Track The Hyperparameter Surface
 
@@ -317,7 +354,7 @@ positive edge below roughly 1-3% round overhead.
 Outcome: sub-1% frontier is live.  Several budgets in `0.08%-0.67%` preserve
 the edge; single-slice ultra-cheap budgets are too noisy.
 
-### E065: Add A Second Hyperparameter Dimension
+### E065: Add A Second Hyperparameter Dimension  [DONE]
 
 After the cost/noise frontier, test whether the same probe signal scales beyond
 one designed hyperparameter:
@@ -334,6 +371,10 @@ log_lr_multiplier x inner_momentum
 
 This is where a GP becomes more natural.
 
+Outcome: 2D headroom is large, and probes beat the parallel-arm average, but
+raw soft weighting captures only about 4% of the oracle gap and does not
+clearly beat the tuned default-only arm.
+
 ### E066: Real Workload Path
 
 Take the best E063/E064 setting to a real small network path.  Do not claim the
@@ -341,7 +382,7 @@ paper from toy rows alone.
 
 ### E067: Moving-Arm / GP Bandit
 
-Only after E066.  Use the workers as a live design over hyperparameters:
+Use the workers as a live design over hyperparameters:
 
 ```text
 arms_t = GP/UCB/Thompson points over log_lr, K, momentum
@@ -350,7 +391,8 @@ server_t = conservative aggregate around posterior-best arms
 ```
 
 The baseline is not "same fixed hyperparameters."  The baseline is E064's
-frozen grouped arms plus offline tuned schedules.
+frozen grouped arms, the default-only arm, and offline tuned schedules.  E065
+is the reason to run this: 2D headroom exists and raw extraction is weak.
 
 ## Paper Shape
 
@@ -369,6 +411,8 @@ That claim fits the favorable evidence:
 - E060/E061 show the stationary grouped-LR mechanism is live.
 - E063 replicates the frozen group-probe rule across K with exact collapse.
 - E064 shows the edge survives below 1% probe overhead.
+- E065 shows the 2D hyperparameter arm space has large oracle headroom, while
+  raw same-round weighting under-extracts it.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped
