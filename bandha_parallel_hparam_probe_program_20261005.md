@@ -208,6 +208,33 @@ extractor is still too primitive for the 2D case.  A GP/response model is now
 motivated by a measured failure mode: there is a smooth arm space with large
 oracle headroom, and same-round soft weighting captures only a thin slice.
 
+### E066: Default-Only Control Explains The Stationary LR Win
+
+E066 asked the control question that E063/E064 did not answer: if the default
+inner LR arm is known and separately tuned, does the grouped probe still win?
+
+Decision: `LR_GROUP_PROBE_BEATS_PARALLEL_AVERAGE_ONLY`.
+
+| K | cost | fixed all | default only | oracle subset | raw | raw minus fixed | raw minus default | raw minus shuffled | capture |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 0.67% | 3.482+/-0.596 | 5.313+/-1.185 | 7.056+/-1.290 | 3.719+/-0.487 | 0.238+/-0.160 | -1.593+/-1.415 | 0.467+/-0.415 | 0.072+/-0.035 |
+| 16 | 0.33% | 1.451+/-0.755 | 5.884+/-4.853 | 7.283+/-6.143 | 1.763+/-0.469 | 0.312+/-0.295 | -4.122+/-5.293 | 0.798+/-1.016 | 0.070+/-0.027 |
+| 32 | 0.17% | 1.000+/-0.000 | 4.362+/-4.419 | 4.020+/-2.004 | 1.100+/-0.041 | 0.100+/-0.041 | -3.262+/-4.428 | 0.337+/-0.219 | 0.049+/-0.020 |
+
+Readout:
+
+- grouped probes consistently rescue the intentionally bad parallel average;
+- grouped probes do **not** beat a separately tuned default-only arm;
+- the positive stationary LR result is therefore not "better than a known good
+  optimizer setting";
+- it is evidence that probes can manage exploratory parallel arms when we do
+  not want to spend whole runs tuning each arm.
+
+This is a useful boundary, not a method win.  The next extractor has to be
+default-anchored: keep the default arm unless probe evidence says an exploratory
+arm is better.  Softly averaging all exploratory arms is exactly the wrong
+thing when one default arm is already strong.
+
 ## Current Interpretation
 
 The favorable result is:
@@ -219,22 +246,25 @@ The favorable result is:
 The limitation is:
 
 > Fixed damped rules capture only a small fraction of oracle headroom and are
-> sensitive to K/regime.
+> sensitive to K/regime; under stationarity they do not beat a known, separately
+> tuned default arm.
 
 E062 says the first online tracker does not solve that limitation.  E064 says
 the frozen grouped-probe method is cheap enough to matter.  E065 says a second
 hyperparameter dimension creates much more headroom but needs a better
-extractor.  So the current live branch is:
+extractor.  E066 says the extractor must be default-anchored rather than a
+free soft average over all exploratory arms.  So the current live branch is:
 
 > use parallel workers to create optimizer-arm non-exchangeability, probe
-> group-level candidate updates, and aggregate conservatively.
+> group-level candidate updates, and aggregate conservatively around a default
+> arm.
 
 The immediate next question is transfer and extraction:
 
 - transfer: does the same grouped-arm probe rule survive outside this
   synthetic/stationary bed?
-- extraction: can a response-surface model capture more than 4% of E065's
-  large 2D oracle headroom?
+- extraction: can a default-anchored response model capture more than 4% of
+  E065's large 2D oracle headroom without losing to the default-only control?
 
 ## New Program: Track The Hyperparameter Surface
 
@@ -375,12 +405,45 @@ Outcome: 2D headroom is large, and probes beat the parallel-arm average, but
 raw soft weighting captures only about 4% of the oracle gap and does not
 clearly beat the tuned default-only arm.
 
-### E066: Real Workload Path
+### E066: Default-Only LR Control  [DONE]
+
+Run the E063/E064 frozen grouped-probe setting with an explicit default-only
+arm and a separately tuned default-only outer `(alpha,beta)`.
+
+Outcome: grouped probes beat the parallel-arm average but lose to default-only.
+This changes the method target: do not use probes to average a bad exploration
+population; use probes to decide when to depart from a strong default.
+
+### E067: Default-Anchored Probe Admission
+
+Keep the default LR group as the baseline action.  Run exploratory groups in
+parallel, probe group-mean candidate updates, and use a conservative rule:
+
+```text
+if posterior(value(explorer) - value(default)) > threshold:
+    mix toward the explorer
+else:
+    use default
+```
+
+Controls:
+
+- default-only;
+- fixed all-arm average;
+- raw E063 grouped-probe soft average;
+- shuffled probes;
+- oracle default-or-explorer choice.
+
+Success means tying default-only when probes are uninformative and winning only
+when exploratory arms produce measured value.  This is the right stationary
+version of the idea.
+
+### E068: Real Workload Path
 
 Take the best E063/E064 setting to a real small network path.  Do not claim the
 paper from toy rows alone.
 
-### E067: Moving-Arm / GP Bandit
+### E069: Moving-Arm / GP Bandit
 
 Use the workers as a live design over hyperparameters:
 
@@ -392,7 +455,9 @@ server_t = conservative aggregate around posterior-best arms
 
 The baseline is not "same fixed hyperparameters."  The baseline is E064's
 frozen grouped arms, the default-only arm, and offline tuned schedules.  E065
-is the reason to run this: 2D headroom exists and raw extraction is weak.
+is the reason to run this: 2D headroom exists and raw extraction is weak.  E066
+adds the constraint: the GP must be default-anchored or it will simply pay to
+include bad exploratory arms.
 
 ## Paper Shape
 
@@ -413,6 +478,9 @@ That claim fits the favorable evidence:
 - E064 shows the edge survives below 1% probe overhead.
 - E065 shows the 2D hyperparameter arm space has large oracle headroom, while
   raw same-round weighting under-extracts it.
+- E066 shows the stationary LR win does not beat a known good default arm, so
+  the correct method is default-anchored exploration rather than averaging all
+  parallel arms.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped
