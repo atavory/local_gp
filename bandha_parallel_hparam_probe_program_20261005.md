@@ -235,6 +235,35 @@ default-anchored: keep the default arm unless probe evidence says an exploratory
 arm is better.  Softly averaging all exploratory arms is exactly the wrong
 thing when one default arm is already strong.
 
+### E067: Default-Anchored Admission Is Safer, But Still Negative
+
+E067 tested the direct repair for E066.  Instead of shrinking toward the
+all-worker prior, it used the default LR group as a one-hot fallback and only
+mixed toward exploratory LR groups through the same frozen probe damping.
+
+Decision: `DEFAULT_ANCHORED_PROBE_NEGATIVE`.
+
+| K | cost | default only | all-prior raw | anchored | anchored minus default | anchored minus shuffled | capture vs default |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 0.67% | 2.854+/-2.343 | 1.303+/-3.063 | 2.159+/-2.358 | -0.694+/-2.172 | 2.481+/-3.386 | -0.021+/-0.186 |
+| 16 | 0.33% | 1.331+/-1.423 | 1.114+/-1.096 | 1.244+/-1.733 | -0.087+/-0.956 | 1.323+/-2.358 | -0.224+/-0.342 |
+| 32 | 0.17% | 11.280+/-19.975 | 0.549+/-1.249 | 8.892+/-14.249 | -2.387+/-5.748 | 3.039+/-5.560 | -0.267+/-0.369 |
+
+Readout:
+
+- anchoring reduces the damage from bad exploratory arms, especially at K=32
+  (`all-prior - default = -10.731`, anchored `-2.387`);
+- it does not beat default-only at any K;
+- the shuffled-control gaps remain positive but very noisy;
+- the oracle gap remains large, so the problem is extraction, not absence of
+  better candidate arms.
+
+This closes the stationary default-known branch for the current same-round
+probe extractor.  In a stationary regime with a strong default, probes are not
+yet good enough to justify departures from that default.  The viable roles are
+now narrower: unknown/default-stale hyperparameter search, drift/nonstationary
+tracking, or a substantially better value proxy.
+
 ## Current Interpretation
 
 The favorable result is:
@@ -253,11 +282,13 @@ E062 says the first online tracker does not solve that limitation.  E064 says
 the frozen grouped-probe method is cheap enough to matter.  E065 says a second
 hyperparameter dimension creates much more headroom but needs a better
 extractor.  E066 says the extractor must be default-anchored rather than a
-free soft average over all exploratory arms.  So the current live branch is:
+free soft average over all exploratory arms.  E067 says default anchoring is
+safer but still not enough to beat a known strong default.  So the current live
+branch is:
 
 > use parallel workers to create optimizer-arm non-exchangeability, probe
-> group-level candidate updates, and aggregate conservatively around a default
-> arm.
+> group-level candidate updates, and aggregate conservatively only when the
+> default is unknown, stale, drifting, or deliberately being searched.
 
 The immediate next question is transfer and extraction:
 
@@ -265,6 +296,8 @@ The immediate next question is transfer and extraction:
   synthetic/stationary bed?
 - extraction: can a default-anchored response model capture more than 4% of
   E065's large 2D oracle headroom without losing to the default-only control?
+- regime: can probes win when the default is stale or the best hyperparameter
+  changes, rather than when a tuned default is already known?
 
 ## New Program: Track The Hyperparameter Surface
 
@@ -434,14 +467,13 @@ Controls:
 - shuffled probes;
 - oracle default-or-explorer choice.
 
-Success means tying default-only when probes are uninformative and winning only
-when exploratory arms produce measured value.  This is the right stationary
-version of the idea.
+Outcome: safer but negative.  It reduced harm from exploratory arms but did not
+beat default-only.  This closes the current stationary/default-known branch.
 
 ### E068: Real Workload Path
 
-Take the best E063/E064 setting to a real small network path.  Do not claim the
-paper from toy rows alone.
+Take only a branch that survives E067's control to a real small network path.
+Do not claim the paper from toy rows alone.
 
 ### E069: Moving-Arm / GP Bandit
 
@@ -481,6 +513,8 @@ That claim fits the favorable evidence:
 - E066 shows the stationary LR win does not beat a known good default arm, so
   the correct method is default-anchored exploration rather than averaging all
   parallel arms.
+- E067 shows default anchoring is not enough on the stationary/default-known
+  bed; the current extractor still cannot justify departures from the default.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped
