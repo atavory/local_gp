@@ -264,6 +264,30 @@ yet good enough to justify departures from that default.  The viable roles are
 now narrower: unknown/default-stale hyperparameter search, drift/nonstationary
 tracking, or a substantially better value proxy.
 
+### E068: Doubling Probe Budget Does Not Rescue Default-Anchored Admission
+
+E068 repeated E067 with the largest clean probe budget available in the current
+two-select-draw bed: `probe_batch=192`, `slices=4`.
+
+Decision: `DEFAULT_ANCHORED_PROBE_NEGATIVE`.
+
+| K | cost | default only | all-prior raw | anchored | anchored minus default | capture vs default |
+|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 1.34% | 2.854+/-2.343 | 1.277+/-3.066 | 2.235+/-2.305 | -0.619+/-2.026 | -0.024+/-0.179 |
+| 16 | 0.67% | 1.331+/-1.423 | 1.149+/-0.981 | 1.344+/-1.555 | 0.013+/-0.774 | -0.224+/-0.341 |
+| 32 | 0.33% | 11.280+/-19.975 | 0.559+/-1.185 | 8.851+/-14.270 | -2.429+/-5.725 | -0.273+/-0.371 |
+
+Compared with E067 (`96 x 4`), the doubled budget barely changes the conclusion:
+
+- K=8 improves only from `-0.694` to `-0.619` versus default;
+- K=16 moves from `-0.087` to `+0.013`, a tie;
+- K=32 remains strongly below default.
+
+So the stationary/default-known failure is not primarily "probes were too
+cheap."  It is a proxy/extraction failure: the held-out probe signal can see
+that bad exploratory arms exist, but it does not reliably identify departures
+from a strong default that improve final held-out value.
+
 ## Current Interpretation
 
 The favorable result is:
@@ -283,8 +307,9 @@ the frozen grouped-probe method is cheap enough to matter.  E065 says a second
 hyperparameter dimension creates much more headroom but needs a better
 extractor.  E066 says the extractor must be default-anchored rather than a
 free soft average over all exploratory arms.  E067 says default anchoring is
-safer but still not enough to beat a known strong default.  So the current live
-branch is:
+safer but still not enough to beat a known strong default.  E068 says merely
+buying more same-round probe precision does not rescue that branch.  So the
+current live branch is:
 
 > use parallel workers to create optimizer-arm non-exchangeability, probe
 > group-level candidate updates, and aggregate conservatively only when the
@@ -470,12 +495,20 @@ Controls:
 Outcome: safer but negative.  It reduced harm from exploratory arms but did not
 beat default-only.  This closes the current stationary/default-known branch.
 
-### E068: Real Workload Path
+### E068: High-Budget Default-Anchored Probe  [DONE]
+
+Double the E067 probe budget to test whether the negative was only a cheap-probe
+noise floor.
+
+Outcome: negative.  The high-budget rule ties default at K=16 but still loses at
+K=8 and K=32.  Same-round probe precision is not enough.
+
+### E069: Real Workload Path
 
 Take only a branch that survives E067's control to a real small network path.
 Do not claim the paper from toy rows alone.
 
-### E069: Moving-Arm / GP Bandit
+### E070: Moving-Arm / GP Bandit
 
 Use the workers as a live design over hyperparameters:
 
@@ -515,6 +548,8 @@ That claim fits the favorable evidence:
   parallel arms.
 - E067 shows default anchoring is not enough on the stationary/default-known
   bed; the current extractor still cannot justify departures from the default.
+- E068 shows doubling the probe budget still does not fix this, pointing to
+  value-proxy/extraction rather than simple probe cheapness.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped
