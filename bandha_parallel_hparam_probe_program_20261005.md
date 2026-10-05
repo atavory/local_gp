@@ -308,6 +308,39 @@ differences do not extract it.  The next test should change the measurement,
 not the anchoring rule: use a validation-gradient marginal-value score
 `<g_val, u_i>` so one backward pass gives scores for all arms.
 
+### E070: Validation-Gradient Marginal Value Does Not Rescue Extraction
+
+E070 made that measurement change.  It replaced per-arm forward finite
+differences with one validation backward per slice:
+
+```text
+g_V = grad L_V(theta)
+score_i = <g_V, alpha * (u_i + beta v)>
+```
+
+Decision: `VALIDATION_GRADIENT_PROBE_NEGATIVE`.
+
+| K | cost | default only | oracle subset | forward anchor | forward minus default | gradient anchor | gradient minus default | gradient minus forward | gradient capture |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 0.67% | 3.189+/-2.177 | 8.116+/-1.474 | 3.845+/-1.755 | 0.656+/-0.914 | 2.923+/-2.632 | -0.266+/-2.173 | -0.922+/-1.414 | 0.057+/-0.292 |
+| 16 | 0.33% | 1.627+/-1.681 | 6.804+/-2.712 | 2.249+/-1.258 | 0.622+/-0.611 | 1.761+/-1.375 | 0.134+/-1.305 | -0.488+/-0.841 | 0.120+/-0.133 |
+| 32 | 0.17% | 0.197+/-1.357 | 6.026+/-2.451 | 1.309+/-0.761 | 1.112+/-0.830 | 1.317+/-0.689 | 1.120+/-0.826 | 0.008+/-0.169 | 0.171+/-0.058 |
+
+Readout:
+
+- the first-order marginal-value score does **not** beat the forward extractor;
+- it does not produce a robust default-beating result at K=8 or K=16;
+- K=32 is directionally good for both forward and gradient anchors, but the
+  paired CI still includes zero;
+- therefore the shared blocker is not simply "we should have used one
+  validation gradient."  The bottleneck is the decision/extraction rule for
+  turning weak same-round value evidence into departures from the default.
+
+This matters because it closes the last cheap measurement swap.  The live
+method cannot just change the probe statistic; it needs either a better
+decision problem (unknown/stale defaults, drift, mandatory exploration) or a
+proper response model over the hyperparameter surface.
+
 ## Current Interpretation
 
 The favorable result is:
@@ -330,22 +363,24 @@ free soft average over all exploratory arms.  E067 says default anchoring is
 safer but still not enough to beat a known strong default.  E068 says merely
 buying more same-round probe precision does not rescue that branch.  E069 says
 even a stale/wrong default does not rescue the current forward-difference
-extractor.  So the current live branch is:
+extractor.  E070 says a validation-gradient marginal-value proxy also does not
+rescue the default-anchored extractor.  So the current live branch is narrower:
 
 > use parallel workers to create optimizer-arm non-exchangeability, probe
 > group-level candidate updates, and aggregate conservatively only when the
-> measurement can identify useful departures from the default.
+> measurement/model can identify useful departures from the default.
 
 The immediate next question is transfer and extraction:
 
 - transfer: does the same grouped-arm probe rule survive outside this
   synthetic/stationary bed?
-- extraction: can a default-anchored response model capture more than 4% of
-  E065's large 2D oracle headroom without losing to the default-only control?
+- extraction: can a default-anchored response model, not a same-round softmax,
+  capture more than 4% of E065's large 2D oracle headroom without losing to the
+  default-only control?
 - regime: can probes win when the default is stale or the best hyperparameter
   changes, rather than when a tuned default is already known?
-- measurement: does a validation-gradient marginal-value score improve capture
-  over forward-difference probes?
+- measurement: E070 says the simple validation-gradient marginal-value score
+  does not improve capture over forward-difference probes.
 
 ## New Program: Track The Hyperparameter Surface
 
@@ -534,7 +569,7 @@ same-round probes can justify leaving it.
 Outcome: negative.  The current forward-difference softmax extractor still
 does not extract the oracle gap.
 
-### E070: Validation-Gradient Marginal-Value Score
+### E070: Validation-Gradient Marginal-Value Score  [DONE]
 
 Replace per-arm forward finite differences with one validation backward:
 
@@ -546,6 +581,9 @@ score_i = <g_V, alpha * (u_i + beta v)>
 This gives first-order scores for all arms for roughly one backward pass rather
 than one forward per arm.  It directly attacks the shared extraction failure
 instead of opening another anchor/schedule variant.
+
+Outcome: negative.  It ties/improves only at K=32 and does not beat the forward
+extractor or default-only control robustly.
 
 ### E071: Real Workload Path
 
@@ -596,6 +634,9 @@ That claim fits the favorable evidence:
   value-proxy/extraction rather than simple probe cheapness.
 - E069 shows a bad/stale anchor is not enough for the existing extractor; the
   measurement itself must improve.
+- E070 shows the obvious validation-gradient measurement swap is not enough;
+  the next improvement has to be a response model or a different regime, not
+  another same-round scalar selector.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped

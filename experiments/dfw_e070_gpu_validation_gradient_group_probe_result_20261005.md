@@ -1,0 +1,32 @@
+# DFW-E070 Result - Validation-Gradient Group Probe
+
+Decision label: `VALIDATION_GRADIENT_PROBE_NEGATIVE`
+
+## Compute Status
+
+`REAL_GPU` via PyTorch CUDA: `torch=2.14.1+cu130 cuda_available=True cuda_version=13.0 device=NVIDIA PG509-210`.
+
+## Held-Out Scores
+
+| K | forward cost | gradient cost | default `(alpha,beta)` | default only | oracle subset | forward anchor | forward minus default | gradient anchor | gradient minus default | gradient minus forward | gradient minus shuffled | gradient capture vs default |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 0.67% | 0.67% | (6.0,0.35) | 3.189+/-2.177 | 8.116+/-1.474 | 3.845+/-1.755 | 0.656+/-0.914 | 2.923+/-2.632 | -0.266+/-2.173 | -0.922+/-1.414 | -0.476+/-0.942 | 0.057+/-0.292 |
+| 16 | 0.33% | 0.33% | (3.0,0.25) | 1.627+/-1.681 | 6.804+/-2.712 | 2.249+/-1.258 | 0.622+/-0.611 | 1.761+/-1.375 | 0.134+/-1.305 | -0.488+/-0.841 | 0.073+/-0.400 | 0.120+/-0.133 |
+| 32 | 0.17% | 0.17% | (2.0,0.00) | 0.197+/-1.357 | 6.026+/-2.451 | 1.309+/-0.761 | 1.112+/-0.830 | 1.317+/-0.689 | 1.120+/-0.826 | 0.008+/-0.169 | 0.357+/-0.409 | 0.171+/-0.058 |
+
+## Run Log
+
+```text
+DFW-E070 validation-gradient group probe
+host=devvm52518.cln0.facebook.com python=/usr/local/fbcode/platform010/bin/python3.12 compute_status=REAL_GPU torch=2.14.1+cu130 cuda_available=True cuda_version=13.0 device=NVIDIA PG509-210
+model=torch_two_layer_binary_classifier dim=97 N=8 K=(8, 16, 32) rounds=36 eta=0.04
+spread=16 probe_batch=96 slices=4
+pilot_seeds=3 heldout_seeds=12
+
+CELL K=8 fwd_cost=0.67% grad_cost=0.67% fixed_pair=(4.0,0.60) default_pair=(6.0,0.35) groups=0.25,1,4 default_only=  3.189+/-2.177 oracle_subset=  8.116+/-1.474 forward_anchor=  3.845+/-1.755 forward-default=  0.656+/-0.914 grad_anchor=  2.923+/-2.632 grad-default= -0.266+/-2.173 grad-forward= -0.922+/-1.414 grad-shuffled= -0.476+/-0.942 grad_capture_vs_default=  0.057+/-0.292
+CELL K=16 fwd_cost=0.33% grad_cost=0.33% fixed_pair=(2.0,0.55) default_pair=(3.0,0.25) groups=0.25,1,4 default_only=  1.627+/-1.681 oracle_subset=  6.804+/-2.712 forward_anchor=  2.249+/-1.258 forward-default=  0.622+/-0.611 grad_anchor=  1.761+/-1.375 grad-default=  0.134+/-1.305 grad-forward= -0.488+/-0.841 grad-shuffled=  0.073+/-0.400 grad_capture_vs_default=  0.120+/-0.133
+CELL K=32 fwd_cost=0.17% grad_cost=0.17% fixed_pair=(2.0,0.05) default_pair=(2.0,0.00) groups=0.25,1,4 default_only=  0.197+/-1.357 oracle_subset=  6.026+/-2.451 forward_anchor=  1.309+/-0.761 forward-default=  1.112+/-0.830 grad_anchor=  1.317+/-0.689 grad-default=  1.120+/-0.826 grad-forward=  0.008+/-0.169 grad-shuffled=  0.357+/-0.409 grad_capture_vs_default=  0.171+/-0.058
+
+DECISION VALIDATION_GRADIENT_PROBE_NEGATIVE
+compute_status=REAL_GPU
+```
