@@ -95,6 +95,54 @@ Read precisely:
 So the mechanism is real but under-extracted.  This is not yet a polished
 method.
 
+### E062: Online Tracker Does Not Improve Raw Group Probes
+
+E062 tested a quadratic/EMA response tracker over the same LR groups.  This was
+the first attempt to turn the grouped arms into an online hyperparameter
+surface model.
+
+Decision: `FROZEN_GROUP_PROBE_LIVE_TRACKER_TIES`.
+
+Readout:
+
+- raw grouped probes remained positive;
+- the tracker mostly selected the same `group_mean2_l40_t2` rule as raw;
+- when it differed at `K=32`, the improvement over raw was tiny
+  (`+0.006+/-0.024`, `+0.007+/-0.062`);
+- therefore GP/response-surface machinery is not justified yet by these rows.
+
+The important correction is that "fit a surface" is not automatically better
+than "score three frozen group means."  The next model has to beat raw grouped
+probes, not merely beat the fixed default arm.
+
+### E063: Frozen Group Probes Replicate Across K
+
+E063 froze the E060/E061 raw rule (`group_mean2_l40_t2`) and repeated it with
+12 held-out seeds.  No pilot-selected policy was allowed to move.
+
+Decision: `RAW_GROUP_PROBE_REPLICATES`.
+
+| spread | K | fixed | oracle | raw | raw minus fixed | raw minus shuffled | capture | cost |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 8 | 5.055 | 5.055 | 5.055 | 0.000+/-0.000 | 0.000+/-0.000 | 0.000+/-0.000 | 0.45% |
+| 16 | 8 | 2.988 | 5.931 | 3.239 | 0.251+/-0.153 | 0.447+/-0.207 | 0.072+/-0.041 | 1.34% |
+| 1 | 16 | 2.832 | 2.832 | 2.832 | 0.000+/-0.000 | 0.000+/-0.000 | 0.000+/-0.000 | 0.22% |
+| 16 | 16 | 1.685 | 4.570 | 1.847 | 0.162+/-0.118 | 0.439+/-0.130 | 0.058+/-0.040 | 0.67% |
+| 1 | 32 | 1.554 | 1.554 | 1.554 | 0.000+/-0.000 | 0.000+/-0.000 | 0.000+/-0.000 | 0.11% |
+| 16 | 32 | 1.090 | 5.898 | 1.361 | 0.271+/-0.147 | 0.824+/-0.303 | 0.053+/-0.027 | 0.33% |
+
+This is the cleanest favorable stationary result so far:
+
+- exact zero effect under exchangeability (`spread=1`);
+- positive held-out gains at `K=8,16,32` when the LR arms are deliberately
+  non-exchangeable;
+- positive shuffled-control gaps;
+- sub-1.5% probe cost.
+
+It is still a small-capture result, not a "smash everything" result.  The value
+is repeatability and collapse behavior: the signal is real, conservative, and
+not fabricated by noisy ranking.
+
 ## Current Interpretation
 
 The favorable result is:
@@ -108,7 +156,14 @@ The limitation is:
 > Fixed damped rules capture only a small fraction of oracle headroom and are
 > sensitive to K/regime.
 
-That limitation points directly to an online response-surface tracker.
+E062 says the first online tracker does not solve that limitation.  So the
+current live branch is narrower and firmer:
+
+> use parallel workers to create optimizer-arm non-exchangeability, probe
+> group-level candidate updates, and aggregate conservatively.
+
+The next question is economic rather than philosophical: how cheap can the
+probe be while retaining the E063 edge?
 
 ## New Program: Track The Hyperparameter Surface
 
@@ -182,7 +237,7 @@ Move to GP only after the quadratic beats:
 
 ## Next Experiments
 
-### E062: Online Quadratic LR Tracker
+### E062: Online Quadratic LR Tracker  [DONE]
 
 Use aligned rounds.  Worker groups are placed at three or five
 `log_lr_multiplier` points around a center.  Each round:
@@ -201,13 +256,19 @@ Controls:
 - oracle group choice;
 - best fixed LR group chosen in hindsight.
 
-Stop rule:
+Outcome:
 
-- If the tracker beats fixed grouped probes and shuffled controls, the
-  hyperparameter-tracking story is live.
-- If it ties E060/E061, the GP idea is premature.
+- tracker tied raw grouped probes;
+- GP/response-surface work is premature until it beats raw grouped probes.
 
-### E063: Cost/Noise Sweep
+### E063: Frozen Group-Probe Replication  [DONE]
+
+Freeze `group_mean2_l40_t2`, repeat across `K in {8,16,32}`, and verify
+collapse at spread 1.
+
+Outcome: replicated.  This is now the baseline to beat.
+
+### E064: Cost/Noise Sweep
 
 Vary probe batch/slices:
 
@@ -219,9 +280,9 @@ slices in {1, 2, 4}
 Measure the capture/cost frontier.  The method only matters if it keeps a
 positive edge below roughly 1-3% round overhead.
 
-### E064: Add A Second Hyperparameter Dimension
+### E065: Add A Second Hyperparameter Dimension
 
-After E062:
+After the cost/noise frontier:
 
 ```text
 log_lr_multiplier x K_multiplier
@@ -235,9 +296,9 @@ log_lr_multiplier x inner_momentum
 
 This is where a GP becomes more natural.
 
-### E065: Real Workload Path
+### E066: Real Workload Path
 
-Take the best E062/E063 setting to a real small network path.  Do not claim the
+Take the best E063/E064 setting to a real small network path.  Do not claim the
 paper from toy rows alone.
 
 ## Paper Shape
@@ -255,8 +316,10 @@ Better claim:
 That claim fits the favorable evidence:
 
 - E060/E061 show the stationary grouped-LR mechanism is live.
+- E063 replicates the frozen group-probe rule across K with exact collapse.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
+- E062 shows online surface tracking is not yet useful beyond raw grouped
+  probes.
 - Earlier schedule-transfer failures motivate online tracking instead of
   offline retuning.
-
