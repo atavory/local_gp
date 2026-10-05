@@ -143,6 +143,39 @@ It is still a small-capture result, not a "smash everything" result.  The value
 is repeatability and collapse behavior: the signal is real, conservative, and
 not fabricated by noisy ranking.
 
+### E064: Sub-1% Probe Cost Frontier Is Live
+
+E064 kept the E063 method fixed (`lambda=0.4`, `tau=2.0`) and swept only the
+probe budget: examples per forward slice and number of independent slices.
+
+Decision: `SUB1_PERCENT_COST_FRONTIER_LIVE`.
+
+Representative rows:
+
+| K | batch | slices | cost | raw minus fixed | raw minus shuffled | capture |
+|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 48 | 1 | 0.08% | -0.008+/-0.166 | 0.405+/-0.262 | -0.007+/-0.044 |
+| 8 | 96 | 4 | 0.67% | 0.190+/-0.161 | 0.647+/-0.336 | 0.051+/-0.043 |
+| 8 | 384 | 1 | 0.67% | 0.185+/-0.163 | 0.611+/-0.322 | 0.051+/-0.043 |
+| 16 | 48 | 1 | 0.04% | -0.030+/-0.101 | 0.273+/-0.147 | -0.008+/-0.041 |
+| 16 | 48 | 4 | 0.17% | 0.168+/-0.121 | 0.525+/-0.255 | 0.048+/-0.034 |
+| 16 | 192 | 4 | 0.67% | 0.207+/-0.148 | 0.535+/-0.273 | 0.059+/-0.037 |
+| 32 | 48 | 1 | 0.02% | -0.027+/-0.116 | 0.260+/-0.143 | -0.011+/-0.047 |
+| 32 | 48 | 4 | 0.08% | 0.183+/-0.121 | 0.483+/-0.216 | 0.044+/-0.034 |
+| 32 | 192 | 4 | 0.33% | 0.210+/-0.132 | 0.497+/-0.228 | 0.048+/-0.044 |
+
+This is the cost shape the project needed:
+
+- one tiny forward slice is too noisy and can be negative;
+- several sub-1% budgets recover the E063 edge;
+- increasing beyond that gives only small incremental returns;
+- the shuffled-control gap stays positive, so the probe is not merely adding
+  variance.
+
+The strongest practical default from this table is **4 slices of 48-96 examples
+per group**, depending on K.  That lives around `0.08%-0.67%` of a round in
+this setup.
+
 ## Current Interpretation
 
 The favorable result is:
@@ -156,14 +189,15 @@ The limitation is:
 > Fixed damped rules capture only a small fraction of oracle headroom and are
 > sensitive to K/regime.
 
-E062 says the first online tracker does not solve that limitation.  So the
-current live branch is narrower and firmer:
+E062 says the first online tracker does not solve that limitation.  E064 says
+the frozen grouped-probe method is cheap enough to matter.  So the current live
+branch is narrower and firmer:
 
 > use parallel workers to create optimizer-arm non-exchangeability, probe
 > group-level candidate updates, and aggregate conservatively.
 
-The next question is economic rather than philosophical: how cheap can the
-probe be while retaining the E063 edge?
+The immediate next question is transfer: does the same grouped-arm probe rule
+survive outside this synthetic/stationary bed?
 
 ## New Program: Track The Hyperparameter Surface
 
@@ -268,7 +302,7 @@ collapse at spread 1.
 
 Outcome: replicated.  This is now the baseline to beat.
 
-### E064: Cost/Noise Sweep
+### E064: Cost/Noise Sweep  [DONE]
 
 Vary probe batch/slices:
 
@@ -280,9 +314,13 @@ slices in {1, 2, 4}
 Measure the capture/cost frontier.  The method only matters if it keeps a
 positive edge below roughly 1-3% round overhead.
 
+Outcome: sub-1% frontier is live.  Several budgets in `0.08%-0.67%` preserve
+the edge; single-slice ultra-cheap budgets are too noisy.
+
 ### E065: Add A Second Hyperparameter Dimension
 
-After the cost/noise frontier:
+After the cost/noise frontier, test whether the same probe signal scales beyond
+one designed hyperparameter:
 
 ```text
 log_lr_multiplier x K_multiplier
@@ -301,6 +339,19 @@ This is where a GP becomes more natural.
 Take the best E063/E064 setting to a real small network path.  Do not claim the
 paper from toy rows alone.
 
+### E067: Moving-Arm / GP Bandit
+
+Only after E066.  Use the workers as a live design over hyperparameters:
+
+```text
+arms_t = GP/UCB/Thompson points over log_lr, K, momentum
+probes_t = cheap values of group-mean candidate updates
+server_t = conservative aggregate around posterior-best arms
+```
+
+The baseline is not "same fixed hyperparameters."  The baseline is E064's
+frozen grouped arms plus offline tuned schedules.
+
 ## Paper Shape
 
 The paper should not claim "Bayesian probes beat averaging" in full generality.
@@ -317,6 +368,7 @@ That claim fits the favorable evidence:
 
 - E060/E061 show the stationary grouped-LR mechanism is live.
 - E063 replicates the frozen group-probe rule across K with exact collapse.
+- E064 shows the edge survives below 1% probe overhead.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped

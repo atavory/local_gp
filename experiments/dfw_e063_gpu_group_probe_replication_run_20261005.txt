@@ -1,0 +1,14 @@
+DFW-E063 grouped LR probe replication
+host=devvm52518.cln0.facebook.com python=/usr/local/fbcode/platform010/bin/python3.12 compute_status=REAL_GPU torch=2.14.1+cu130 cuda_available=True cuda_version=13.0 device=NVIDIA PG509-210
+model=torch_two_layer_binary_classifier dim=97 N=(8,) K=(8, 16, 32) rounds=36 eta=0.04
+pilot_seeds=3 heldout_seeds=12 spread_values=(1.0, 16.0) select_batch=384 raw_spec=group_mean2_l40_t2
+
+CELL spread=1 N=8 K=8 fixed_pair=(6.0,0.35) groups=1 fixed=  5.055+/-0.772 oracle=  5.055+/-0.772 raw=  5.055+/-0.772 raw-fixed=  0.000+/-0.000 raw-shuffled=  0.000+/-0.000 capture=  0.000+/-0.000 cost=0.45%
+CELL spread=16 N=8 K=8 fixed_pair=(3.0,0.40) groups=0.25,1,4 fixed=  2.988+/-0.377 oracle=  5.931+/-0.871 raw=  3.239+/-0.427 raw-fixed=  0.251+/-0.153 raw-shuffled=  0.447+/-0.207 capture=  0.072+/-0.041 cost=1.34%
+CELL spread=1 N=8 K=16 fixed_pair=(4.0,0.15) groups=1 fixed=  2.832+/-0.340 oracle=  2.832+/-0.340 raw=  2.832+/-0.340 raw-fixed=  0.000+/-0.000 raw-shuffled=  0.000+/-0.000 capture=  0.000+/-0.000 cost=0.22%
+CELL spread=16 N=8 K=16 fixed_pair=(2.0,0.20) groups=0.25,1,4 fixed=  1.685+/-0.212 oracle=  4.570+/-0.537 raw=  1.847+/-0.282 raw-fixed=  0.162+/-0.118 raw-shuffled=  0.439+/-0.130 capture=  0.058+/-0.040 cost=0.67%
+CELL spread=1 N=8 K=32 fixed_pair=(2.0,0.00) groups=1 fixed=  1.554+/-0.117 oracle=  1.554+/-0.117 raw=  1.554+/-0.117 raw-fixed=  0.000+/-0.000 raw-shuffled=  0.000+/-0.000 capture=  0.000+/-0.000 cost=0.11%
+CELL spread=16 N=8 K=32 fixed_pair=(2.0,0.00) groups=0.25,1,4 fixed=  1.090+/-0.429 oracle=  5.898+/-1.637 raw=  1.361+/-0.400 raw-fixed=  0.271+/-0.147 raw-shuffled=  0.824+/-0.303 capture=  0.053+/-0.027 cost=0.33%
+
+DECISION RAW_GROUP_PROBE_REPLICATES
+compute_status=REAL_GPU
