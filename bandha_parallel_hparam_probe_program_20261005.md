@@ -13,6 +13,41 @@ hyperparameters, use cheap probe sets to estimate the value of the returned
 candidate updates, and aggregate through a conservative posterior rule that
 shrinks back to averaging when the evidence is weak.
 
+## Deployment Claim
+
+The useful target is **not** "beat a free tuned default."  A tuned default is
+not free.  It is a sweep over whole training runs, repeated whenever `K`,
+model, data, batch size, optimizer, or training phase changes.
+
+The useful target is:
+
+> Match the per-regime tuned schedule without running a new tuning sweep, at
+> sub-1% to low-single-digit probe overhead, and collapse to the default when
+> the probe signal is uninformative.
+
+This already has one strong synthetic support point from the earlier
+round-level `(alpha,beta)` probe-control branch:
+
+| K | K=8 schedule transferred | per-K retuned schedule | sparse probe argmax, no retuned design | probe overhead |
+|---:|---:|---:|---:|---:|
+| 8 | 6.676 | 6.668 | 6.308-6.357 | 0.41%-1.22% |
+| 16 | 0.998 | 3.918 | 3.676-3.733 | 0.20%-0.61% |
+| 32 | -9.745 | 2.406 | 2.204-2.234 | 0.10%-0.30% |
+| 64 | -28.857 | 1.613 | 1.545-1.564 | 0.05%-0.15% |
+
+Readout:
+
+- the schedule tuned at `K=8` fails catastrophically when transferred to
+  `K=16,32,64`;
+- the per-K retuned schedule recovers, but it costs a new sweep for each K;
+- the sparse probe controller uses the same 12 design points across K and
+  recovers roughly 85%-96% of the per-round oracle gap at tiny per-run cost.
+
+That is the clean "you should use this" claim: probes buy online retuning
+inside the training run.  The open problem is making the same story survive the
+default-only controls and real-workload path, especially for hyperparameter-arm
+selection where E066-E070 show the current same-round extractor is still weak.
+
 ## Why This Is Different
 
 The failed stationary setup was:
