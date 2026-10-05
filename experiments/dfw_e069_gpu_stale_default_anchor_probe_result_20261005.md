@@ -1,0 +1,34 @@
+# DFW-E069 Result - Stale-Default Anchor Probe
+
+Diagnostic: stale/default-wrong anchor with `lr_multiplier=0.25`.
+
+Decision label: `DEFAULT_ANCHORED_PROBE_NEGATIVE`
+
+## Compute Status
+
+`REAL_GPU` via PyTorch CUDA: `torch=2.14.1+cu130 cuda_available=True cuda_version=13.0 device=NVIDIA PG509-210`.
+
+## Held-Out Scores
+
+| K | cost | fixed `(alpha,beta)` | default `(alpha,beta)` | fixed all | stale-anchor only | oracle subset | oracle single | all-prior raw | all-prior minus default | anchored | anchored minus fixed | anchored minus default | default minus fixed | anchored minus shuffled | capture vs default |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 0.67% | (5.0,0.00) | (18.0,0.15) | 0.569+/-3.941 | 2.049+/-1.330 | 9.697+/-3.126 | 7.130+/-2.369 | 1.303+/-3.063 | -0.746+/-3.861 | -1.610+/-7.113 | -2.179+/-3.277 | -3.659+/-7.755 | 1.479+/-4.725 | 12.612+/-15.533 | -0.233+/-0.516 |
+| 16 | 0.33% | (2.0,0.05) | (9.0,0.05) | 0.935+/-1.194 | 2.171+/-3.213 | 9.035+/-6.251 | 7.243+/-6.004 | 1.114+/-1.096 | -1.058+/-4.215 | 1.611+/-1.134 | 0.676+/-1.651 | -0.561+/-2.980 | 1.236+/-4.324 | 4.471+/-6.609 | 0.034+/-0.212 |
+| 32 | 0.17% | (2.0,0.00) | (5.0,0.00) | -0.764+/-3.492 | 7.549+/-14.555 | 24.863+/-33.751 | 20.138+/-29.268 | 0.549+/-1.249 | -7.000+/-15.744 | 6.171+/-9.208 | 6.935+/-12.673 | -1.378+/-5.527 | 8.313+/-18.015 | 10.001+/-17.679 | 0.117+/-0.102 |
+
+## Run Log
+
+```text
+DFW-E069 default-anchored probe admission
+host=devvm52518.cln0.facebook.com python=/usr/local/fbcode/platform010/bin/python3.12 compute_status=REAL_GPU torch=2.14.1+cu130 cuda_available=True cuda_version=13.0 device=NVIDIA PG509-210
+model=torch_two_layer_binary_classifier dim=97 N=8 K=(8, 16, 32) rounds=36 eta=0.04
+spread=16 probe_batch=96 slices=4 lam=0.4 tau=2.0
+pilot_seeds=3 heldout_seeds=12
+
+CELL K=8 cost=0.67% fixed_pair=(5.0,0.00) stale_anchor_pair=(18.0,0.15) groups=0.25,1,4 fixed_all=  0.569+/-3.941 stale_anchor_only=  2.049+/-1.330 oracle_subset=  9.697+/-3.126 oracle_single=  7.130+/-2.369 allprior_raw=  1.303+/-3.063 allprior-default= -0.746+/-3.861 anchored= -1.610+/-7.113 anchored-fixed= -2.179+/-3.277 anchored-default= -3.659+/-7.755 default-fixed=  1.479+/-4.725 anchored-shuffled= 12.612+/-15.533 capture_vs_default= -0.233+/-0.516
+CELL K=16 cost=0.33% fixed_pair=(2.0,0.05) stale_anchor_pair=(9.0,0.05) groups=0.25,1,4 fixed_all=  0.935+/-1.194 stale_anchor_only=  2.171+/-3.213 oracle_subset=  9.035+/-6.251 oracle_single=  7.243+/-6.004 allprior_raw=  1.114+/-1.096 allprior-default= -1.058+/-4.215 anchored=  1.611+/-1.134 anchored-fixed=  0.676+/-1.651 anchored-default= -0.561+/-2.980 default-fixed=  1.236+/-4.324 anchored-shuffled=  4.471+/-6.609 capture_vs_default=  0.034+/-0.212
+CELL K=32 cost=0.17% fixed_pair=(2.0,0.00) stale_anchor_pair=(5.0,0.00) groups=0.25,1,4 fixed_all= -0.764+/-3.492 stale_anchor_only=  7.549+/-14.555 oracle_subset= 24.863+/-33.751 oracle_single= 20.138+/-29.268 allprior_raw=  0.549+/-1.249 allprior-default= -7.000+/-15.744 anchored=  6.171+/-9.208 anchored-fixed=  6.935+/-12.673 anchored-default= -1.378+/-5.527 default-fixed=  8.313+/-18.015 anchored-shuffled= 10.001+/-17.679 capture_vs_default=  0.117+/-0.102
+
+DECISION DEFAULT_ANCHORED_PROBE_NEGATIVE
+compute_status=REAL_GPU
+```

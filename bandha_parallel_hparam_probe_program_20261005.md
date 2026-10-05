@@ -288,6 +288,26 @@ cheap."  It is a proxy/extraction failure: the held-out probe signal can see
 that bad exploratory arms exist, but it does not reliably identify departures
 from a strong default that improve final held-out value.
 
+### E069: Bad/Stale Default Does Not Rescue The Current Extractor
+
+E069 inverted the E066-E068 control: instead of anchoring on the known default
+LR group (`1.0`), it anchored on a deliberately stale/wrong low-LR group
+(`0.25`) and asked whether probes could justify leaving it.
+
+Decision: `DEFAULT_ANCHORED_PROBE_NEGATIVE`.
+
+| K | cost | stale-anchor only | oracle subset | anchored | anchored minus stale anchor | capture vs stale anchor |
+|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 0.67% | 2.049+/-1.330 | 9.697+/-3.126 | -1.610+/-7.113 | -3.659+/-7.755 | -0.233+/-0.516 |
+| 16 | 0.33% | 2.171+/-3.213 | 9.035+/-6.251 | 1.611+/-1.134 | -0.561+/-2.980 | 0.034+/-0.212 |
+| 32 | 0.17% | 7.549+/-14.555 | 24.863+/-33.751 | 6.171+/-9.208 | -1.378+/-5.527 | 0.117+/-0.102 |
+
+This kills the naive "bad default" rescue for the existing softmax probe
+extractor.  The branch still has oracle headroom, but the probe forward
+differences do not extract it.  The next test should change the measurement,
+not the anchoring rule: use a validation-gradient marginal-value score
+`<g_val, u_i>` so one backward pass gives scores for all arms.
+
 ## Current Interpretation
 
 The favorable result is:
@@ -308,12 +328,13 @@ hyperparameter dimension creates much more headroom but needs a better
 extractor.  E066 says the extractor must be default-anchored rather than a
 free soft average over all exploratory arms.  E067 says default anchoring is
 safer but still not enough to beat a known strong default.  E068 says merely
-buying more same-round probe precision does not rescue that branch.  So the
-current live branch is:
+buying more same-round probe precision does not rescue that branch.  E069 says
+even a stale/wrong default does not rescue the current forward-difference
+extractor.  So the current live branch is:
 
 > use parallel workers to create optimizer-arm non-exchangeability, probe
 > group-level candidate updates, and aggregate conservatively only when the
-> default is unknown, stale, drifting, or deliberately being searched.
+> measurement can identify useful departures from the default.
 
 The immediate next question is transfer and extraction:
 
@@ -323,6 +344,8 @@ The immediate next question is transfer and extraction:
   E065's large 2D oracle headroom without losing to the default-only control?
 - regime: can probes win when the default is stale or the best hyperparameter
   changes, rather than when a tuned default is already known?
+- measurement: does a validation-gradient marginal-value score improve capture
+  over forward-difference probes?
 
 ## New Program: Track The Hyperparameter Surface
 
@@ -503,12 +526,33 @@ noise floor.
 Outcome: negative.  The high-budget rule ties default at K=16 but still loses at
 K=8 and K=32.  Same-round probe precision is not enough.
 
-### E069: Real Workload Path
+### E069: Stale-Default Anchor Probe  [DONE]
+
+Anchor on the deliberately stale/wrong LR group (`0.25`) and ask whether
+same-round probes can justify leaving it.
+
+Outcome: negative.  The current forward-difference softmax extractor still
+does not extract the oracle gap.
+
+### E070: Validation-Gradient Marginal-Value Score
+
+Replace per-arm forward finite differences with one validation backward:
+
+```text
+g_V = grad L_V(theta)
+score_i = <g_V, alpha * (u_i + beta v)>
+```
+
+This gives first-order scores for all arms for roughly one backward pass rather
+than one forward per arm.  It directly attacks the shared extraction failure
+instead of opening another anchor/schedule variant.
+
+### E071: Real Workload Path
 
 Take only a branch that survives E067's control to a real small network path.
 Do not claim the paper from toy rows alone.
 
-### E070: Moving-Arm / GP Bandit
+### E072: Moving-Arm / GP Bandit
 
 Use the workers as a live design over hyperparameters:
 
@@ -550,6 +594,8 @@ That claim fits the favorable evidence:
   bed; the current extractor still cannot justify departures from the default.
 - E068 shows doubling the probe budget still does not fix this, pointing to
   value-proxy/extraction rather than simple probe cheapness.
+- E069 shows a bad/stale anchor is not enough for the existing extractor; the
+  measurement itself must improve.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped
