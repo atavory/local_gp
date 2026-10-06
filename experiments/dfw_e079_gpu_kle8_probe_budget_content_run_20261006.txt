@@ -1,0 +1,24 @@
+DFW-E079 K<=8 probe-content budget sweep
+host=devvm52518.cln0.facebook.com python=/usr/local/fbcode/platform010/bin/python3.12 compute_status=REAL_GPU torch=2.14.1+cu130 cuda_available=True cuda_version=13.0 device=NVIDIA PG509-210
+design=scaled policy=soft_std2
+K=(4, 8) N=(8, 16) select=(384, 768, 1536)
+pilot_seeds=2 heldout_seeds=13
+
+CELL select=384 N=8 K=4 selector=  9.730+/-2.501 fixed=  8.903+/-3.125 schedule=  9.234+/-3.417 best_control=  9.419+/-3.279 minus_fixed=  0.827+/-0.759 minus_schedule=  0.496+/-0.975 minus_best_control=  0.311+/-0.842 minus_shuffled= -0.003+/-0.354 capture=  0.159+/-0.204
+CELL select=384 N=8 K=8 selector=  5.301+/-1.418 fixed=  4.696+/-1.999 schedule=  4.306+/-2.472 best_control=  4.893+/-2.063 minus_fixed=  0.605+/-0.641 minus_schedule=  0.995+/-1.125 minus_best_control=  0.409+/-0.705 minus_shuffled= -0.035+/-0.259 capture=  0.150+/-0.265
+CELL select=384 N=16 K=4 selector=  9.199+/-3.449 fixed=  7.039+/-5.673 schedule=  4.614+/-7.699 best_control=  7.969+/-4.557 minus_fixed=  2.160+/-2.281 minus_schedule=  4.585+/-4.309 minus_best_control=  1.230+/-1.321 minus_shuffled=  0.274+/-0.302 capture=  0.166+/-0.257
+CELL select=384 N=16 K=8 selector=  4.348+/-2.554 fixed=  1.858+/-5.252 schedule=  0.738+/-6.199 best_control=  3.181+/-3.546 minus_fixed=  2.490+/-2.732 minus_schedule=  3.609+/-3.666 minus_best_control=  1.167+/-1.232 minus_shuffled=  0.126+/-0.200 capture=  0.211+/-0.304
+CELL select=768 N=8 K=4 selector=  9.735+/-2.430 fixed=  8.903+/-3.125 schedule=  9.234+/-3.417 best_control=  9.419+/-3.279 minus_fixed=  0.832+/-0.810 minus_schedule=  0.501+/-1.031 minus_best_control=  0.316+/-0.897 minus_shuffled= -0.032+/-0.310 capture=  0.142+/-0.228
+CELL select=768 N=8 K=8 selector=  5.330+/-1.358 fixed=  4.696+/-1.999 schedule=  4.306+/-2.472 best_control=  4.893+/-2.063 minus_fixed=  0.634+/-0.700 minus_schedule=  1.024+/-1.174 minus_best_control=  0.437+/-0.760 minus_shuffled= -0.012+/-0.217 capture=  0.138+/-0.293
+CELL select=768 N=16 K=4 selector=  9.101+/-3.520 fixed=  7.039+/-5.673 schedule=  4.614+/-7.699 best_control=  7.969+/-4.557 minus_fixed=  2.063+/-2.197 minus_schedule=  4.487+/-4.228 minus_best_control=  1.132+/-1.247 minus_shuffled=  0.165+/-0.283 capture=  0.148+/-0.266
+CELL select=768 N=16 K=8 selector=  4.279+/-2.613 fixed=  1.858+/-5.252 schedule=  0.738+/-6.199 best_control=  3.181+/-3.546 minus_fixed=  2.421+/-2.667 minus_schedule=  3.541+/-3.602 minus_best_control=  1.098+/-1.178 minus_shuffled=  0.038+/-0.194 capture=  0.196+/-0.313
+CELL select=1536 N=8 K=4 selector=  9.765+/-2.424 fixed=  8.903+/-3.125 schedule=  9.234+/-3.417 best_control=  9.419+/-3.279 minus_fixed=  0.862+/-0.835 minus_schedule=  0.531+/-1.042 minus_best_control=  0.346+/-0.908 minus_shuffled=  0.008+/-0.327 capture=  0.143+/-0.240
+CELL select=1536 N=8 K=8 selector=  5.330+/-1.374 fixed=  4.696+/-1.999 schedule=  4.306+/-2.472 best_control=  4.893+/-2.063 minus_fixed=  0.634+/-0.693 minus_schedule=  1.023+/-1.162 minus_best_control=  0.437+/-0.748 minus_shuffled= -0.014+/-0.223 capture=  0.135+/-0.299
+CELL select=1536 N=16 K=4 selector=  9.173+/-3.494 fixed=  7.039+/-5.673 schedule=  4.614+/-7.699 best_control=  7.969+/-4.557 minus_fixed=  2.134+/-2.247 minus_schedule=  4.559+/-4.261 minus_best_control=  1.204+/-1.328 minus_shuffled=  0.205+/-0.296 capture=  0.164+/-0.271
+CELL select=1536 N=16 K=8 selector=  4.333+/-2.606 fixed=  1.858+/-5.252 schedule=  0.738+/-6.199 best_control=  3.181+/-3.546 minus_fixed=  2.475+/-2.693 minus_schedule=  3.595+/-3.619 minus_best_control=  1.152+/-1.247 minus_shuffled=  0.080+/-0.252 capture=  0.213+/-0.315
+
+POOLED select=384 minus_fixed=  1.521+/-0.924 minus_schedule=  2.421+/-1.495 minus_best_control=  0.779+/-0.525 minus_shuffled=  0.090+/-0.142 capture=  0.171+/-0.126
+POOLED select=768 minus_fixed=  1.487+/-0.902 minus_schedule=  2.388+/-1.473 minus_best_control=  0.746+/-0.515 minus_shuffled=  0.040+/-0.126 capture=  0.156+/-0.134
+POOLED select=1536 minus_fixed=  1.526+/-0.917 minus_schedule=  2.427+/-1.482 minus_best_control=  0.785+/-0.537 minus_shuffled=  0.069+/-0.137 capture=  0.164+/-0.137
+DECISION PROBE_CONTENT_BUDGET_NULL
+compute_status=REAL_GPU

@@ -1005,7 +1005,7 @@ experiments/dfw_e078_gpu_kle8_probe_content_replication_run_20261006.txt
 experiments/dfw_e078_gpu_kle8_probe_content_replication_LEGITIMACY_CHECK_20261006.md
 ```
 
-### E079: K<=8 Probe-Budget Content Sweep  [RUNNING]
+### E079: K<=8 Probe-Budget Content Sweep  [DONE]
 
 Now that E078 proves probe content at `K<=8`, sweep the validation/probe budget
 on the same frozen selector:
@@ -1027,9 +1027,78 @@ Purpose:
 - keep GP/bandit work blocked until the current selector's cost frontier is
   measured.
 
-Queued on `assafcohen__devvm23211` under the double_fan worker protocol.
+The first queued worker attempt on `assafcohen__devvm23211` returned
+`NO_GPU_HARNESS` because that host had a GPU but no importable `torch` in the
+requested Python.  The real run was executed directly on the known-good
+`devvm52518` GPU/PyTorch host.
 
-### E080: Moving-Arm / GP Bandit  [BLOCKED UNTIL E079]
+Decision: `PROBE_CONTENT_BUDGET_NULL`.
+
+Compute: `REAL_GPU` on `devvm52518`, PyTorch CUDA
+`2.14.1+cu130`, `NVIDIA PG509-210`.
+
+Pooled result by probe batch:
+
+| select | selector - fixed | selector - best control | selector - shuffled | capture |
+|---:|---:|---:|---:|---:|
+| 384 | `+1.521+/-0.924` | `+0.779+/-0.525` | `+0.090+/-0.142` | `+0.171+/-0.126` |
+| 768 | `+1.487+/-0.902` | `+0.746+/-0.515` | `+0.040+/-0.126` | `+0.156+/-0.134` |
+| 1536 | `+1.526+/-0.917` | `+0.785+/-0.537` | `+0.069+/-0.137` | `+0.164+/-0.137` |
+
+Readout:
+
+- the selector/action family beat fixed and best implementable controls on
+  these seeds, with positive CIs;
+- the probe labels did **not** beat shuffled labels at any tested budget;
+- increasing probe batch size from 384 to 1536 did not materially increase
+  capture or shuffled contrast;
+- therefore E079 is not an actionable probe-content positive.  It says the
+  control family is useful on this seed slice, but the labels are not yet
+  proven to be the reason.
+
+This does not erase E078; it makes the immediate ambiguity sharper:
+
+```text
+E078, select=384, 33 heldout seeds: selector - shuffled = +0.242 +/- 0.081
+E079, select=384, 13 heldout seeds: selector - shuffled = +0.090 +/- 0.142
+```
+
+The next run should be high-power at the single cheapest budget (`select=384`),
+not a wider budget sweep.
+
+Artifacts:
+
+```text
+experiments/dfw_e079_gpu_kle8_probe_budget_content.py
+experiments/dfw_e079_gpu_kle8_probe_budget_content_result_20261006.md
+experiments/dfw_e079_gpu_kle8_probe_budget_content_run_20261006.txt
+experiments/dfw_e079_gpu_kle8_probe_budget_content_LEGITIMACY_CHECK_20261006.md
+```
+
+### E080: K<=8 Probe-Content Power Replication  [NEXT]
+
+Repeat only the cheapest/proven configuration with fresh pilot seeds and many
+held-out seeds:
+
+```text
+K      = {4, 8}
+N      = {8, 16}
+select = 384
+policy = soft_std2
+design = scaled
+pilot  = fresh 2-seed pilot
+heldout = >= 60 fresh seeds
+gate   = selector - shuffled > 0 and selector - fixed >= 0
+```
+
+Purpose:
+
+- decide whether E078 was real and E079 was underpowered/noisy;
+- test whether the probe labels remain useful under a fresh pilot;
+- keep the action-space/GP branch blocked until label content survives this
+  high-power replication.
+
+### E081: Moving-Arm / GP Bandit  [BLOCKED UNTIL E080]
 
 Use the workers as a live design over hyperparameters:
 
@@ -1044,8 +1113,9 @@ frozen grouped arms, the default-only arm, and offline tuned schedules.  E065
 is the reason to run this: 2D headroom exists and raw extraction is weak.  E066
 adds the constraint: the GP must be default-anchored or it will simply pay to
 include bad exploratory arms.  E078 adds the permission to continue: probe
-labels can beat shuffled labels in the restricted low-K regime.  E079 must
-show what that costs before adding a GP layer.
+labels can beat shuffled labels in the restricted low-K regime.  E079 says
+that result is not stable enough from a 13-seed budget sweep, so E080 must
+replicate label content at high power before adding a GP layer.
 
 ## Paper Shape
 
@@ -1102,8 +1172,10 @@ That claim fits the favorable evidence:
 - E078 isolates the probe-active `K<=8` cells and gives the actionable
   positive that E077 lacked: `selector - shuffled = +0.242+/-0.081` and
   `selector - fixed = +0.246+/-0.080`, both pooled CIs excluding zero.
-- E079 is running the budget frontier for that K<=8 effect before any GP
-  bandit or larger action-space claim.
+- E079 sweeps budgets on fresh seeds and fails the shuffled-label content gate:
+  the action family beats fixed/best-control, but not shuffled labels.
+- E080 is the deciding high-power replication for the K<=8 label-content
+  claim.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped
