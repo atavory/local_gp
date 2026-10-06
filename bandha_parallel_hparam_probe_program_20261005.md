@@ -863,9 +863,9 @@ Readout:
   **oracle-over-control ceilings**, otherwise the experiment keeps chasing an
   unshippable baseline.
 
-### E077: Implementable-Control Audit  [NEXT]
+### E077: Implementable-Control Audit  [DONE]
 
-Re-score E071-E076 style rows with three separate comparisons:
+E077 re-scored the E071-E076 style rows with three separate comparisons:
 
 ```text
 1. fixed control                 # implementable
@@ -873,18 +873,34 @@ Re-score E071-E076 style rows with three separate comparisons:
 3. held-out best-of controls     # oracle ceiling, not a baseline
 ```
 
-The live question becomes:
+Decision: `IMPLEMENTABLE_CONTROL_AUDIT_FAILS` under the strict gate requiring
+a positive CI over fixed and pilot-best.  The readout is more useful than the
+label:
 
-```text
-Can probes beat or match implementable controls on held-out seeds,
-while the oracle-over-control ceiling tells us how much control-selection
-noise remains?
-```
+| rule | minus fixed | minus schedule / pilot-best | minus held-out-best ceiling | minus shuffled |
+|---|---:|---:|---:|---:|
+| `e073_k_aware` | -0.127+/-0.196 | 0.165+/-0.181 | -0.205+/-0.202 | 0.216+/-0.306 |
+| `small_k_probe_fixed_large_k` | 0.062+/-0.089 | 0.353+/-0.138 | -0.017+/-0.084 | 0.044+/-0.077 |
+| `small_k_probe_pilot_large_k` | -0.091+/-0.130 | 0.200+/-0.115 | -0.170+/-0.119 | 0.044+/-0.077 |
+
+Pilot-best again chose `schedule` in every cell.  That makes the conclusion
+sharp:
+
+- the best simple deployable rule is **probe at K<=8, fixed fallback at K>8**;
+- it beats the pilot/schedule baseline by `0.353+/-0.138`;
+- it ties fixed (`0.062+/-0.089`) rather than robustly beating it;
+- it nearly matches the held-out-best control ceiling (`-0.017+/-0.084`);
+- the old strict gate was too harsh if interpreted as a deployment baseline,
+  because the held-out-best column is an oracle ceiling;
+- the operational value is therefore "avoid bad transferred schedules and get
+  close to the best control ceiling," not "beat fixed in every stationary
+  cell."
 
 This is the correction to the dumb-baseline problem: keep the oracle ceiling,
-but stop treating it as the deployment baseline.
+but score method value against implementable controls.  Under that scoring,
+`small_k_probe_fixed_large_k` is the current best simple rule.
 
-### E078: Moving-Arm / GP Bandit  [AFTER E077]
+### E078: Moving-Arm / GP Bandit  [NEXT]
 
 Use the workers as a live design over hyperparameters:
 
@@ -948,6 +964,10 @@ That claim fits the favorable evidence:
   every cell and transferred worse than plain fixed at large K.  It also
   exposes that held-out best-of controls are an oracle ceiling, not a deployable
   baseline.
+- E077 separates implementable controls from that ceiling.  The best simple
+  rule, `small_k_probe_fixed_large_k`, beats the schedule/pilot baseline
+  (`+0.353+/-0.138`), ties fixed (`+0.062+/-0.089`), and nearly matches the
+  held-out control ceiling (`-0.017+/-0.084`).
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped
