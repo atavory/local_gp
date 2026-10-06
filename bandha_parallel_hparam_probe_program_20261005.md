@@ -817,29 +817,74 @@ Readout:
   among fixed, DiLoCo, and schedule, then only let probes override that when
   the margin is strong.
 
-### E076: Pilot-Best Control Fallback  [NEXT]
+### E076: Pilot-Best Control Fallback  [DONE]
 
-Repeat E075, but for `K > 8` fall back to the pilot-selected control family
-rather than to plain fixed.  This keeps the action implementable while matching
-the comparator more honestly:
+E076 repeated E075, but for `K > 8` fell back to the pilot-selected control
+family rather than to plain fixed.  This kept the action implementable and
+asked whether E075's remaining large-K loss was just the wrong fallback.
 
 ```text
 K <= 8:  scaled/soft_std2
 K >  8:  pilot-best among fixed, DiLoCo, and schedule
 ```
 
-If this clears:
+Decision: `PILOT_BEST_FALLBACK_FAILS`.
+
+| rule | pooled selector minus best control | selector minus shuffled | large-K selector minus best control | capture |
+|---|---:|---:|---:|---:|
+| `e073_k_aware` | 0.032+/-0.180 | 0.209+/-0.105 | -0.113+/-0.123 | -0.064+/-0.133 |
+| `pilot_best_large_k_fallback` | 0.012+/-0.172 | 0.060+/-0.046 | -0.153+/-0.060 | -0.135+/-0.117 |
+
+Pilot fallback chose `schedule` in every cell:
 
 ```text
-pooled selector-control > 0
-large-K selector-control >= 0
-selector-shuffled >= 0
+select=384 N=8  K=4:  schedule
+select=384 N=8  K=8:  schedule
+select=384 N=8  K=16: schedule
+select=384 N=8  K=32: schedule
+select=384 N=16 K=4:  schedule
+select=384 N=16 K=8:  schedule
+select=384 N=16 K=16: schedule
+select=384 N=16 K=32: schedule
 ```
 
-then the operational rule is simple: probe where the measured control headroom
-is large, otherwise use the best cheap control chosen from pilot data.
+Readout:
 
-### E077: Moving-Arm / GP Bandit  [AFTER E076]
+- E076 fails the method gate: pooled control gap does not exclude zero, and
+  large-K fallback is worse than the strict comparator;
+- the pilot schedule choice overfit the two pilot seeds and transferred worse
+  than plain fixed in the large-K held-out rows;
+- small-K probe rows were also weak on these fresh seeds, so E074's small
+  positive is not yet a stable deployment result;
+- the strict `best control` column is a useful ceiling but not an implementable
+  baseline, because it chooses the best of fixed, DiLoCo, and schedule per
+  held-out seed;
+- the next result table must separate **implementable controls** from
+  **oracle-over-control ceilings**, otherwise the experiment keeps chasing an
+  unshippable baseline.
+
+### E077: Implementable-Control Audit  [NEXT]
+
+Re-score E071-E076 style rows with three separate comparisons:
+
+```text
+1. fixed control                 # implementable
+2. pilot-selected control        # implementable, but may overfit
+3. held-out best-of controls     # oracle ceiling, not a baseline
+```
+
+The live question becomes:
+
+```text
+Can probes beat or match implementable controls on held-out seeds,
+while the oracle-over-control ceiling tells us how much control-selection
+noise remains?
+```
+
+This is the correction to the dumb-baseline problem: keep the oracle ceiling,
+but stop treating it as the deployment baseline.
+
+### E078: Moving-Arm / GP Bandit  [AFTER E077]
 
 Use the workers as a live design over hyperparameters:
 
@@ -898,8 +943,11 @@ That claim fits the favorable evidence:
   but the win is driven by K<=8 and the large-K cells should fall back.
 - E075 shows hard fallback improves the pooled control comparison
   (`+0.116+/-0.097`) but plain fixed is not the right large-K fallback against
-  a best-of fixed/DiLoCo/schedule comparator; the next fallback must be
-  pilot-selected among the implementable controls.
+  a best-of fixed/DiLoCo/schedule comparator.
+- E076 shows naive pilot-selected fallback also fails: it picked schedule in
+  every cell and transferred worse than plain fixed at large K.  It also
+  exposes that held-out best-of controls are an oracle ceiling, not a deployable
+  baseline.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped

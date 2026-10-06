@@ -1,0 +1,29 @@
+DFW-E076 pilot-best control fallback
+host=devvm52518.cln0.facebook.com python=/usr/local/fbcode/platform010/bin/python3.12 compute_status=REAL_GPU torch=2.14.1+cu130 cuda_available=True cuda_version=13.0 device=NVIDIA PG509-210
+design=scaled policies=(top3_mean,soft_std2)
+rule=K<=8 probe soft_std2; K>8 pilot-best control fallback
+K=(4, 8, 16, 32) N=(8, 16) select=(384,)
+pilot_seeds=2 heldout_seeds=12
+
+CELL select=384 N=8 K=4 rule=e073_k_aware fallback=probe control= 12.139+/-1.515 selector= 11.936+/-1.030 minus_control= -0.202+/-0.532 minus_shuffled=  0.206+/-0.207 capture=  0.043+/-0.212
+CELL select=384 N=8 K=4 rule=pilot_best_large_k_fallback fallback=probe control= 12.139+/-1.515 selector= 11.936+/-1.030 minus_control= -0.202+/-0.532 minus_shuffled=  0.206+/-0.207 capture=  0.043+/-0.212
+CELL select=384 N=8 K=8 rule=e073_k_aware fallback=probe control=  6.464+/-0.899 selector=  6.326+/-0.544 minus_control= -0.138+/-0.372 minus_shuffled=  0.094+/-0.138 capture= -0.047+/-0.228
+CELL select=384 N=8 K=8 rule=pilot_best_large_k_fallback fallback=probe control=  6.464+/-0.899 selector=  6.326+/-0.544 minus_control= -0.138+/-0.372 minus_shuffled=  0.094+/-0.138 capture= -0.047+/-0.228
+CELL select=384 N=8 K=16 rule=e073_k_aware fallback=probe control=  3.682+/-0.537 selector=  3.418+/-0.502 minus_control= -0.264+/-0.182 minus_shuffled=  0.193+/-0.321 capture= -0.388+/-0.344
+CELL select=384 N=8 K=16 rule=pilot_best_large_k_fallback fallback=schedule control=  3.682+/-0.537 selector=  3.391+/-0.639 minus_control= -0.291+/-0.181 minus_shuffled=  0.000+/-0.000 capture= -0.592+/-0.384
+CELL select=384 N=8 K=32 rule=e073_k_aware fallback=probe control=  2.286+/-0.320 selector=  2.135+/-0.396 minus_control= -0.152+/-0.149 minus_shuffled=  0.536+/-0.368 capture= -0.085+/-0.127
+CELL select=384 N=8 K=32 rule=pilot_best_large_k_fallback fallback=schedule control=  2.286+/-0.320 selector=  2.124+/-0.339 minus_control= -0.162+/-0.107 minus_shuffled=  0.000+/-0.000 capture= -0.276+/-0.239
+CELL select=384 N=16 K=4 rule=e073_k_aware fallback=probe control= 10.184+/-2.393 selector= 10.827+/-1.503 minus_control=  0.642+/-0.929 minus_shuffled=  0.128+/-0.239 capture=  0.186+/-0.323
+CELL select=384 N=16 K=4 rule=pilot_best_large_k_fallback fallback=probe control= 10.184+/-2.393 selector= 10.827+/-1.503 minus_control=  0.642+/-0.929 minus_shuffled=  0.128+/-0.239 capture=  0.186+/-0.323
+CELL select=384 N=16 K=8 rule=e073_k_aware fallback=probe control=  5.311+/-1.421 selector=  5.718+/-0.759 minus_control=  0.407+/-0.674 minus_shuffled=  0.049+/-0.126 capture=  0.031+/-0.476
+CELL select=384 N=16 K=8 rule=pilot_best_large_k_fallback fallback=probe control=  5.311+/-1.421 selector=  5.718+/-0.759 minus_control=  0.407+/-0.674 minus_shuffled=  0.049+/-0.126 capture=  0.031+/-0.476
+CELL select=384 N=16 K=16 rule=e073_k_aware fallback=probe control=  3.019+/-0.779 selector=  2.992+/-0.643 minus_control= -0.027+/-0.354 minus_shuffled=  0.046+/-0.384 capture= -0.208+/-0.667
+CELL select=384 N=16 K=16 rule=pilot_best_large_k_fallback fallback=schedule control=  3.019+/-0.779 selector=  2.929+/-0.777 minus_control= -0.090+/-0.071 minus_shuffled=  0.000+/-0.000 capture= -0.240+/-0.318
+CELL select=384 N=16 K=32 rule=e073_k_aware fallback=probe control=  1.784+/-0.478 selector=  1.776+/-0.373 minus_control= -0.008+/-0.252 minus_shuffled=  0.422+/-0.411 capture= -0.047+/-0.370
+CELL select=384 N=16 K=32 rule=pilot_best_large_k_fallback fallback=schedule control=  1.784+/-0.478 selector=  1.716+/-0.478 minus_control= -0.068+/-0.044 minus_shuffled=  0.000+/-0.000 capture= -0.187+/-0.250
+
+POOLED rule=e073_k_aware minus_control=  0.032+/-0.180 minus_shuffled=  0.209+/-0.105 large_k_minus_control= -0.113+/-0.123 capture= -0.064+/-0.133
+POOLED rule=pilot_best_large_k_fallback minus_control=  0.012+/-0.172 minus_shuffled=  0.060+/-0.046 large_k_minus_control= -0.153+/-0.060 capture= -0.135+/-0.117
+fallback_by_cell={(384, 8, 4): 'schedule', (384, 8, 8): 'schedule', (384, 8, 16): 'schedule', (384, 8, 32): 'schedule', (384, 16, 4): 'schedule', (384, 16, 8): 'schedule', (384, 16, 16): 'schedule', (384, 16, 32): 'schedule'}
+DECISION PILOT_BEST_FALLBACK_FAILS
+compute_status=REAL_GPU
