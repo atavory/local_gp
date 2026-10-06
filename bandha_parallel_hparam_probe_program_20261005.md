@@ -873,9 +873,9 @@ E077 re-scored the E071-E076 style rows with three separate comparisons:
 3. held-out best-of controls     # oracle ceiling, not a baseline
 ```
 
-Decision: `IMPLEMENTABLE_CONTROL_AUDIT_FAILS` under the strict gate requiring
-a positive CI over fixed and pilot-best.  The readout is more useful than the
-label:
+Decision: `IMPLEMENTABLE_CONTROL_AUDIT_FAILS`.  Keep this label.  The gate was
+pre-declared as a positive CI over fixed and pilot-best implementable controls,
+and the rule did not clear it.
 
 | rule | minus fixed | minus schedule / pilot-best | minus held-out-best ceiling | minus shuffled |
 |---|---:|---:|---:|---:|
@@ -883,24 +883,64 @@ label:
 | `small_k_probe_fixed_large_k` | 0.062+/-0.089 | 0.353+/-0.138 | -0.017+/-0.084 | 0.044+/-0.077 |
 | `small_k_probe_pilot_large_k` | -0.091+/-0.130 | 0.200+/-0.115 | -0.170+/-0.119 | 0.044+/-0.077 |
 
-Pilot-best again chose `schedule` in every cell.  That makes the conclusion
-sharp:
+Pilot-best again chose `schedule` in every cell.  The apparent win over
+schedule/pilot is therefore not automatically probe evidence; it may be
+plain fixed beating an overfit schedule.
 
-- the best simple deployable rule is **probe at K<=8, fixed fallback at K>8**;
-- it beats the pilot/schedule baseline by `0.353+/-0.138`;
-- it ties fixed (`0.062+/-0.089`) rather than robustly beating it;
-- it nearly matches the held-out-best control ceiling (`-0.017+/-0.084`);
-- the old strict gate was too harsh if interpreted as a deployment baseline,
-  because the held-out-best column is an oracle ceiling;
-- the operational value is therefore "avoid bad transferred schedules and get
-  close to the best control ceiling," not "beat fixed in every stationary
-  cell."
+Readout:
 
-This is the correction to the dumb-baseline problem: keep the oracle ceiling,
-but score method value against implementable controls.  Under that scoring,
-`small_k_probe_fixed_large_k` is the current best simple rule.
+- `small_k_probe_fixed_large_k` beats the schedule/pilot baseline by
+  `0.353+/-0.138`, but it only ties fixed (`0.062+/-0.089`);
+- it does **not** beat shuffled (`0.044+/-0.077`);
+- it nearly matches the held-out-best control ceiling (`-0.017+/-0.084`), but
+  that is because the control ceiling has collapsed toward fixed, not because
+  probe extraction is strong;
+- the strict `heldout-best` column remains useful as a ceiling but is not a
+  deployable baseline;
+- the deployable conclusion is: fixed is extremely hard to beat in this
+  stationary control family, and the probe content is not yet proven.
 
-### E078: Moving-Arm / GP Bandit  [NEXT]
+Reanalysis, using the E077 reported cell means and reconstructing pooled CIs
+from the per-cell `n=12` summaries:
+
+| component | minus fixed | minus schedule / pilot-best | minus held-out-best ceiling | minus shuffled |
+|---|---:|---:|---:|---:|
+| K<=8 probe-active cells | 0.124+/-0.176 | 0.400+/-0.216 | 0.031+/-0.155 | 0.089+/-0.154 |
+| K>8 fixed-fallback cells | 0.000+/-0.000 | 0.306+/-0.172 | -0.065+/-0.062 | 0.000+/-0.000 |
+
+This split changes the interpretation:
+
+- the actual probe content lives only in the K<=8 rows;
+- the large-K improvement over schedule/pilot is not probe information, it is
+  fixed fallback beating a pilot-selected schedule that overfit;
+- the pooled shuffled comparison is diluted because K>8 uses fixed for both
+  the rule and the shuffled control;
+- after removing the dilution, the K<=8 probe-vs-shuffled contrast is still
+  null (`0.089+/-0.154`);
+- therefore E077 is evidence for schedule-overfit avoidance, not for a clean
+  probe-value signal.
+
+The column-4 claim still needs a **genuinely tuning-free large-K fallback**:
+a frozen single pair, a K=8-transferred pair, or a simple theory-derived pair.
+Using `cell.fixed` at large K imports per-K pilot tuning, so it cannot be the
+final no-retuning story.
+
+### E078: K<=8 Probe-Content Replication  [NEXT]
+
+Before any GP/bandit model, replicate the only place probes actually act:
+`K<=8`.  The gate is the shuffled contrast, not the schedule contrast.
+
+```text
+probe-active rows only:
+  selector - shuffled > 0 with CI excluding zero
+  selector - fixed >= 0
+```
+
+If this fails, the current probe selector contributes no proven information,
+and the outer-control branch should stop claiming probe value.  The remaining
+positive is the non-probe heuristic: fixed fallback avoids overfit schedules.
+
+### E079: Moving-Arm / GP Bandit  [BLOCKED UNTIL E078 PASSES]
 
 Use the workers as a live design over hyperparameters:
 
