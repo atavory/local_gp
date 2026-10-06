@@ -775,36 +775,71 @@ Readout:
 - the next method should make the fallback explicit rather than forcing probe
   selection where measured headroom has mostly vanished.
 
-### E075: Fallback-Aware K Rule  [NEXT]
+### E075: Fallback-Aware K Rule  [DONE]
 
-Freeze a conservative rule that only gives the probe selector authority where
-E073/E074 showed actual control headroom:
+E075 froze three conservative rules that only give the probe selector authority
+where E073/E074 showed actual control headroom:
+
+```text
+e073_k_aware:
+  K <= 8: scaled/soft_std2
+  K >  8: scaled/top3_mean
+
+hard_large_k_fallback:
+  K <= 8: scaled/soft_std2
+  K >  8: fixed-control fallback, no probes
+
+guard_large_k_fallback:
+  K <= 8: scaled/soft_std2
+  K >  8: scaled/top3_guard_fixed
+```
+
+Decision: `FALLBACK_AWARE_K_RULE_PARTIAL`.
+
+| rule | pooled selector minus best control | selector minus shuffled | large-K selector minus best control | capture |
+|---|---:|---:|---:|---:|
+| `e073_k_aware` | 0.095+/-0.128 | 0.541+/-0.263 | -0.086+/-0.166 | -0.084+/-0.159 |
+| `guard_large_k_fallback` | 0.096+/-0.127 | 0.497+/-0.248 | -0.084+/-0.165 | -0.085+/-0.160 |
+| `hard_large_k_fallback` | 0.116+/-0.097 | 0.082+/-0.061 | -0.045+/-0.024 | 0.041+/-0.068 |
+
+Readout:
+
+- the hard fallback improves the pooled control comparison enough to exclude
+  zero (`+0.116+/-0.097`);
+- the same hard fallback also gives a positive shuffled-control gap
+  (`+0.082+/-0.061`), despite doing no probe work at large K;
+- the strict large-K bar still fails (`-0.045+/-0.024`) because the fallback
+  was plain fixed while the comparator is per-seed best-of
+  fixed/DiLoCo/schedule;
+- the guarded probe fallback does not improve on the E073 rule;
+- therefore the next repair is not "more probing at large K."  It is an
+  implementable control fallback: pick the large-K fallback from pilot data
+  among fixed, DiLoCo, and schedule, then only let probes override that when
+  the margin is strong.
+
+### E076: Pilot-Best Control Fallback  [NEXT]
+
+Repeat E075, but for `K > 8` fall back to the pilot-selected control family
+rather than to plain fixed.  This keeps the action implementable while matching
+the comparator more honestly:
 
 ```text
 K <= 8:  scaled/soft_std2
-K >  8:  explicit fallback to best fixed/schedule unless probe margin clears a
-         high-confidence threshold
+K >  8:  pilot-best among fixed, DiLoCo, and schedule
 ```
 
-Controls:
-
-- best fixed/DiLoCo/schedule controls;
-- E073 K-aware rule without fallback;
-- shuffled probes;
-- oracle design choice.
-
-The success criterion is not high capture everywhere.  It is:
+If this clears:
 
 ```text
 pooled selector-control > 0
 large-K selector-control >= 0
-selector-shuffled > 0
+selector-shuffled >= 0
 ```
 
-This directly tests the readout from E074: probes are useful when they have
-headroom, and should collapse when they do not.
+then the operational rule is simple: probe where the measured control headroom
+is large, otherwise use the best cheap control chosen from pilot data.
 
-### E076: Moving-Arm / GP Bandit  [AFTER E075]
+### E077: Moving-Arm / GP Bandit  [AFTER E076]
 
 Use the workers as a live design over hyperparameters:
 
@@ -861,6 +896,10 @@ That claim fits the favorable evidence:
 - E074 shows the K-aware selector transfers over `K in {4,8,16,32}` and
   `N in {8,16}` as a small pooled win (`+0.156+/-0.139` over best controls),
   but the win is driven by K<=8 and the large-K cells should fall back.
+- E075 shows hard fallback improves the pooled control comparison
+  (`+0.116+/-0.097`) but plain fixed is not the right large-K fallback against
+  a best-of fixed/DiLoCo/schedule comparator; the next fallback must be
+  pilot-selected among the implementable controls.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped

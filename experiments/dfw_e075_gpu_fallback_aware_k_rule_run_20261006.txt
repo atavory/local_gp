@@ -1,0 +1,37 @@
+DFW-E075 fallback-aware K rule
+host=devvm52518.cln0.facebook.com python=/usr/local/fbcode/platform010/bin/python3.12 compute_status=REAL_GPU torch=2.14.1+cu130 cuda_available=True cuda_version=13.0 device=NVIDIA PG509-210
+design=scaled policies=(top3_mean,soft_std2,top3_guard_fixed)
+rules=e073_k_aware, hard_large_k_fallback, guard_large_k_fallback
+K=(4, 8, 16, 32) N=(8, 16) select=(384,)
+pilot_seeds=2 heldout_seeds=12
+
+CELL select=384 N=8 K=4 rule=e073_k_aware points=23 control=  9.419+/-0.765 selector=  9.939+/-1.037 minus_control=  0.520+/-0.389 minus_shuffled=  0.221+/-0.274 capture=  0.208+/-0.188
+CELL select=384 N=8 K=4 rule=hard_large_k_fallback points=23 control=  9.419+/-0.765 selector=  9.939+/-1.037 minus_control=  0.520+/-0.389 minus_shuffled=  0.221+/-0.274 capture=  0.208+/-0.188
+CELL select=384 N=8 K=4 rule=guard_large_k_fallback points=23 control=  9.419+/-0.765 selector=  9.939+/-1.037 minus_control=  0.520+/-0.389 minus_shuffled=  0.221+/-0.274 capture=  0.208+/-0.188
+CELL select=384 N=8 K=8 rule=e073_k_aware points=23 control=  5.009+/-0.535 selector=  5.229+/-0.642 minus_control=  0.220+/-0.204 minus_shuffled=  0.178+/-0.168 capture=  0.145+/-0.169
+CELL select=384 N=8 K=8 rule=hard_large_k_fallback points=23 control=  5.009+/-0.535 selector=  5.229+/-0.642 minus_control=  0.220+/-0.204 minus_shuffled=  0.178+/-0.168 capture=  0.145+/-0.169
+CELL select=384 N=8 K=8 rule=guard_large_k_fallback points=23 control=  5.009+/-0.535 selector=  5.229+/-0.642 minus_control=  0.220+/-0.204 minus_shuffled=  0.178+/-0.168 capture=  0.145+/-0.169
+CELL select=384 N=8 K=16 rule=e073_k_aware points=23 control=  2.703+/-0.308 selector=  2.706+/-0.492 minus_control=  0.003+/-0.332 minus_shuffled=  0.517+/-0.521 capture= -0.031+/-0.494
+CELL select=384 N=8 K=16 rule=hard_large_k_fallback points=0 control=  2.703+/-0.308 selector=  2.671+/-0.292 minus_control= -0.032+/-0.045 minus_shuffled=  0.000+/-0.000 capture=  0.000+/-0.000
+CELL select=384 N=8 K=16 rule=guard_large_k_fallback points=23 control=  2.703+/-0.308 selector=  2.703+/-0.493 minus_control= -0.000+/-0.333 minus_shuffled=  0.509+/-0.517 capture= -0.035+/-0.494
+CELL select=384 N=8 K=32 rule=e073_k_aware points=23 control=  1.671+/-0.190 selector=  1.551+/-0.413 minus_control= -0.119+/-0.322 minus_shuffled=  1.240+/-1.043 capture= -0.082+/-0.445
+CELL select=384 N=8 K=32 rule=hard_large_k_fallback points=0 control=  1.671+/-0.190 selector=  1.629+/-0.176 minus_control= -0.042+/-0.055 minus_shuffled=  0.000+/-0.000 capture=  0.000+/-0.000
+CELL select=384 N=8 K=32 rule=guard_large_k_fallback points=23 control=  1.671+/-0.190 selector=  1.551+/-0.413 minus_control= -0.119+/-0.322 minus_shuffled=  0.986+/-0.936 capture= -0.082+/-0.445
+CELL select=384 N=16 K=4 rule=e073_k_aware points=23 control=  9.670+/-0.932 selector=  9.881+/-1.371 minus_control=  0.211+/-0.474 minus_shuffled=  0.191+/-0.327 capture=  0.011+/-0.349
+CELL select=384 N=16 K=4 rule=hard_large_k_fallback points=23 control=  9.670+/-0.932 selector=  9.881+/-1.371 minus_control=  0.211+/-0.474 minus_shuffled=  0.191+/-0.327 capture=  0.011+/-0.349
+CELL select=384 N=16 K=4 rule=guard_large_k_fallback points=23 control=  9.670+/-0.932 selector=  9.881+/-1.371 minus_control=  0.211+/-0.474 minus_shuffled=  0.191+/-0.327 capture=  0.011+/-0.349
+CELL select=384 N=16 K=8 rule=e073_k_aware points=23 control=  5.006+/-0.421 selector=  5.158+/-0.752 minus_control=  0.153+/-0.343 minus_shuffled=  0.068+/-0.147 capture= -0.033+/-0.338
+CELL select=384 N=16 K=8 rule=hard_large_k_fallback points=23 control=  5.006+/-0.421 selector=  5.158+/-0.752 minus_control=  0.153+/-0.343 minus_shuffled=  0.068+/-0.147 capture= -0.033+/-0.338
+CELL select=384 N=16 K=8 rule=guard_large_k_fallback points=23 control=  5.006+/-0.421 selector=  5.158+/-0.752 minus_control=  0.153+/-0.343 minus_shuffled=  0.068+/-0.147 capture= -0.033+/-0.338
+CELL select=384 N=16 K=16 rule=e073_k_aware points=23 control=  2.684+/-0.217 selector=  2.568+/-0.516 minus_control= -0.116+/-0.344 minus_shuffled= -0.003+/-0.218 capture= -0.490+/-0.616
+CELL select=384 N=16 K=16 rule=hard_large_k_fallback points=0 control=  2.684+/-0.217 selector=  2.665+/-0.235 minus_control= -0.019+/-0.036 minus_shuffled=  0.000+/-0.000 capture=  0.000+/-0.000
+CELL select=384 N=16 K=16 rule=guard_large_k_fallback points=23 control=  2.684+/-0.217 selector=  2.568+/-0.516 minus_control= -0.116+/-0.344 minus_shuffled=  0.004+/-0.227 capture= -0.490+/-0.616
+CELL select=384 N=16 K=32 rule=e073_k_aware points=23 control=  1.622+/-0.154 selector=  1.509+/-0.476 minus_control= -0.112+/-0.368 minus_shuffled=  1.913+/-1.421 capture= -0.400+/-0.697
+CELL select=384 N=16 K=32 rule=hard_large_k_fallback points=0 control=  1.622+/-0.154 selector=  1.536+/-0.113 minus_control= -0.086+/-0.054 minus_shuffled=  0.000+/-0.000 capture=  0.000+/-0.000
+CELL select=384 N=16 K=32 rule=guard_large_k_fallback points=23 control=  1.622+/-0.154 selector=  1.522+/-0.465 minus_control= -0.100+/-0.361 minus_shuffled=  1.818+/-1.373 capture= -0.404+/-0.703
+
+POOLED rule=e073_k_aware minus_control=  0.095+/-0.128 minus_shuffled=  0.541+/-0.263 large_k_minus_control= -0.086+/-0.166 capture= -0.084+/-0.159
+POOLED rule=guard_large_k_fallback minus_control=  0.096+/-0.127 minus_shuffled=  0.497+/-0.248 large_k_minus_control= -0.084+/-0.165 capture= -0.085+/-0.160
+POOLED rule=hard_large_k_fallback minus_control=  0.116+/-0.097 minus_shuffled=  0.082+/-0.061 large_k_minus_control= -0.045+/-0.024 capture=  0.041+/-0.068
+DECISION FALLBACK_AWARE_K_RULE_PARTIAL
+compute_status=REAL_GPU
