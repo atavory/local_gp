@@ -1,0 +1,11 @@
+DFW-E071 top-k probe outer control
+host=devvm52518.cln0.facebook.com python=/usr/local/fbcode/platform010/bin/python3.12 compute_status=REAL_GPU torch=2.14.1+cu130 cuda_available=True cuda_version=13.0 device=NVIDIA PG509-210
+model=torch_two_layer_binary_classifier dim=97 N=(8,) K=(8, 32) rounds=8 eta=0.04
+select_batches=(384,) designs=('old12', 'scaled', 'hybrid') policies=('top1', 'top3_mean', 'top5_mean', 'soft_std1', 'soft_std2', 'top3_guard_fixed')
+pilot_seeds=3 heldout_seeds=12
+
+CELL select=384 N=8 K=8 fixed=(8.0, 0.5) schedule=  1.859+/-3.256 oracle=  5.959+/-0.755 best=scaled/soft_std2 value=  4.753+/-1.046 minus_control=  1.952+/-1.324 minus_shuffled=  0.205+/-0.432 capture=  0.518+/-0.251
+CELL select=384 N=8 K=32 fixed=(3.0, 0.4) schedule= -0.439+/-1.272 oracle=  2.322+/-0.295 best=scaled/top3_mean value=  1.359+/-0.497 minus_control=  1.036+/-1.049 minus_shuffled=  1.242+/-1.388 capture=  0.185+/-0.522
+
+DECISION TOPK_PROBE_BEATS_TARGET_CONTROLS
+compute_status=REAL_GPU

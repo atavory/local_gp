@@ -44,9 +44,11 @@ Readout:
   recovers roughly 85%-96% of the per-round oracle gap at tiny per-run cost.
 
 That is the clean "you should use this" claim: probes buy online retuning
-inside the training run.  The open problem is making the same story survive the
-default-only controls and real-workload path, especially for hyperparameter-arm
-selection where E066-E070 show the current same-round extractor is still weak.
+inside the training run.  E071-E073 now give the first real-GPU support for the
+same story: a K-aware robust probe selector improves/ties the best
+fixed/DiLoCo/time-schedule controls on fresh seeds, with a clear K=8 win and a
+K=32 shuffled-control win but only a control tie.  The effect is modest and
+K-dependent.
 
 ## Why This Is Different
 
@@ -376,19 +378,80 @@ method cannot just change the probe statistic; it needs either a better
 decision problem (unknown/stale defaults, drift, mandatory exploration) or a
 proper response model over the hyperparameter surface.
 
+### E071-E073: Real-GPU Robust Outer-Control Probes Replicate With K-Awareness
+
+E039 found a useful failure mode: the target-good outer-control action was
+often in the top few probe-ranked candidates, but brittle top-1 selection still
+lost.  E071 tested robust selectors on the real PyTorch/CUDA path: top-k means,
+soft losses, and guarded variants over the `scaled` and `hybrid` candidate
+designs.
+
+E071 decision: `TOPK_PROBE_BEATS_TARGET_CONTROLS`.
+
+Best E071 rows:
+
+| K | best frozen design/policy | best control | selector | selector minus control | selector minus shuffled | capture |
+|---:|---|---:|---:|---:|---:|---:|
+| 8 | `scaled/soft_std2` | 2.801 | 4.753+/-1.046 | 1.952+/-1.324 | 0.205+/-0.432 | 0.518+/-0.251 |
+| 32 | `scaled/top3_mean` | 0.323 | 1.359+/-0.497 | 1.036+/-1.049 | 1.242+/-1.388 | 0.185+/-0.522 |
+
+That result was encouraging but post-hoc over selector family, so E072 froze
+the single `scaled/soft_std2` rule and repeated on fresh seeds.
+
+E072 decision: `TOPK_PROBE_STILL_LOSES`.
+
+| K | frozen policy | best control | selector | selector minus control | selector minus shuffled |
+|---:|---|---:|---:|---:|---:|
+| 8 | `scaled/soft_std2` | 4.882+/-1.433 | 5.425+/-0.781 | 0.543+/-0.688 | 0.093+/-0.157 |
+| 32 | `scaled/soft_std2` | 1.152+/-1.340 | 1.134+/-1.200 | -0.017+/-0.195 | 0.387+/-0.534 |
+
+This said the selector cannot be K-invariant.  That is not fatal: `K` is known
+to the outer optimizer.  E073 therefore froze the K-aware rule that E071
+identified:
+
+```text
+K <= 8:  scaled/soft_std2
+K >  8:  scaled/top3_mean
+```
+
+E073 decision: `K_AWARE_TOPK_PROBE_REPLICATES`.
+
+| K | frozen K-aware policy | best control | selector | selector minus control | selector minus shuffled | capture |
+|---:|---|---:|---:|---:|---:|---:|
+| 8 | `soft_std2` | 5.184+/-0.804 | 5.638+/-0.495 | 0.454+/-0.329 | 0.098+/-0.112 | 0.156+/-0.306 |
+| 32 | `top3_mean` | 1.691+/-0.327 | 1.720+/-0.285 | 0.029+/-0.144 | 0.975+/-0.446 | 0.063+/-0.177 |
+
+Readout:
+
+- this is the first real-GPU, fresh-seed, frozen-rule positive for the
+  probe-control branch;
+- the win is modest: K=8 clears the control comparison, while K=32 is a
+  positive-mean tie against controls;
+- the shuffled-control gap is positive at both K values and clean at K=32;
+- one K-invariant selector failed, so the method needs known-regime
+  conditioning.  That is acceptable for `K`, because `K` is an explicit control
+  variable, not hidden state.
+
+This is now the live method claim:
+
+> Use round-aligned probe sets to perform low-cost online retuning of outer
+> optimizer controls, with K-aware robust selection over a fixed candidate
+> design.
+
 ## Current Interpretation
 
 The favorable result is:
 
-> Probes can extract stationary value from designed optimizer
-> non-exchangeability when evidence is pooled at the hyperparameter-group
-> level and shrinkage keeps the rule close to averaging.
+> Probes can extract useful value when the action space is deliberately
+> structured and low-dimensional: group-level optimizer arms in synthetic
+> stationary beds, and round-level outer-control actions on the real GPU path.
 
 The limitation is:
 
-> Fixed damped rules capture only a small fraction of oracle headroom and are
-> sensitive to K/regime; under stationarity they do not beat a known, separately
-> tuned default arm.
+> Same-round worker/arm weighting still captures only a small fraction of
+> oracle headroom and does not beat a known, separately tuned default arm.  The
+> successful real-path selector is K-aware and modest, not a universal adaptive
+> optimizer.
 
 E062 says the first online tracker does not solve that limitation.  E064 says
 the frozen grouped-probe method is cheap enough to matter.  E065 says a second
@@ -399,11 +462,13 @@ safer but still not enough to beat a known strong default.  E068 says merely
 buying more same-round probe precision does not rescue that branch.  E069 says
 even a stale/wrong default does not rescue the current forward-difference
 extractor.  E070 says a validation-gradient marginal-value proxy also does not
-rescue the default-anchored extractor.  So the current live branch is narrower:
+rescue the default-anchored extractor.  E071-E073 say robust K-aware
+outer-control selection can work on the real GPU path.  So the current live
+branch is:
 
-> use parallel workers to create optimizer-arm non-exchangeability, probe
-> group-level candidate updates, and aggregate conservatively only when the
-> measurement/model can identify useful departures from the default.
+> use aligned probes for low-dimensional optimizer-control decisions where the
+> candidate set is deliberately structured, the fallback is explicit, and the
+> selector is robust to noisy top-1 rankings.
 
 The immediate next question is transfer and extraction:
 
@@ -416,6 +481,9 @@ The immediate next question is transfer and extraction:
   changes, rather than when a tuned default is already known?
 - measurement: E070 says the simple validation-gradient marginal-value score
   does not improve capture over forward-difference probes.
+- real path: E073 says K-aware robust round-level outer control survives one
+  fresh-seed replication; the next bar is another K/N/model transfer, not
+  another post-hoc selector sweep.
 
 ## New Program: Track The Hyperparameter Surface
 
@@ -620,12 +688,57 @@ instead of opening another anchor/schedule variant.
 Outcome: negative.  It ties/improves only at K=32 and does not beat the forward
 extractor or default-only control robustly.
 
-### E071: Real Workload Path
+### E071: Top-k / Soft Probe Outer Control On Real GPU  [DONE]
 
-Take only a branch that survives E067's control to a real small network path.
-Do not claim the paper from toy rows alone.
+Replace brittle top-1 argmin over probe losses with robust selectors over the
+same real-path `(alpha,beta)` candidate designs:
 
-### E072: Moving-Arm / GP Bandit
+```text
+top3_mean
+top5_mean
+soft_std1
+soft_std2
+top3_guard_fixed
+```
+
+Outcome: positive screen.  `scaled/soft_std2` was best at K=8 and
+`scaled/top3_mean` was best at K=32, both against fixed, DiLoCo, and
+target-retuned schedule controls.
+
+### E072: Single-Policy Frozen Replication  [DONE]
+
+Freeze `scaled/soft_std2` across K and repeat on fresh seeds.
+
+Outcome: negative.  It directionally improved K=8 but tied/lost at K=32.  The
+policy cannot be K-invariant.
+
+### E073: K-aware Frozen Replication  [DONE]
+
+Freeze the K-aware rule:
+
+```text
+K <= 8:  scaled/soft_std2
+K >  8:  scaled/top3_mean
+```
+
+Outcome: replicated on fresh seeds in the pooled decision.  It beat the best
+fixed/DiLoCo/schedule control by `0.454+/-0.329` at K=8; at K=32 it tied the
+control (`0.029+/-0.144`) but strongly beat shuffled (`0.975+/-0.446`).
+
+### E074: K/N/Model Transfer  [NEXT]
+
+Repeat E073 across a wider grid:
+
+```text
+K in {4, 8, 16, 32}
+N in {8, 16}
+one second real path model or data seed family
+```
+
+Do not open the selector family.  The question is whether the K-aware frozen
+rule is a method or just a two-cell fit.
+
+### E075: Moving-Arm / GP Bandit  [AFTER E074]
 
 Use the workers as a live design over hyperparameters:
 
@@ -648,10 +761,11 @@ The paper should not claim "Bayesian probes beat averaging" in full generality.
 Better claim:
 
 > Distributed training has parallel experimental bandwidth that standard
-> averaging wastes.  If aligned workers are assigned diverse optimizer
-> hyperparameters, cheap probe sets can track which local optimizer settings are
-> valuable in the current training phase and can conservatively aggregate them,
-> collapsing to averaging when the arms are exchangeable.
+> optimizers waste.  In aligned rounds, cheap probe sets can retune
+> low-dimensional outer optimizer controls online, matching or exceeding
+> fixed/scheduled controls without a new per-regime sweep.  For worker/arm
+> weighting, the same evidence must be pooled and conservatively shrunk; it
+> collapses when arms are exchangeable.
 
 That claim fits the favorable evidence:
 
@@ -672,6 +786,12 @@ That claim fits the favorable evidence:
 - E070 shows the obvious validation-gradient measurement swap is not enough;
   the next improvement has to be a response model or a different regime, not
   another same-round scalar selector.
+- E071 shows robust top-k/soft probe selection can beat real-path controls, but
+  only as a selector-family screen.
+- E072 shows a single K-invariant selector does not replicate.
+- E073 shows the frozen K-aware selector does replicate on fresh real-GPU
+  seeds in the pooled decision: a K=8 control win plus a K=32 shuffled-control
+  win/control tie.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped

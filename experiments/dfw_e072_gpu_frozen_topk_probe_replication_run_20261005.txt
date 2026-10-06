@@ -1,0 +1,11 @@
+DFW-E072 frozen top-k probe replication
+host=devvm52518.cln0.facebook.com python=/usr/local/fbcode/platform010/bin/python3.12 compute_status=REAL_GPU torch=2.14.1+cu130 cuda_available=True cuda_version=13.0 device=NVIDIA PG509-210
+frozen_selector=scaled/soft_std2
+K=(8, 32) N=(8,) select=(384,)
+pilot_seeds=3 heldout_seeds=24
+
+CELL select=384 N=8 K=8 fixed=(12.0, 0.15) control=  4.882+/-1.433 selector=  5.425+/-0.781 minus_control=  0.543+/-0.688 minus_shuffled=  0.093+/-0.157 capture= -0.150+/-0.440
+CELL select=384 N=8 K=32 fixed=(4.0, 0.05) control=  1.152+/-1.340 selector=  1.134+/-1.200 minus_control= -0.017+/-0.195 minus_shuffled=  0.387+/-0.534 capture= -0.044+/-0.114
+
+DECISION TOPK_PROBE_STILL_LOSES
+compute_status=REAL_GPU
