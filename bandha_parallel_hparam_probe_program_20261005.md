@@ -1,6 +1,6 @@
 # Parallel Hyperparameter Probes
 
-Status: live synthesis, 2026-10-05.
+Status: live synthesis, 2026-10-06.
 
 This note supersedes the narrow "rank workers with probes" framing.  The useful
 object is not a set of exchangeable workers.  The useful object is a parallel
@@ -44,11 +44,11 @@ Readout:
   recovers roughly 85%-96% of the per-round oracle gap at tiny per-run cost.
 
 That is the clean "you should use this" claim: probes buy online retuning
-inside the training run.  E071-E073 now give the first real-GPU support for the
+inside the training run.  E071-E074 now give the first real-GPU support for the
 same story: a K-aware robust probe selector improves/ties the best
-fixed/DiLoCo/time-schedule controls on fresh seeds, with a clear K=8 win and a
-K=32 shuffled-control win but only a control tie.  The effect is modest and
-K-dependent.
+fixed/DiLoCo/time-schedule controls on fresh seeds, with clear K=4/8 wins and
+K>=16 control ties/slight losses but strong shuffled-control gaps.  The effect
+is modest and K-dependent.
 
 ## Why This Is Different
 
@@ -463,17 +463,20 @@ buying more same-round probe precision does not rescue that branch.  E069 says
 even a stale/wrong default does not rescue the current forward-difference
 extractor.  E070 says a validation-gradient marginal-value proxy also does not
 rescue the default-anchored extractor.  E071-E073 say robust K-aware
-outer-control selection can work on the real GPU path.  So the current live
-branch is:
+outer-control selection can work on the real GPU path.  E074 says the same
+selector transfers over a wider K/N grid as a small pooled win, with useful
+control gains at `K<=8` and large-K cells mostly tying or slightly losing to
+the best controls while beating shuffled probes.  So the current live branch
+is:
 
 > use aligned probes for low-dimensional optimizer-control decisions where the
 > candidate set is deliberately structured, the fallback is explicit, and the
 > selector is robust to noisy top-1 rankings.
 
-The immediate next question is transfer and extraction:
+The immediate next question is fallback and extraction:
 
-- transfer: does the same grouped-arm probe rule survive outside this
-  synthetic/stationary bed?
+- fallback: can an explicit large-K fallback keep the `K<=8` gains while
+  eliminating the `K>=16` drag measured in E074?
 - extraction: can a default-anchored response model, not a same-round softmax,
   capture more than 4% of E065's large 2D oracle headroom without losing to the
   default-only control?
@@ -482,7 +485,8 @@ The immediate next question is transfer and extraction:
 - measurement: E070 says the simple validation-gradient marginal-value score
   does not improve capture over forward-difference probes.
 - real path: E073 says K-aware robust round-level outer control survives one
-  fresh-seed replication; the next bar is another K/N/model transfer, not
+  fresh-seed replication; E074 says K/N transfer is positive pooled but
+  concentrated at K<=8, so the next bar is fallback-aware K behavior, not
   another post-hoc selector sweep.
 
 ## New Program: Track The Hyperparameter Surface
@@ -725,20 +729,82 @@ Outcome: replicated on fresh seeds in the pooled decision.  It beat the best
 fixed/DiLoCo/schedule control by `0.454+/-0.329` at K=8; at K=32 it tied the
 control (`0.029+/-0.144`) but strongly beat shuffled (`0.975+/-0.446`).
 
-### E074: K/N/Model Transfer  [NEXT]
+### E074: K/N Transfer  [DONE]
 
-Repeat E073 across a wider grid:
+E074 kept the E073 frozen K-aware rule and expanded the real-GPU grid:
 
 ```text
 K in {4, 8, 16, 32}
 N in {8, 16}
-one second real path model or data seed family
+selector batch = 384
+K <= 8: scaled/soft_std2
+K >  8: scaled/top3_mean
 ```
 
-Do not open the selector family.  The question is whether the K-aware frozen
-rule is a method or just a two-cell fit.
+Decision: `K_N_TRANSFER_REPLICATES`.
 
-### E075: Moving-Arm / GP Bandit  [AFTER E074]
+| N | K | policy | best control | selector | selector minus control | selector minus shuffled | capture |
+|---:|---:|---|---:|---:|---:|---:|---:|
+| 8 | 4 | `soft_std2` | 10.595+/-0.977 | 10.917+/-1.408 | 0.322+/-0.458 | 0.267+/-0.280 | 0.084+/-0.295 |
+| 8 | 8 | `soft_std2` | 5.687+/-0.392 | 5.900+/-0.665 | 0.213+/-0.297 | 0.145+/-0.170 | 0.116+/-0.214 |
+| 8 | 16 | `top3_mean` | 3.276+/-0.230 | 3.286+/-0.526 | 0.010+/-0.338 | 0.445+/-0.337 | -0.275+/-0.402 |
+| 8 | 32 | `top3_mean` | 2.043+/-0.142 | 2.025+/-0.413 | -0.017+/-0.303 | 0.601+/-0.330 | -0.346+/-0.501 |
+| 16 | 4 | `soft_std2` | 10.735+/-1.044 | 11.322+/-1.627 | 0.587+/-0.617 | 0.585+/-0.324 | 0.167+/-0.267 |
+| 16 | 8 | `soft_std2` | 5.828+/-0.643 | 6.022+/-0.833 | 0.194+/-0.232 | 0.339+/-0.191 | 0.086+/-0.229 |
+| 16 | 16 | `top3_mean` | 3.186+/-0.316 | 3.183+/-0.663 | -0.002+/-0.436 | 0.379+/-0.387 | -0.621+/-1.008 |
+| 16 | 32 | `top3_mean` | 1.913+/-0.254 | 1.853+/-0.419 | -0.060+/-0.292 | 0.985+/-0.953 | -0.547+/-0.734 |
+
+Pooled:
+
+```text
+selector minus best control: 0.156+/-0.139
+selector minus shuffled:     0.468+/-0.157
+capture:                    -0.167+/-0.189
+```
+
+Readout:
+
+- the transfer result is positive pooled, but not a smash;
+- the control win is driven by `K <= 8`, where outer-control headroom is still
+  large;
+- at `K >= 16`, the selector mostly ties or slightly loses to the best control
+  while still beating shuffled probes, which says the probe signal is real but
+  the best action is often the conservative fallback;
+- negative capture at large K is a warning against using capture as the sole
+  metric in thin-headroom cells;
+- the next method should make the fallback explicit rather than forcing probe
+  selection where measured headroom has mostly vanished.
+
+### E075: Fallback-Aware K Rule  [NEXT]
+
+Freeze a conservative rule that only gives the probe selector authority where
+E073/E074 showed actual control headroom:
+
+```text
+K <= 8:  scaled/soft_std2
+K >  8:  explicit fallback to best fixed/schedule unless probe margin clears a
+         high-confidence threshold
+```
+
+Controls:
+
+- best fixed/DiLoCo/schedule controls;
+- E073 K-aware rule without fallback;
+- shuffled probes;
+- oracle design choice.
+
+The success criterion is not high capture everywhere.  It is:
+
+```text
+pooled selector-control > 0
+large-K selector-control >= 0
+selector-shuffled > 0
+```
+
+This directly tests the readout from E074: probes are useful when they have
+headroom, and should collapse when they do not.
+
+### E076: Moving-Arm / GP Bandit  [AFTER E075]
 
 Use the workers as a live design over hyperparameters:
 
@@ -792,6 +858,9 @@ That claim fits the favorable evidence:
 - E073 shows the frozen K-aware selector does replicate on fresh real-GPU
   seeds in the pooled decision: a K=8 control win plus a K=32 shuffled-control
   win/control tie.
+- E074 shows the K-aware selector transfers over `K in {4,8,16,32}` and
+  `N in {8,16}` as a small pooled win (`+0.156+/-0.139` over best controls),
+  but the win is driven by K<=8 and the large-K cells should fall back.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped
