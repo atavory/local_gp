@@ -23,8 +23,11 @@ Execute, in this order unless a result logically blocks the next item:
 5. DONE update `bandha_internal_hpo_option_map_20261006.md`,
    `bandha_parallel_hparam_probe_program_20261005.md`, and
    `research_control_board.md` after E084/E085.
-6. NEXT commit and push the relevant files.
-7. NEXT write `INTERNAL_HPO_BUSY_DONE.md` only after all required artifacts and docs
+6. DONE commit and push the relevant files.
+   Result: pushed commits `f685489` and validation alias commit `0b23156` to
+   `origin/main`.
+7. DONE write `INTERNAL_HPO_BUSY_DONE.md` only after all required artifacts and docs
    exist and the push is complete.
+   Result: wrapper validation reported `complete` at HEAD `0b23156`.
 
 Do not spend a turn only explaining.  Run or write the next artifact.

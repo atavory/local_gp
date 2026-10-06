@@ -86,5 +86,14 @@ Initialized by bandha at 2026-10-06.
 - Updated busy-wait `state.md` and `agenda.md`.
 - Files changed/created include E084/E085 scripts, result markdowns, run logs,
   legitimacy checks, the three durable docs, and this busy-wait state.
-- Next recommended action: commit and push the relevant files through Mr.
-  Gitties, then write `INTERNAL_HPO_BUSY_DONE.md` and validate the sentinel.
+- Committed and pushed `f685489` (`Complete internal HPO busy-wait gates`) to
+  `origin/main` through Mr. Gitties.
+- Added validation alias symlinks required by
+  `bandha_internal_hpo_busy_wait_agent_20261006.py`, then committed and pushed
+  `0b23156` (`Add internal HPO validation aliases`) through Mr. Gitties.
+- Wrote `INTERNAL_HPO_BUSY_DONE.md` and added `pushed=yes` plus current HEAD.
+- Ran wrapper validation:
+  `/usr/local/fbcode/platform010/bin/python3.12 bandha_internal_hpo_busy_wait_agent_20261006.py bandha_internal_hpo_busy_wait_20261006/runs/20261006_031825_turn_0002/prompt.md`.
+  Result: `BUSY_WAIT_STATUS: complete` at HEAD `0b23156`.
+- Next recommended action: none for this busy-wait objective; the done sentinel
+  validates.

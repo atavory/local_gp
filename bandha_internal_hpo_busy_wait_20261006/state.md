@@ -33,6 +33,11 @@ Turn 2 progress, 2026-10-06:
 - Updated `bandha_internal_hpo_option_map_20261006.md`,
   `bandha_parallel_hparam_probe_program_20261005.md`, and
   `research_control_board.md` with E084/E085 outcomes.
+- Committed and pushed the busy-wait artifacts and docs:
+  `f685489` (`Complete internal HPO busy-wait gates`) and `0b23156`
+  (`Add internal HPO validation aliases`).
+- Wrote `INTERNAL_HPO_BUSY_DONE.md`; wrapper validation reported complete at
+  HEAD `0b23156`.
 
 Required artifacts before completion:
 
@@ -43,7 +48,7 @@ Required artifacts before completion:
 - Updated `bandha_internal_hpo_option_map_20261006.md`. DONE for E082-E085.
 - Updated `bandha_parallel_hparam_probe_program_20261005.md`. DONE for E082-E085.
 - Updated `research_control_board.md`. DONE for E082-E085.
-- Git commit and push marker in `INTERNAL_HPO_BUSY_DONE.md`.
+- Git commit and push marker in `INTERNAL_HPO_BUSY_DONE.md`. DONE.
 
 Current hard positive to preserve:
 
