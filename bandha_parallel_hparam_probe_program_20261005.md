@@ -44,11 +44,21 @@ Readout:
   recovers roughly 85%-96% of the per-round oracle gap at tiny per-run cost.
 
 That is the clean "you should use this" claim: probes buy online retuning
-inside the training run.  E071-E074 now give the first real-GPU support for the
-same story: a K-aware robust probe selector improves/ties the best
-fixed/DiLoCo/time-schedule controls on fresh seeds, with clear K=4/8 wins and
-K>=16 control ties/slight losses but strong shuffled-control gaps.  The effect
-is modest and K-dependent.
+inside the training run.  E071-E078 now give the first real-GPU support for the
+same story.  The important update is E078: after isolating only the cells where
+the selector actually uses probes (`K<=8`), the rule beats both shuffled probes
+and fixed controls with CIs excluding zero:
+
+```text
+selector - shuffled = +0.242 +/- 0.081
+selector - fixed    = +0.246 +/- 0.080
+```
+
+That is the current actionable positive.  It is not a large-K result yet, and
+it is not a claim that probe content beats every tuned control family.  It says
+the probe labels carry deployable value in the probe-active low-K regime.  The
+next job is to reduce/measure the cost frontier and then decide whether this
+becomes a budgeted component of the optimizer.
 
 ## Why This Is Different
 
@@ -466,8 +476,11 @@ rescue the default-anchored extractor.  E071-E073 say robust K-aware
 outer-control selection can work on the real GPU path.  E074 says the same
 selector transfers over a wider K/N grid as a small pooled win, with useful
 control gains at `K<=8` and large-K cells mostly tying or slightly losing to
-the best controls while beating shuffled probes.  So the current live branch
-is:
+the best controls while beating shuffled probes.  E077 then showed that the
+pooled K-aware/fallback story was diluted by large-K fallback and schedule
+overfit.  E078 fixes that audit by testing only probe-active `K<=8` cells and
+replicates real probe content: `+0.242+/-0.081` over shuffled and
+`+0.246+/-0.080` over fixed.  So the current live branch is:
 
 > use aligned probes for low-dimensional optimizer-control decisions where the
 > candidate set is deliberately structured, the fallback is explicit, and the
@@ -475,8 +488,10 @@ is:
 
 The immediate next question is fallback and extraction:
 
-- fallback: can an explicit large-K fallback keep the `K<=8` gains while
-  eliminating the `K>=16` drag measured in E074?
+- budget: can the E078 `K<=8` probe-content win survive at lower probe cost
+  and across a small budget frontier?
+- fallback: after the `K<=8` branch is costed, can a genuinely tuning-free
+  large-K fallback avoid importing per-K tuned `fixed` values?
 - extraction: can a default-anchored response model, not a same-round softmax,
   capture more than 4% of E065's large 2D oracle headroom without losing to the
   default-only control?
@@ -484,10 +499,8 @@ The immediate next question is fallback and extraction:
   changes, rather than when a tuned default is already known?
 - measurement: E070 says the simple validation-gradient marginal-value score
   does not improve capture over forward-difference probes.
-- real path: E073 says K-aware robust round-level outer control survives one
-  fresh-seed replication; E074 says K/N transfer is positive pooled but
-  concentrated at K<=8, so the next bar is fallback-aware K behavior, not
-  another post-hoc selector sweep.
+- real path: E078 says K-aware robust round-level outer control has proven
+  probe content at `K<=8`; E079 is the cost frontier for that claim.
 
 ## New Program: Track The Hyperparameter Surface
 
@@ -925,7 +938,7 @@ a frozen single pair, a K=8-transferred pair, or a simple theory-derived pair.
 Using `cell.fixed` at large K imports per-K pilot tuning, so it cannot be the
 final no-retuning story.
 
-### E078: K<=8 Probe-Content Replication  [NEXT]
+### E078: K<=8 Probe-Content Replication  [DONE]
 
 Before any GP/bandit model, replicate the only place probes actually act:
 `K<=8`.  The gate is the shuffled contrast, not the schedule contrast.
@@ -936,11 +949,87 @@ probe-active rows only:
   selector - fixed >= 0
 ```
 
-If this fails, the current probe selector contributes no proven information,
-and the outer-control branch should stop claiming probe value.  The remaining
-positive is the non-probe heuristic: fixed fallback avoids overfit schedules.
+Decision: `PROBE_CONTENT_REPLICATES`.
 
-### E079: Moving-Arm / GP Bandit  [BLOCKED UNTIL E078 PASSES]
+Compute: `REAL_GPU` on `devvm52518`, PyTorch CUDA
+`2.14.1+cu130`, `NVIDIA PG509-210`.
+
+Frozen configuration:
+
+```text
+design = scaled
+policy = soft_std2
+K      = {4, 8}
+N      = {8, 16}
+select = 384 batches
+pilot  = 2 seeds
+heldout = 33 fresh seeds
+```
+
+Pooled result:
+
+| comparison | value |
+|---|---:|
+| selector - fixed | `+0.246+/-0.080` |
+| selector - schedule | `+0.387+/-0.100` |
+| selector - best implementable control | `+0.117+/-0.109` |
+| selector - shuffled | `+0.242+/-0.081` |
+| capture vs oracle gap | `+0.025+/-0.074` |
+
+Cell-level `selector - shuffled` was positive in every probe-active cell:
+
+| N | K | selector - shuffled |
+|---:|---:|---:|
+| 8 | 4 | `+0.243+/-0.203` |
+| 8 | 8 | `+0.168+/-0.127` |
+| 16 | 4 | `+0.353+/-0.186` |
+| 16 | 8 | `+0.204+/-0.112` |
+
+Readout:
+
+- this is the first recent **actionable positive** by the stricter bar:
+  probe content beats shuffled labels and fixed controls with pooled CIs
+  excluding zero;
+- E077 was correctly labeled a failure because it mixed probe-active cells with
+  fallback cells; E078 removes that dilution and shows the probe labels carry
+  signal where they are used;
+- the claim is restricted to `K<=8` and this probe budget.  It is not yet a
+  large-K claim, and the cost frontier is still open.
+
+Artifacts:
+
+```text
+experiments/dfw_e078_gpu_kle8_probe_content_replication.py
+experiments/dfw_e078_gpu_kle8_probe_content_replication_result_20261006.md
+experiments/dfw_e078_gpu_kle8_probe_content_replication_run_20261006.txt
+experiments/dfw_e078_gpu_kle8_probe_content_replication_LEGITIMACY_CHECK_20261006.md
+```
+
+### E079: K<=8 Probe-Budget Content Sweep  [RUNNING]
+
+Now that E078 proves probe content at `K<=8`, sweep the validation/probe budget
+on the same frozen selector:
+
+```text
+K      = {4, 8}
+N      = {8, 16}
+select = {384, 768, 1536}
+policy = soft_std2
+design = scaled
+gate   = selector - shuffled > 0 and selector - fixed >= 0
+```
+
+Purpose:
+
+- locate the cheapest batch budget that preserves the E078 content result;
+- check whether larger probe batches increase capture or only tighten the
+  same small effect;
+- keep GP/bandit work blocked until the current selector's cost frontier is
+  measured.
+
+Queued on `assafcohen__devvm23211` under the double_fan worker protocol.
+
+### E080: Moving-Arm / GP Bandit  [BLOCKED UNTIL E079]
 
 Use the workers as a live design over hyperparameters:
 
@@ -954,7 +1043,9 @@ The baseline is not "same fixed hyperparameters."  The baseline is E064's
 frozen grouped arms, the default-only arm, and offline tuned schedules.  E065
 is the reason to run this: 2D headroom exists and raw extraction is weak.  E066
 adds the constraint: the GP must be default-anchored or it will simply pay to
-include bad exploratory arms.
+include bad exploratory arms.  E078 adds the permission to continue: probe
+labels can beat shuffled labels in the restricted low-K regime.  E079 must
+show what that costs before adding a GP layer.
 
 ## Paper Shape
 
@@ -1008,6 +1099,11 @@ That claim fits the favorable evidence:
   rule, `small_k_probe_fixed_large_k`, beats the schedule/pilot baseline
   (`+0.353+/-0.138`), ties fixed (`+0.062+/-0.089`), and nearly matches the
   held-out control ceiling (`-0.017+/-0.084`).
+- E078 isolates the probe-active `K<=8` cells and gives the actionable
+  positive that E077 lacked: `selector - shuffled = +0.242+/-0.081` and
+  `selector - fixed = +0.246+/-0.080`, both pooled CIs excluding zero.
+- E079 is running the budget frontier for that K<=8 effect before any GP
+  bandit or larger action-space claim.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped
