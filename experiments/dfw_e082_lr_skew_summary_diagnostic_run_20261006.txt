@@ -1,0 +1,11 @@
+DFW-E082 LR skew summary diagnostic
+compute_status=REANALYSIS_EXISTING_REAL_GPU_ARTIFACTS
+E060: /data/users/atavory/local_gp/experiments/dfw_e060_gpu_stationary_inner_lr_group_probe_admission_result_20261005.md rows=3
+E061: /data/users/atavory/local_gp/experiments/dfw_e061_gpu_stationary_group_admission_k_sweep_result_20261005.md rows=12
+nontrivial_cells=10
+policy_counts=group_l05_t4:1,group_l20_t2:1,group_mean2_l40_t2:8
+mean_minus_fixed=0.245 +/- 0.137
+mean_minus_shuffled=0.447 +/- 0.231
+mean_oracle_headroom=2.830 +/- 0.597
+conservative_prior_policy_cells=1
+DECISION LR_SKEW_SUMMARY_NO_SAFE_COLLAPSE_TRACE_NEEDED

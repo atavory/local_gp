@@ -62,6 +62,59 @@ Interpretation: E080 was not merely a selector screen.  E081 gives a
 deployment-shaped method: use the low-K probe controller where it is proven,
 and use a frozen large-K fallback that does not import per-K tuning.
 
+Busy-loop gate updates:
+
+```text
+E082:
+  LR skew summary over E060/E061:
+    nontrivial cells = 10
+    pilot-best policy counts = group_mean2_l40_t2: 8, group_l20_t2: 1,
+                               group_l05_t4: 1
+    mean pilot-best - fixed = +0.245 +/- 0.137
+    mean pilot-best - shuffled = +0.447 +/- 0.231
+
+E083:
+  batch-size/value-per-FLOP, REAL_GPU:
+    decision = BATCH_VALUE_PER_FLOP_NEGATIVE
+    K=8 value/FLOP - default = +1.009 +/- 1.254
+    K=8 value/FLOP - shuffled = +0.054 +/- 0.112
+    K=16 value/FLOP - default = +5.647 +/- 9.583
+    K=16 value/FLOP - shuffled = +0.287 +/- 0.405
+
+E084:
+  selected-arm trajectory for E080/E081 scaled/soft_std2, REAL_GPU:
+    decision = OUTER_TRAJECTORY_STABLE_SOFT_INTERIOR
+    effective alpha ~= 19.7-19.9 at K=4 and ~= 9.95-10.03 at K=8
+    effective beta ~= 0.116 in all cells
+    normalized phase spans <= 0.008
+    soft alpha-edge mass ~= 0.08-0.09
+    entropy ~= 0.976
+
+E085:
+  guarded stale-default HP-arm, REAL_GPU:
+    decision = STALE_DEFAULT_GUARDED_PROBE_LIVE
+    stale default lr_multiplier = 0.25
+    guard = abandon stale default only when 4-slice probe comparison clears
+            margin and 3/4 slices agree
+    guarded - stale = +0.997 +/- 0.739 at K=8
+    guarded - stale = +0.395 +/- 0.654 at K=16
+    guarded - stale = +0.727 +/- 1.114 at K=32
+    abandon rate ~= 0.20 per round
+```
+
+Interpretation: E082 does not show a summary-level collapse to the small/safe
+LR arm, but exact LR arm mass is not present in the old artifacts and still
+needs a trajectory/arm-mass trace before free LR search becomes `LIVE`.  E083
+finds batch-size oracle headroom, but the default-anchored soft value/FLOP
+selector does not beat shuffled labels cleanly, so the simple batch-size arm is
+not promoted.  E084 says the deployed outer-control selector is not secretly
+edge-pinned and does not require a moving grid/GP yet: it is a high-entropy,
+stable soft interior mixture centered near the theory-scaled design.  E085
+rescues the intended stale-default customer case, but only after changing the
+decision rule from soft mixing to a guarded abandonment test; that promotes
+stale-default recovery as an internal-HPO use case without reopening free LR
+search.
+
 ## Status Labels
 
 | label | meaning |
@@ -91,8 +144,8 @@ This rule changes the priority order:
 | tier | option | why |
 |---|---|---|
 | 1 | outer `(alpha,beta)` at `K<=8` | already replicated; direct one-round value |
-| 1 | batch size / value per FLOP | cost and payoff are both in-round; untested but excellent fit |
-| 1 | inner LR multiplier around a schedule | visible in-round, but myopia must be checked |
+| 1 | batch size / value per FLOP | cost and payoff are both in-round; E083 says the simple soft selector is not enough |
+| 1 | inner LR multiplier around a schedule | visible in-round; E082 found no summary collapse but exact arm mass is still missing |
 | 2 | fault veto / admission | one-round badness is visible; rare-event payoff |
 | 3 | K / sync period | communication benefit is cross-round; needs sequential test, not worker-arm selection |
 | 4 | weight decay / Adam internals | too slow to observe reliably in one round |
@@ -124,8 +177,8 @@ already have replicated probe content.
 | A5 | top-k mean selector | `DEFER` | screened earlier, weaker than soft policy | only revisit if soft fails |
 | A6 | top-1 argmin selector | `KILL` | winner's curse / unstable rankings | do not use as headline |
 | A7 | guard-to-fixed policy | `DEFER` | safety useful, not current best | test only in deployment audit |
-| A8 | selected-arm trajectory diagnostic | `GATED` | needed to know if grid is enough | run after E081 |
-| A9 | grid-edge expansion | `GATED` | only justified if selected arms pin edges | trigger from A8, not by taste |
+| A8 | selected-arm trajectory diagnostic | `DONE` | E084: stable soft interior, no phase movement | no moving grid needed now |
+| A9 | grid-edge expansion | `DEFER` | E084: low alpha-edge mass, high entropy | only revisit if a new regime pins edges |
 | A10 | per-round quadratic surface fit | `KILL` | extrapolation / schedule issues | do not revive without trust region |
 | A11 | sliding schedule fit over rounds | `KILL` for stationary | converges to tuned schedule | only possible under proven drift |
 | A12 | hysteresis over selected `(alpha,beta)` | `GATED` | reduces churn; natural deployment control | test after frozen rule passes |
@@ -138,19 +191,22 @@ loss drop.
 
 | # | option | status | evidence | next gate |
 |---:|---|---|---|---|
-| B1 | batch-size arms, scored value/FLOP | `GATED` | untested; best myopia profile | run batch-size arm |
+| B1 | batch-size arms, scored value/FLOP | `GATED` | E083 negative for simple soft value/FLOP; oracle headroom remains | do not promote without better extractor |
 | B2 | microbatch / accumulation arms | `DEFER` | same family as batch size | after B1 |
 | B3 | local compute budget per worker | `GATED` | close to batch/K boundary | only if value/FLOP is explicit |
 | B4 | adaptive repeat/replicate for noise | `GATED` | E027 oracle liked replicate | needs costed noise regime |
 | B5 | probe budget allocation itself | `GATED` | E079 says naive bigger batch not enough | only after score improves |
 
-Batch size gets promoted because it has the right economics:
+Batch size had the right economics, but E083 blocks the simple implementation:
 
 - a worker at `2B` spends about `2x` compute;
 - the probe can score improvement per FLOP in the same round;
 - critical batch size moves during training, so a static default can become
   stale;
-- unlike K, the benefit is not hidden in future communication savings.
+- unlike K, the benefit is not hidden in future communication savings;
+- nevertheless, the E083 value/FLOP selector tied shuffled labels, so this
+  branch needs a stronger model or a different resource control before it is a
+  method claim.
 
 ### C. Inner Worker Hyperparameters
 
@@ -160,11 +216,11 @@ the distributed round."
 
 | # | option | status | evidence | next gate |
 |---:|---|---|---|---|
-| C1 | inner LR multiplier arms | `GATED` | E060/E061 positive but default-known issue | stale/default-shift test |
-| C2 | default-anchored LR arms | `GATED` | E066-E068 say anchoring is required | combine with better score |
-| C3 | deliberately bad/stale default recovery | `GATED` | the customer setting; not settled | run bad-default HP-arm test |
+| C1 | inner LR multiplier arms | `GATED` | E060/E061 positive; E082 no summary safe-collapse | exact arm-mass trace before free LR search |
+| C2 | default-anchored LR arms | `AUDIT` | E067-E069 soft anchoring negative; E085 guarded rule positive | use guarded abandonment, not soft mixing |
+| C3 | deliberately bad/stale default recovery | `LIVE` | E085 guarded stale-default test positive | preserve guard and shuffled control |
 | C4 | log-spaced LR arm grid | `GATED` | plausible HPO design | only after C1/C3 pass |
-| C5 | LR multiplier on a known schedule | `GATED` | mitigates one-round myopia | skew check first |
+| C5 | LR multiplier on a known schedule | `GATED` | E082 reduces myopia concern but old artifacts lack arm mass | test after selected-arm/arm-mass trace |
 | C6 | inner momentum arms | `DEFER` | no headroom result yet | test only after LR/batch |
 | C7 | AdamW beta1/beta2 arms | `DEFER` | high dimension, no evidence | wait for simpler axes |
 | C8 | weight decay arms | `DEFER` | slow-timescale, hard to score per round | likely offline/slow posterior |
@@ -172,10 +228,13 @@ the distributed round."
 | C10 | optimizer-type arms, e.g. SGD vs AdamW | `DEFER` | too discrete/high-variance | only if phase-transition evidence |
 | C11 | local LR schedule arms | `DEFER` | could be useful but many degrees | after selected-arm diagnostic |
 
-Risk to test immediately: LR myopia.  In earlier spread experiments the arms
-included small and large LR multipliers.  If the selector systematically
-prefers the small/safe arm, the one-round probe is too myopic for free LR HPO
-and the right action is schedule-constrained multipliers, not open LR search.
+LR myopia check: E082 reanalyzed E060/E061 and did not find a summary-level
+collapse to the most conservative/default-preserving policy.  The caveat is
+important: the old artifacts do not store exact low/default/high LR arm mass,
+so free LR search stays gated.  E085 changes the viable customer story: do not
+run free soft LR search from a strong known default; instead, keep a stale or
+bad default as the fallback and abandon it only under a guarded same-round
+probe comparison.
 
 ### D. Synchronization / Communication
 
@@ -237,7 +296,7 @@ current proven action family before adding a GP or larger arm space.
 | F7 | training-loss self-report | `DEFER` | biased but free | only as auxiliary feature |
 | F8 | pooled round-quality score | `GATED` | higher SNR than per-worker ranking | combine with outer control |
 | F9 | Bayesian shrinkage over probe scores | `LIVE` conceptually | `soft_std2` is empirical shrinkage | formalize after E081 |
-| F10 | GP / UCB / Thompson over controls | `DEFER` | no need until frozen selection hits edge | trigger: A8 grid-edge diagnostic |
+| F10 | GP / UCB / Thompson over controls | `DEFER` | E084 shows no edge pinning or phase movement | require new regime-shift evidence |
 
 ### G. Killed Or Frozen Branches
 
@@ -260,22 +319,23 @@ Immediate:
 2. Preserve both E081 variants in the paper: global-fixed fallback as the
    conservative decision-label winner, theory fallback as the cleaner no-pilot
    deployment candidate.
-3. Do not run another same-family selector sweep unless the selected-arm
-   trajectory diagnostic shows edge pinning.
+3. Do not run another same-family selector sweep for the E080/E081 controller:
+   E084 shows a stable soft interior mixture, not edge pinning.
 
 Then:
 
-4. Run LR-arm skew check on existing E060/E061 data.  If the selector prefers
-   the small/safe LR arm, free LR search is myopic and should be schedule-bound.
-5. Run the batch-size arm.  This is the best untested fit to the in-round HPO
-   rule because the score is value per FLOP.
-6. Run selected-arm trajectory diagnostic.  This decides whether a moving grid,
-   GP, or Thompson sampler is needed for outer controls.
-7. Run the bad/stale-default HP-arm test.  This decides whether inner LR arms
-   are useful in the intended customer setting.
-8. Only then consider GP/UCB/Thompson.  Trigger condition: frozen grid either
-   pins to edges or fails under a regime shift while probe labels still beat
-   shuffled labels.
+4. E082 LR-arm skew summary is done: no summary safe-collapse, but exact arm
+   mass is still missing.
+5. E083 batch-size/value-per-FLOP is done: simple soft value/FLOP is negative
+   against shuffled labels despite oracle headroom.
+6. E084 selected-arm trajectory is done: the frozen grid sits in a stable,
+   high-entropy interior mixture, so moving-arm/GP machinery is not justified
+   for the current outer-control rule.
+7. E085 bad/stale-default HP-arm test is done: guarded abandonment from a
+   stale LR default is live, while earlier soft default anchoring remains
+   negative.
+8. Only consider GP/UCB/Thompson after a new regime-shift result shows frozen
+   controls failing while probe labels still beat shuffled labels.
 
 ## Current Best Method Statement
 
@@ -294,9 +354,9 @@ is an option with a gate, not a claim.
 | priority | experiment | promotes which option | pass criterion |
 |---:|---|---|---|
 | 1 | write frozen deployment method | A/D/E frozen method | E080/E081 as core evidence |
-| 2 | LR skew check on E060/E061 | C1/C5 | no pathological skew toward small/safe LR |
-| 3 | batch-size arm | B1 | value/FLOP beats shuffled and default |
-| 4 | selected-arm trajectory | A8/A9/F10 | edge pinning or phase movement justifies moving arms |
-| 5 | bad/stale default HP-arm test | C2/C3 | probes recover from stale default without losing collapse |
+| 2 | LR skew check on E060/E061 | C1/C5 | DONE E082: no summary safe-collapse; arm-mass trace still needed |
+| 3 | batch-size arm | B1 | DONE E083: simple value/FLOP selector negative vs shuffled |
+| 4 | selected-arm trajectory | A8/A9/F10 | DONE E084: stable soft interior; moving grid not triggered |
+| 5 | bad/stale default HP-arm test | C2/C3 | DONE E085: guarded stale-default recovery live |
 | 6 | marginal-value score in current rule | F3 | improves shuffled contrast or capture at matched cost |
 | 7 | sequential K test prototype | D1/D2 | marginal local-step value predicts when to sync |

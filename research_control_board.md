@@ -71,6 +71,608 @@ Before closed loop, require an offline held-out prediction win:
 
 ## Current Status
 
+### Internal-HPO Busy Loop - 2026-10-06
+
+E082-E085 completed the guarded internal-HPO agenda:
+
+- E082, `experiments/dfw_e082_lr_skew_summary_diagnostic.py`, returned
+  `LR_SKEW_SUMMARY_NO_SAFE_COLLAPSE_TRACE_NEEDED` by reanalyzing the durable
+  E060/E061 real-GPU summaries.  Across 10 nontrivial LR-spread cells,
+  pilot-best minus fixed was `+0.245+/-0.137` and pilot-best minus shuffled was
+  `+0.447+/-0.231`.  This does not prove low/default/high arm mass, so free LR
+  search remains gated behind a trajectory/arm-mass trace.
+- E083, `experiments/dfw_e083_gpu_batch_value_per_flop_hpo.py`, ran on
+  `devvm52518` as `REAL_GPU` and returned `BATCH_VALUE_PER_FLOP_NEGATIVE`.
+  Batch-size arms have oracle headroom, but value/FLOP probe minus shuffled was
+  only `+0.054+/-0.112` at K=8 and `+0.287+/-0.405` at K=16.  The simple
+  default-anchored value/FLOP selector is not promoted.
+- E084, `experiments/dfw_e084_gpu_outer_control_trajectory_diagnostic.py`,
+  ran on `devvm52518` as `REAL_GPU` and returned
+  `OUTER_TRAJECTORY_STABLE_SOFT_INTERIOR`.  The E080/E081 low-K controller
+  has high entropy (`~0.976`), low alpha-edge mass (`~0.08-0.09`), and
+  negligible phase span (`<=0.008`), so moving-arm GP machinery is not
+  triggered.
+- E085, `experiments/dfw_e085_gpu_stale_default_guarded_hp_arm.py`, ran on
+  `devvm52518` as `REAL_GPU` and returned
+  `STALE_DEFAULT_GUARDED_PROBE_LIVE`.  A guarded abandonment rule for a stale
+  low-LR default (`lr_multiplier=0.25`) improves over stale-only by
+  `+0.997+/-0.739`, `+0.395+/-0.654`, and `+0.727+/-1.114` for K=8/16/32,
+  while keeping the stale fallback about 80% of rounds.
+
+Current interpretation: preserve E080/E081 as the method core; do not expand
+the outer-control grid without new regime-shift evidence; do not promote the
+simple batch-size selector; do promote stale-default recovery only in the
+guarded abandon-or-fallback form.
+
+### Round-Aligned Probe-Control Branch - 2026-10-04
+
+This is now the primary live branch.
+
+The structural move is: keep aligned rounds and the distributed
+momentum/DiLoCo/FedOpt outer-optimizer skeleton. Use probe sets to choose
+low-dimensional outer control variables, especially `(alpha,beta)`, not to
+infer dense local geometry or score unaligned async arrivals.
+
+`ushmoo_rho_spectrum_check.py` established the theory target. Local SGD maps
+each Hessian direction through
+
+```text
+rho_j = 1 - (1 - eta lambda_j)^K
+```
+
+so the outer optimizer acts on a preconditioned pseudo-gradient spectrum. On
+the E021 bed, the predicted optimal outer momentum falls with K: about `0.610`
+at `K=8` and `0.140` at `K=128`.
+
+X1, `bandha_alpha_beta_ceiling_20261004.py`, returned
+`ALPHA_BETA_CONTROL_LIVE`.
+
+At `N=32`, per-round oracle `(alpha,beta)` versus best fixed `(alpha,beta)`:
+
+| K | best fixed `(alpha,beta)` | per-round oracle | gap |
+|---:|---:|---:|---:|
+| 8 | `1.2690 +/- 0.0010` | `6.7264 +/- 0.1184` | `5.4574 +/- 0.1181` |
+| 16 | `1.3404 +/- 0.0013` | `3.9036 +/- 0.0681` | `2.5632 +/- 0.0681` |
+| 32 | `1.3262 +/- 0.0024` | `2.3522 +/- 0.0387` | `1.0259 +/- 0.0375` |
+| 64 | `1.1195 +/- 0.0022` | `1.6047 +/- 0.0300` | `0.4852 +/- 0.0287` |
+
+At `K=8`, per-round `(alpha,beta)` gets close to `oracle_H`
+(`6.7264` vs `7.6823`), while the per-worker span oracle is only `1.3738`.
+The main headroom on this bed is outer control, not per-worker reweighting.
+
+X2, `bandha_probe_fit_vs_argmax_20261004.py`, returned
+`PROBE_ARGMAX_SUFFICIENT`.
+
+Correction to the wording in the original result artifact: this is not a dense
+1220-probe grid. It is a 12-point sparse probe design; the 1220-point grid is
+only a cheap search over the fitted surface. At `K=8`, sparse argmax over
+`(alpha,beta)` captures almost all of the X1 oracle gap:
+
+| P | argmax | argmax-fixed | argmax gap captured | shuffled argmax |
+|---:|---:|---:|---:|---:|
+| 3 | `6.5858 +/- 0.1240` | `5.3168 +/- 0.1238` | `0.9742 +/- 0.0051` | `1.8807 +/- 0.8894` |
+| 9 | `6.6787 +/- 0.1254` | `5.4097 +/- 0.1252` | `0.9912 +/- 0.0042` | `-7.5554 +/- 13.4051` |
+| 33 | `6.7119 +/- 0.1192` | `5.4429 +/- 0.1189` | `0.9973 +/- 0.0016` | `-3.2393 +/- 6.9826` |
+
+The quadratic-fit selector consistently trailed argmax on this first grid
+design. Do not claim fit yet. The deployable object for the next pass is probe
+argmax/shrinkage over a structured `(alpha,beta)` proposal set.
+
+X3, `bandha_alpha_beta_schedule_baseline_20261004.py`, returned
+`SCHEDULE_EXPLAINS_ALPHA_BETA`.
+
+This is the harsh zero-probe baseline: greedily tune one `(alpha_t,beta_t)`
+pair per round index on pilot repetitions, then freeze that schedule on heldout
+repetitions. It captures nearly all of the X1 oracle gap when tuned at the same
+target `K`:
+
+| K | target-tuned schedule capture |
+|---:|---:|
+| 8 | `0.9867 +/- 0.0046` |
+| 16 | `0.9914 +/- 0.0032` |
+| 32 | `0.9815 +/- 0.0045` |
+| 64 | `0.9606 +/- 0.0063` |
+
+Interpretation: "probes beat constant `(alpha,beta)`" is not a paper claim.
+The baseline to beat is a tuned time schedule.
+
+X4, `bandha_alpha_beta_schedule_transfer_20261004.py`, returned
+`SCHEDULE_NEEDS_RETUNING`.
+
+The schedule tuned at `K=8` transfers to `K=8`, then fails badly under K shift:
+
+| target K | source-K=8 schedule capture | target-retuned schedule capture |
+|---:|---:|---:|
+| 8 | `0.9926 +/- 0.0032` | `0.9910 +/- 0.0043` |
+| 16 | `-0.0884 +/- 0.1007` | `0.9926 +/- 0.0018` |
+| 32 | `-9.5110 +/- 1.0704` | `0.9802 +/- 0.0059` |
+| 64 | `-58.8088 +/- 4.8647` | `0.9541 +/- 0.0086` |
+
+Interpretation: schedules are strong, but not portable across K. This is the
+actual opening for probes: cheaply re-measure the low-dimensional control
+surface instead of retuning an offline schedule for every K/regime.
+
+X5, `bandha_probe_fit_vs_argmax_k_sweep_20261004.py`, returned
+`PROBE_K_PARTIAL`.
+
+The conservative label is partial because the shuffled-label controls have huge
+variance, so the CI bar is not clean. The main signal is still strong: the same
+12-point sparse design, reused unchanged across `K=8,16,32,64`, captures
+85-96% of the oracle gap with sub-percent overhead:
+
+| K | overhead at P=3 | argmax gap captured |
+|---:|---:|---:|
+| 8 | `0.41%` | `0.9510 +/- 0.0118` |
+| 16 | `0.20%` | `0.9263 +/- 0.0146` |
+| 32 | `0.10%` | `0.8541 +/- 0.0195` |
+| 64 | `0.05%` | `0.8531 +/- 0.0224` |
+
+Interpretation: the live paper shape is now `probe-controlled outer schedule
+adaptation`, not per-worker reweighting and not dense map recovery.
+
+X7, `bandha_probe_trust_shrinkage_k_sweep_20261004.py`, returned
+`TRUST_SHRINKAGE_PARTIAL`.
+
+The unconstrained quadratic fit is still unsafe. Trust-region fitting around
+the observed sparse winner repairs the worst extrapolation at small K, but
+decays at larger K. Half-shrinkage between the observed winner and the
+trust-region fit is broadly positive across the K sweep, while still trailing
+sparse argmax:
+
+| K | P=3 argmax capture | P=3 fit capture | P=3 trust capture | P=3 half-shrink capture |
+|---:|---:|---:|---:|---:|
+| 8 | `0.9453 +/- 0.0150` | `0.0815 +/- 0.0550` | `0.8657 +/- 0.0188` | `0.9338 +/- 0.0124` |
+| 16 | `0.9418 +/- 0.0185` | `-0.3630 +/- 0.2231` | `0.8171 +/- 0.0263` | `0.9256 +/- 0.0156` |
+| 32 | `0.8318 +/- 0.0236` | `-3.8576 +/- 2.5524` | `0.5729 +/- 0.0416` | `0.7969 +/- 0.0182` |
+| 64 | `0.8866 +/- 0.0294` | `-5.1808 +/- 4.6905` | `0.1480 +/- 0.0931` | `0.7479 +/- 0.0258` |
+
+Interpretation: do not claim an unconstrained learned quadratic selector.
+Sparse observed argmax remains the default deployable object. Half-shrinkage is
+a conservative safety variant, not a stronger result.
+
+X8, `bandha_continuous_spectrum_robustness_20261004.py`, returned
+`CONTINUOUS_SPECTRUM_PARTIAL`.
+
+The smoother log-spaced spectrum preserves the schedule story but weakens the
+source-frozen sparse probe claim. Target-tuned schedules still capture about
+91-96% of the oracle-fixed gap across K. A source-K=8 schedule transfers to K=8
+and partly to K=16, then fails at K=32/64. The frozen 12-point sparse probe
+design is positive at K=16/32/64 but misses K=8:
+
+| K | target schedule cap | source-K=8 schedule cap | P=3 argmax cap | P=3 half-shrink cap |
+|---:|---:|---:|---:|---:|
+| 8 | `0.9077 +/- 0.0257` | `0.9077 +/- 0.0257` | `0.0840 +/- 0.1750` | `-0.0165 +/- 0.2125` |
+| 16 | `0.9559 +/- 0.0100` | `0.7612 +/- 0.0588` | `0.5393 +/- 0.0874` | `0.5300 +/- 0.0837` |
+| 32 | `0.9530 +/- 0.0145` | `0.0666 +/- 0.1708` | `0.5957 +/- 0.1168` | `0.6253 +/- 0.0930` |
+| 64 | `0.9488 +/- 0.0193` | `-3.1240 +/- 0.8848` | `0.7666 +/- 0.0316` | `0.7513 +/- 0.0430` |
+
+The focused K=8 audit,
+`bandha_continuous_k8_probe_budget_20261004.py`, returned
+`K8_DESIGN_OR_SIGNAL_MISS`: raising P to 9 and 33 only lifted argmax capture to
+`0.3399 +/- 0.0870` and `0.3945 +/- 0.0790`, with overhead rising to 1.22% and
+4.46%. The next fix must be a principled source-frozen design rule or probe
+shard change, not simply more P on the old hand design.
+
+X9a, `bandha_principled_probe_design_20261004.py`, returned
+`ACTION_MAXIMIN_K8_PARTIAL`.
+
+The pure action-space maximin rule covers normalized update coefficients
+`(alpha, alpha * beta)` instead of raw `(alpha,beta)`. It repaired the
+continuous-spectrum K=8 miss (`0.7852 +/- 0.0520` argmax capture at P=9), but
+it dropped the old low-alpha spine and failed the original spike/bulk K=64
+cell (`-0.2938 +/- 0.0808` at P=9). Interpretation: high-alpha/low-momentum
+coverage is needed, but not by replacing the old source design wholesale.
+
+X9b, `bandha_augmented_probe_design_20261004.py`, returned
+`AUGMENTED_DESIGN_LIVE`.
+
+The repair keeps the old 12 source-frozen design points and appends two
+low-momentum action-space anchors, `(3.50,0.15)` and `(6.00,0.00)`. The
+14-point design fixes the smooth-spectrum K=8 miss and preserves the
+spike/bulk sweep:
+
+| K | smooth P=3 cap | smooth P=9 cap | spike/bulk P=3 cap | spike/bulk P=9 cap |
+|---:|---:|---:|---:|---:|
+| 8 | `0.5937 +/- 0.0762` | `0.7737 +/- 0.0371` | `0.9631 +/- 0.0104` | `0.9769 +/- 0.0089` |
+| 16 | `0.6988 +/- 0.0787` | `0.8339 +/- 0.0108` | `0.9478 +/- 0.0044` | `0.9551 +/- 0.0043` |
+| 32 | `0.6907 +/- 0.0636` | `0.8169 +/- 0.0132` | `0.8906 +/- 0.0174` | `0.9304 +/- 0.0098` |
+| 64 | `0.7118 +/- 0.0756` | `0.8014 +/- 0.0284` | `0.8904 +/- 0.0199` | `0.9220 +/- 0.0101` |
+
+At P=9, overhead is 1.42% at K=8 and falls to 0.18% at K=64. Shuffled-label
+controls remain heavy-tailed, so report them honestly; do not use this as a
+real-path claim.
+
+DFW-E032, `experiments/dfw_e032_gpu_probe_outer_control_real_path.py`, returned
+`REAL_SCHEDULE_OR_FIXED_EXPLAINS` on a real PyTorch/CUDA path
+(`torch=2.14.1+cu130`, NVIDIA PG509-210).
+
+Setup: E030 two-layer binary classifier, actual local-SGD worker paths,
+`N in {8,16}`, `K in {4,8,16}`, pilot-tuned fixed `(alpha,beta)`,
+DiLoCo-like `beta=0.9` with tuned alpha, target-retuned time schedule,
+source-K schedule transfer diagnostic, frozen 12-point sparse probe argmax,
+shuffled probe labels, and target oracle.
+
+Key result:
+
+| N | K | fixed | target schedule | probe | oracle | probe-fixed |
+|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 4 | `10.845 +/- 2.004` | `10.658 +/- 2.278` | `10.231 +/- 2.735` | `13.108 +/- 3.224` | `-0.614 +/- 0.910` |
+| 8 | 8 | `5.889 +/- 0.933` | `5.882 +/- 1.078` | `5.527 +/- 1.859` | `7.429 +/- 1.973` | `-0.361 +/- 1.079` |
+| 8 | 16 | `3.380 +/- 0.497` | `3.363 +/- 0.546` | `2.578 +/- 0.758` | `4.339 +/- 0.940` | `-0.803 +/- 0.309` |
+| 16 | 4 | `10.888 +/- 2.382` | `10.868 +/- 2.427` | `9.351 +/- 2.153` | `13.152 +/- 2.812` | `-1.537 +/- 1.247` |
+| 16 | 8 | `5.945 +/- 1.122` | `5.997 +/- 1.189` | `4.897 +/- 1.290` | `7.261 +/- 1.575` | `-1.048 +/- 0.830` |
+| 16 | 16 | `3.304 +/- 0.674` | `3.381 +/- 0.703` | `2.500 +/- 1.240` | `4.386 +/- 0.944` | `-0.803 +/- 0.882` |
+
+Interpretation: the old frozen 12-point probe controller is not a deployable
+real-path result. The real-path workload still has oracle headroom, and
+source-K schedules can fail, but fixed/target-retuned controls explain or beat
+the probe rule. This blocks `PAPER_READY` on a positive real-path claim.
+
+DFW-E032 large-K stress was attempted with `K in {32,64}` and source `K=8`, but
+the remote SSH job terminated after 806 seconds with exit code 143 before a
+result file was written. Treat that as `INVALID`, not evidence.
+
+DFW-E033 triage, `experiments/dfw_e033_gpu_probe_design_real_path.py` with
+`K=8`, `N=8`, select batches `{96,384}`, returned
+`REAL_REPAIRED_PROBE_STILL_LOSES`. This was a bounded triage, not the full
+paper gate. It compared old12, the low-momentum synthetic augmentation,
+K-scaled low-momentum points, and the hybrid. The best repaired probes still
+trailed the fixed/schedule controls and had negative gap capture:
+best select=96 was `scaled` with probe `2.832 +/- 2.923` vs fixed
+`5.062 +/- 1.542`; best select=384 was `low_aug` with probe
+`2.810 +/- 4.497` vs fixed `5.062 +/- 1.542`.
+
+Interpretation: the real-path failure is not obviously repaired by adding the
+synthetic low-momentum anchors or by simply increasing the select batch. The
+next repair needs a clearer real-path design diagnosis or a different control
+family/cost ledger.
+
+DFW-E034, `experiments/dfw_e034_gpu_select_target_rank_diagnostic.py`,
+returned `REAL_SELECT_TARGET_MISRANK_CONFIRMED` on the same real PyTorch/CUDA
+host and the same `K=8,N=8` real-path profile.
+
+It compared the deployed select-loss winner with a target oracle constrained to
+the same old12, low-augmented, scaled, and hybrid design sets. The target
+oracles inside those design sets beat the best fixed/DiLoCo/schedule control,
+but the select-loss winner gave away the headroom. At select batch 384, old12
+scored `5.505 +/- 1.018` while its constrained target oracle scored
+`6.562 +/- 1.152`; hybrid scored `5.664 +/- 1.037` while its constrained target
+oracle scored `6.748 +/- 1.126`. The oracle-control margins were
+`0.759 +/- 0.312` for old12 and `0.945 +/- 0.323` for hybrid, but top-1 target
+hit rates were only `0.333` and `0.083`.
+
+Interpretation: the real-path candidate family contains target-good actions,
+but the select shard is not a reliable target proxy. This motivated a direct
+selector/proxy repair before spending on more synthetic point additions.
+
+DFW-E035, `experiments/dfw_e035_gpu_selector_proxy_repair.py`, returned
+`REAL_SELECTOR_PROXY_REPAIR_STILL_MISRANKS` on the same real PyTorch/CUDA host
+and the same `K=8,N=8` real-path profile.
+
+It directly tested the obvious selector/proxy repairs: split-select top-k
+reranking, mean loss over two or four independent select shards,
+conservative UCB-on-loss selection, and schedule-guarded proxy selection. The
+target batch was used only for scoring and for the constrained target-design
+oracle. None of the deployable selectors beat the best fixed/DiLoCo/schedule
+controls. The schedule-guarded policies reduced damage by falling back most of
+the time, but still trailed controls: old12 best proxy was
+`5.553 +/- 1.035` with `-0.250 +/- 0.154` selector-control, while hybrid best
+proxy was `5.591 +/- 1.050` with `-0.212 +/- 0.155` selector-control. The
+target-design oracles remained high (`6.562 +/- 1.152` for old12 and
+`6.748 +/- 1.126` for hybrid).
+
+Interpretation: E034's misranking diagnosis survives simple selector repairs.
+The next real-path gate should change the proxy data source, control family, or
+cost ledger; do not spend another run merely reranking the same select
+distribution.
+
+DFW-E036, `experiments/dfw_e036_gpu_target_proxy_control_gate.py`, returned
+`REAL_TARGET_PROXY_STILL_NOT_ENOUGH` on the same real PyTorch/CUDA host and the
+same `K=8,N=8` real-path profile.
+
+It changed the proxy data source rather than reranking the same select split:
+candidate actions were selected using target-distribution validation proxy
+batches of 24, 48, or 96 examples, then scored on a disjoint target batch. This
+was priced as extra validation-proxy forward work. The best old12 target-proxy
+selector was `target_guard_b96`, scoring `4.884 +/- 1.396` with
+`-0.296 +/- 0.520` selector-control at 0.73% proxy cost. The hybrid target
+oracle remained `5.903 +/- 0.842`, but its best target-proxy selector scored
+`4.858 +/- 1.342` with `-0.323 +/- 0.448` selector-control at 1.90% proxy cost.
+
+Interpretation: the easiest proxy-source repair is also negative. A small
+target-distribution validation proxy improves some old12 rank diagnostics, but
+it still does not beat fixed/DiLoCo/schedule controls at the tested costs. The
+next real-path gate should change the control family or cost ledger more
+substantially, not simply add another select/target mini-batch proxy around the
+same `(alpha,beta)` candidate sets.
+
+DFW-E037,
+`experiments/dfw_e037_gpu_schedule_residual_control_family.py`, returned
+`REAL_SCHEDULE_RESIDUAL_SELECTOR_BLOCKED` on the same real PyTorch/CUDA host
+and the same `K=8,N=8` real-path profile.
+
+It changed the control family rather than only changing the proxy source:
+candidate actions were schedule-neighborhood residuals around the pilot-tuned
+time schedule, and the schedule action was always an explicit fallback
+candidate. This tested whether a lower-dimensional family would make
+real-path proxy selection easier. It did not. The alpha-only family target
+oracle scored `6.723 +/- 1.433`, which was `0.951 +/- 0.402` above the best
+control, but its best deployed selector scored `5.598 +/- 1.634`, or
+`-0.174 +/- 0.644` below control. The beta-only family came closest, with
+selector `5.706 +/- 1.564` and `-0.066 +/- 0.544` below control. The full
+residual family had the largest target-oracle margin (`1.059 +/- 0.512` above
+control) but the deployed selector still scored `5.521 +/- 1.706`, or
+`-0.251 +/- 0.718` below control.
+
+Interpretation: the blocker survives both a proxy-source change and a
+schedule-neighborhood control-family change. The next real-path gate should be
+a substantially different cost ledger, workload, or representation test, not
+another mini-batch selector or nearby `(alpha,beta)` residual family.
+
+DFW-E038,
+`experiments/dfw_e038_gpu_large_k_probe_transfer_gate.py`, returned
+`REAL_LARGE_K_PROBE_ONLY_BEATS_SOURCE_SCHEDULE` on the same real PyTorch/CUDA
+host.
+
+It narrowed the invalid broad E032 large-K attempt to a focused workload shift:
+tune a source time schedule at `K=8`, then evaluate `K=32,N=8` with select
+batch 384. The source schedule collapsed at `-16.006 +/- 3.896`, while the
+best target-tuned control was fixed `(alpha,beta)=(4.0,0.35)` at
+`1.613 +/- 1.053` and the full target oracle was `2.645 +/- 0.833`. Repaired
+probe designs beat the stale source schedule by large paired margins, but not
+the target-tuned controls with paired confidence: scaled scored
+`1.842 +/- 0.195` with `0.228 +/- 0.917` probe-control, and hybrid scored
+`1.841 +/- 0.196` with the same probe-control margin. Target-design oracles
+inside the scaled/hybrid families remained high (`2.567 +/- 0.779` and
+`2.570 +/- 0.784`), but this focused gate still does not produce a deployable
+real-path probe win.
+
+Interpretation: the real CUDA path does show the source-schedule transfer
+failure that motivates probes at larger `K`, but E038 does not overturn the
+E032--E037 boundary. This motivated a direct high-cost validation-ledger test
+rather than another simple large-`K` rerun.
+
+DFW-E039,
+`experiments/dfw_e039_gpu_validation_cost_ledger_gate.py`, returned
+`REAL_HIGH_COST_TARGET_VALIDATION_STILL_MISRANKS` on the same real
+PyTorch/CUDA host and the same `K=8,N=8` real-path profile.
+
+It changed the validation/cost ledger rather than the point design: candidate
+actions in old12, hybrid, and scaled families were selected with large
+target-distribution validation proxies of 192 and 320 examples, then scored on
+a disjoint target batch of 192 examples. Target-design oracles still beat the
+best fixed/DiLoCo/schedule controls: old12 oracle-control was
+`0.551 +/- 0.225`, hybrid was `0.732 +/- 0.240`, and scaled was
+`0.728 +/- 0.239`. The deployed selectors still did not clear controls. The
+best old12 selector was `target_guard_b320` at `5.215 +/- 1.174`, or
+`-0.343 +/- 0.480` versus control; the best hybrid selector remained
+`select384` at `5.436 +/- 0.952`, or `-0.123 +/- 0.228`; and the best scaled
+selector remained `select384` at `5.551 +/- 0.909`, or
+`-0.007 +/- 0.204`.
+
+Interpretation: the E036 small-target-proxy negative is not obviously repaired
+by spending a much larger disjoint target-validation proxy. At the tested
+validation costs, the real-path target-good actions still do not become a
+deployable controller. The next real-path gate should change representation or
+workload, not only target-proxy batch size.
+
+DFW-E040,
+`experiments/dfw_e040_gpu_worker_quality_burst_gate.py`, returned
+`REAL_BURSTY_TARGET_ORACLE_SELECTOR_BLOCKED` on the same real PyTorch/CUDA
+host.
+
+It changed the workload instead of another selector repair: at `K=8,N=8`, each
+round had probability `0.50` of selecting a random `0.50` fraction of workers
+as bad workers whose local steps used label-flipped minibatches. Select and
+target scoring stayed on clean held-out splits, and fixed/DiLoCo/schedule
+controls were tuned on bursty pilot repetitions. Held-out rounds had active
+bursts in `0.54` of rounds with `4.00` bad workers per active round. The
+clean-source schedule scored `6.699 +/- 4.056`, the best target-tuned control
+scored `10.409 +/- 4.399`, and the full oracle scored `16.430 +/- 3.540`.
+The best deployed hybrid probe scored `12.859 +/- 0.829`, with
+`2.450 +/- 4.820` versus target controls and `6.160 +/- 4.755` versus the
+clean-source schedule. Its target-design oracle scored `14.886 +/- 2.328`,
+or `4.477 +/- 2.808` above target controls.
+
+Interpretation: worker-quality bursts are a materially different real-path
+workload and create large target-oracle headroom, but the deployed probe margin
+over target-tuned controls is not paired-positive. This is a promising
+replication/representation lead, not a deployable real-path win.
+
+DFW-E041,
+`experiments/dfw_e041_gpu_burst_tagged_aggregate_gate.py`, returned
+`REAL_BURST_TAGGED_DESIGN_ORACLE_SELECTOR_BLOCKED` on the same real
+PyTorch/CUDA host.
+
+It tested the most direct representation follow-up to E040: score every worker
+endpoint on the clean select shard, keep the best half of workers, and average
+only those updates. Fixed, DiLoCo-like, and time-schedule controls were then
+tuned on both the raw aggregate and this same tagged aggregate, so a probe win
+had to beat a fair zero-probe tagged baseline. The clean-select tag selected no
+injected bad workers in held-out rounds (`selected_bad_frac=0.000`,
+`bad_kept_frac=0.000`). The best raw zero-probe control scored
+`9.262 +/- 2.972`; the best tagged zero-probe control rose to
+`14.509 +/- 6.373`; the tagged full oracle scored `16.403 +/- 6.929`; and the
+unavailable clean-worker oracle scored `16.486 +/- 6.972`. The best deployed
+hybrid tagged probe scored `14.578 +/- 6.418`, only `0.069 +/- 0.661` above
+the fair tagged-control baseline, while its tagged-design oracle remained
+`1.644 +/- 0.785` above controls.
+
+Interpretation: worker-quality tags are a real representation lead under the
+burst workload, but they do not rescue the sparse `(alpha,beta)` probe claim.
+Once fixed/schedule controls get the same tagged aggregate, the deployed probe
+selector no longer has a paired-positive margin.
+
+DFW-E042,
+`experiments/dfw_e042_gpu_worker_quality_burst_replication.py`, returned
+`REAL_BURSTY_TARGET_ORACLE_SELECTOR_BLOCKED` on the same real PyTorch/CUDA
+host.
+
+It reused the E040 raw burst workload but increased held-out repetitions from
+6 to 12 and restricted the reported designs to `old12,hybrid`. At `K=8,N=8`,
+held-out rounds had active bursts in `0.55` of rounds with `4.00` bad workers
+per active round. The best retuned fixed/DiLoCo/schedule control scored
+`12.474 +/- 5.685`, the clean-source schedule scored `2.986 +/- 5.524`, and
+the full oracle scored `19.206 +/- 8.980`. The best deployed hybrid probe
+scored `12.328 +/- 4.338`, or `-0.147 +/- 3.265` versus the best retuned
+control, while its target-design oracle scored `15.052 +/- 3.734`, or
+`2.578 +/- 2.475` above controls.
+
+Interpretation: the raw burst workload remains a useful real-path stressor
+because it creates oracle headroom and punishes stale clean schedules, but the
+E040 positive deployed mean does not survive as a stronger result under the
+wider held-out replication. Do not spend the next gate simply repeating the
+same raw burst `(alpha,beta)` candidate set.
+
+DFW-E043,
+`experiments/dfw_e043_gpu_data_order_drift_gate.py`, returned
+`REAL_DATA_ORDER_DRIFT_TARGET_ORACLE_SELECTOR_BLOCKED` on the same real
+PyTorch/CUDA host.
+
+It changed the workload without corrupting labels: at `K=8,N=8`, each round
+sampled local worker minibatches from one random clean data-order stratum
+(`balanced`, high/low first feature, or label-one/label-zero-heavy pools),
+while select and target scoring stayed on clean held-out splits. Held-out mode
+rates were `balanced=0.31`, `x0_high=0.17`, `x0_low=0.25`,
+`label_one=0.17`, and `label_zero=0.10`. The clean-source schedule collapsed
+to `-31.354 +/- 45.173`, the target-tuned time schedule scored
+`-4.924 +/- 16.752`, and the best retuned fixed/DiLoCo/schedule control
+scored `3.945 +/- 3.484`. The deployed hybrid probe scored
+`11.477 +/- 10.531`, or `7.532 +/- 8.323` versus the best retuned control,
+while its target-design oracle scored `12.997 +/- 10.922`, or
+`9.052 +/- 8.752` above controls.
+
+Interpretation: clean data-order drift is a better real-path stressor than a
+simple rerun: it destroys stale clean schedules and creates large target-oracle
+headroom inside the current probe designs. But the deployed probe margin still
+crosses zero, so this is another selector-blocked boundary rather than a
+deployable real-path win.
+
+DFW-E044,
+`experiments/dfw_e044_gpu_data_order_drift_replication.py`, returned
+`REAL_DATA_ORDER_DRIFT_PROBE_BEATS_TARGET_CONTROLS` on the same real
+PyTorch/CUDA host.
+
+It widened E043 to 12 held-out seeds while keeping the clean data-order drift
+workload, E043 source/drift pilots, select batch 384, and `old12,hybrid`
+design families. Held-out mode rates were `balanced=0.30`, `x0_high=0.15`,
+`x0_low=0.22`, `label_one=0.20`, and `label_zero=0.14`. The clean-source
+schedule scored `-19.694 +/- 23.590`, the target-tuned time schedule scored
+`-4.600 +/- 8.897`, and the best retuned fixed/DiLoCo/schedule control scored
+`1.123 +/- 2.939`. The deployed hybrid probe scored `6.874 +/- 5.923`, or
+`5.751 +/- 5.270` versus the best retuned control, while its target-design
+oracle scored `8.335 +/- 6.437`, or `7.212 +/- 6.094` above controls.
+
+Interpretation: E044 is the first deployed real-path probe win, but it is
+narrow. The result is specific to the clean data-order drift workload at
+`K=8,N=8`, and the hybrid design costs 7.59% overhead. E032--E043 remain
+important boundary conditions rather than obsolete negatives.
+
+DFW-E045,
+`experiments/dfw_e045_gpu_balanced_data_order_drift_confirmation.py`, returned
+`REAL_DATA_ORDER_DRIFT_TARGET_ORACLE_SELECTOR_BLOCKED` on the same real
+PyTorch/CUDA host.
+
+It reused the E043/E044 clean data-order drift harness on independent seeds and
+replaced random mode draws with a deterministic balanced clean-strata cycle:
+`(seed + round_idx) mod 5` over `balanced`, `x0_high`, `x0_low`,
+`label_one`, and `label_zero`. With 15 held-out repetitions and eight rounds,
+held-out mode rates were exactly `0.20` for every mode. The clean-source
+schedule collapsed to `-65.484 +/- 69.148`, the target-tuned schedule scored
+`9.400 +/- 9.505`, and the best retuned fixed/DiLoCo/schedule control scored
+`13.100 +/- 14.846`. The deployed hybrid probe scored
+`16.212 +/- 17.243`, or `3.112 +/- 2.622` versus that control, while its
+target-design oracle scored `17.825 +/- 18.103`, or
+`4.725 +/- 3.422` above controls; hybrid capture was only
+`0.437 +/- 0.283`.
+
+Interpretation: the balanced independent-seed clean-drift confirmation does
+not support treating E044 as a stable real-path optimizer win. It preserves
+source-schedule transfer pressure and target-good probe actions, and it even
+keeps a positive paired probe-control margin, but the deployed selector fails
+the capture gate and remains below its constrained target-design oracle. The
+clean-drift evidence is fragile and workload-specific.
+
+X6, `bandha_nonstationary_schedule_probe_gate_20261004.py`, returned
+`NONSTATIONARY_PROBE_NO_SIGNAL`.
+
+This is the sharper gate from the ushmoo/wanger diagnosis: perturb the bed with
+random per-round curvature regimes so `(alpha*_t,beta*_t)` is not purely a
+function of round index. The result is mixed but not a clean positive:
+
+| K | schedule capture | probe capture | probe - schedule |
+|---:|---:|---:|---:|
+| 8 | `0.8201 +/- 0.1308` | `0.9314 +/- 0.0165` | `0.4441 +/- 0.4864` |
+| 32 | `0.5912 +/- 0.3948` | `0.8617 +/- 0.0284` | `0.1467 +/- 0.2206` |
+| 64 | `0.7634 +/- 0.1154` | `0.7235 +/- 0.1036` | `-0.0274 +/- 0.0402` |
+
+Interpretation: probes remain robust in absolute gap capture, but they do not
+beat the frozen schedule with paired CI, and they lose slightly at K=64. This
+does **not** support the stronger claim "probes track nonstationarity a schedule
+cannot" on this first synthetic perturbation. The paper can still claim
+cross-K retuning replacement, but the stronger nonstationary story is not yet
+proven.
+
+X10, `bandha_inner_lr_phase_shift_probe_gate_20261004.py`, returned
+`INNER_LR_PHASE_SCHEDULE_TRANSFERS`.
+
+This was a principled follow-up to X6 using a training-shaped perturbation:
+the local-step inner learning-rate profile had mean-one cosine modulation, the
+source pilot schedule used phase `0`, and heldout target rounds cycled phases
+`pi/2`, `pi`, and `3pi/2`. The augmented 14-point source-frozen design stayed
+useful, but the source-phase time schedule transferred strongly:
+
+| K | source schedule cap | target schedule cap | augmented P=9 cap | augmented-source |
+|---:|---:|---:|---:|---:|
+| 8 | `0.9752 +/- 0.0067` | `0.9853 +/- 0.0041` | `0.9838 +/- 0.0061` | `0.0435 +/- 0.0568` |
+| 32 | `0.9755 +/- 0.0046` | `0.9834 +/- 0.0049` | `0.9343 +/- 0.0066` | `-0.0452 +/- 0.0092` |
+| 64 | `0.9462 +/- 0.0098` | `0.9532 +/- 0.0100` | `0.8960 +/- 0.0184` | `-0.0262 +/- 0.0104` |
+
+Interpretation: inner-LR phase shifts do not repair the nonstationarity claim.
+They are a useful cautionary negative: not every realistic-looking training
+drift invalidates a round-indexed schedule. Future nonstationary tests should
+use a different mechanism, such as data-order drift, worker-quality bursts, or
+a real workload shift.
+
+Next gates:
+
+1. Turn 19 made the submission-framing decision, turn 20 compressed the
+   abstract/opening scope, and turn 21 completed the final claim/table sanity
+   pass: the synthetic mechanism plus E032--E045 real-path boundary and
+   fragile clean-drift evidence are defensible only as a short workshop
+   mechanism-and-boundary paper, not as a broad optimizer/product claim. The
+   boundary is now specific: target-good actions exist in several candidate
+   families, and a K=8 source schedule can fail badly at real-path K=32. E040
+   adds that random worker-quality bursts create a large positive mean for the
+   deployed hybrid probe but still do not clear target-tuned
+   fixed/DiLoCo/schedule controls with paired confidence. E041 adds that
+   clean-select worker tags identify the injected bad workers but tagged
+   zero-probe controls explain the gain. E042 narrows the raw burst uncertainty
+   and moves the deployed hybrid probe mean slightly below the best retuned
+   control. E043 adds that clean data-order drift collapses the clean-source
+   schedule and gives the deployed hybrid probe a large positive mean, while
+   E044 widens that gate to a paired-positive deployed margin over retuned
+   controls. E045 uses independent seeds and balanced clean strata, then returns
+   to a selector-blocked verdict because capture remains below the positive
+   threshold. Cheap and high-cost target-proxy deployable selection remain
+   blocked outside the fragile clean-drift signal. The remaining paper-ready
+   action is a successful build or Overleaf compile check; local TeX tools and
+   the checked remote host's TeX tools are unavailable, so the busy-wait is
+   blocked on compile infrastructure.
+2. Complete or narrow the full DFW-E033 real-path repair only after a concrete
+   change that is not another selector around the same `(alpha,beta)` candidate
+   sets or a schedule-neighborhood residual family.
+3. Strengthen/repair X6 only if there is a principled nonstationarity not
+   already explained by schedules. Inner-LR phase shifts have now transferred,
+   E044 tested a widened clean data-order drift replication on the real path
+   with a narrow-positive deployed margin, and E045's balanced independent-seed
+   confirmation returned selector-blocked. Any follow-up should change
+   representation or workload materially rather than hand-tune perturbations
+   merely to make probes win.
+4. Stress the augmented 14-point source-frozen design on another synthetic
+   regime only if it addresses a credible reviewer objection; do not keep
+   hand-tuning probe points.
+
 E001 has run and returned `SCHEDULE_EXPLAINS`.
 
 Summary:
@@ -472,6 +1074,214 @@ spending compute that scalar FedAvg or extra fit probes would use better. This
 settles the cost objection for the same-round synthetic bed. It does not settle
 winner's curse or causal persistence; E026 remains the binding dense gate.
 
+E026 ran the higher-power delayed-gamma replication and returned
+`SAME_ROUND_SELECTION_EXPLAINS`.
+
+Summary:
+
+- same-round validation-gamma beats scalar and shuffled on the drop-two subset;
+- lag-1 is weaker than same-round everywhere, does not beat shuffled with a
+  positive CI, and only clearly beats scalar at N=32;
+- lag-2 is weaker still and does not clear scalar/shuffled;
+- gamma autocorrelation is small or negative.
+
+Interpretation: dense geometry still has oracle headroom, and same-round
+validation can act as a safety/selection layer. But E022/E025 do not establish a
+causal reusable trust signal across rounds.
+
+E027 ran the global information query-policy gate and returned
+`FIXED_SCHEDULE_EXPLAINS`.
+
+Summary:
+
+- the greedy global VoI policy beat fixed FedAvg by a large paired margin;
+- it lost to a fixed round-robin exploit/probe/replicate schedule by
+  `0.0221 +/- 0.0049` final objective;
+- oracle policy still had headroom.
+
+Interpretation: shared information state is still a useful framing, but this
+one-step greedy query allocator mostly rediscovered "probe a lot" and did not
+beat a simple fixed schedule.
+
+E027 follow-up `ushmoo_e027_noise_sweep_oracle.py` returned
+`PROBE_CROSSOVER_EXISTS`.
+
+Summary:
+
+- when curvature must be learned from the same probe primitive as E027, a
+  probe-bearing fixed mix beats the best no-probe mix with positive paired CI
+  at every swept noise scale from `0.05` to `2.50`;
+- best mixes usually spend about 24-49% of actions on probes, depending on
+  noise scale;
+- no-probe arms keep curvature RMSE at the prior error (`0.90496`), while
+  probe-bearing arms reduce it sharply.
+
+Interpretation: E027 is not a bed where probes are intrinsically worthless. The
+original adaptive policy failed because its acquisition was wrong. Also, in the
+E027 implementation, `exploit` and `replicate` are both base-gradient
+observations within a round; do not overinterpret their split. The meaningful
+axis is base-gradient budget versus probe budget.
+
+E027 follow-up `ushmoo_e027_bayes_risk_acquisition.py` returned
+`BAYES_RISK_FIXES_GREEDY_NOT_FIXED`.
+
+Summary:
+
+- Bayes-risk acquisition beats original greedy at higher noise:
+  - noise `1.00`: `+0.01517 +/- 0.00528`;
+  - noise `2.50`: `+0.03317 +/- 0.01621`.
+- It does not beat the fixed-mix frontier:
+  - noise `1.00`: `-0.01277 +/- 0.00655`;
+  - noise `2.50`: `-0.04134 +/- 0.01261`.
+
+Interpretation: replacing entropy/D-optimality with a consolidation-risk proxy
+is directionally right but not enough. The next query-control bar is not
+"improve on original greedy"; it is "beat the fixed base/probe frontier."
+
+`ushmoo_validation_lottery_20261004.py` ran the first cheap-validation toy and
+returned `SELF_DROP_EXPLAINS_VALIDATION_LOTTERY`.
+
+Setup:
+
+- workers propose ordinary training-gradient updates;
+- each reports a biased/noisy local self-drop;
+- each randomly samples validation budget `m in {0, 1, 4, 16}` with expected
+  `0.840` validation forwards per worker;
+- matched-cost scalar gets `41` workers instead of `32`, using the rule one
+  training step costs about three validation forwards.
+
+Result:
+
+- raw self-drop vs sixteen-forward diagnostic correlation: `0.724`;
+- after lottery-tail per-tag calibration, self posterior vs true value
+  correlation: `0.999`;
+- lottery posterior vs true value correlation: `0.999`;
+- calibrated self-drop beats matched-cost scalar by `0.00768 +/- 0.00320`;
+- ongoing per-update lottery does not beat calibrated self-drop:
+  `-0.00007 +/- 0.00007`.
+
+Interpretation: on this toy, the value of randomized validation is calibration,
+not per-update measurement. A small validation tail can make the nearly-free
+training self-drop usable, after which most workers should probably run
+`m=0`. The next version must add calibration drift or hidden contexts; otherwise
+ongoing validation is explained by calibrated self-drop.
+
+`ushmoo_span_oracle_check.py` measured the missing rung-2 ceiling on the E026
+bed and returned `SIMPLEX_SPAN_ORACLE_LIVE`.
+
+Summary:
+
+- at `N=32`, tuned scalar was `1.2306 +/- 0.0012`;
+- row-oracle scalar was `3.2658 +/- 0.0413`;
+- simplex worker reweighting was `4.1203 +/- 0.0323`;
+- simplex minus row-oracle scalar was `0.8545 +/- 0.0717`.
+
+Interpretation: same-round action-value headroom is real, and per-worker
+reweighting adds headroom beyond a rowwise scalar. But much of the rung-2
+ceiling is step-size/action-value selection, not dense geometry.
+
+`ushmoo_linearization_gap_check.py` tested whether one shared validation
+gradient explains per-worker value scoring and returned
+`SECOND_ORDER_VALUE_NEEDED`.
+
+Summary at `N=32, alpha=1`:
+
+- pooled correlation: `0.9014`;
+- mean within-round correlation: `0.5259 +/- 0.0241`;
+- top-20 overlap: `0.4880 +/- 0.0227`;
+- linear-best/true-best: `0.4327 +/- 0.1669`.
+
+Interpretation: pooled first-order correlation is misleading. The server needs
+within-round worker ranking, and the shared-gradient score misses too much of
+that ranking. A forward probe set is buying nonlinear action-value evidence on
+this bed.
+
+`bandha_probe_set_rung2_20261004.py` ran the direct probe-set action-value
+experiment and returned `PROBE_SET_RUNG2_LIVE`.
+
+Setup:
+
+- workers propose ordinary K-step local-SGD endpoint updates on the E026 bed;
+- a shared cheap probe set scores
+  `L_probe(theta) - L_probe(theta + alpha_score u_i)` for each worker update;
+- the server softmax-reweights worker updates from those scalar value labels;
+- controls are tuned scalar FedAvg, a shared-gradient linearization scorer,
+  shuffled probe labels, and a true-value softmax diagnostic.
+
+Result:
+
+- at `N=32`, tuned scalar was `1.2300 +/- 0.0009`;
+- shared-gradient softmax was `1.2353 +/- 0.0105`;
+- shuffled `m=4` probe labels scored `1.4521 +/- 0.0022`;
+- best probe arm `probe_mean_m16` scored `1.5738 +/- 0.0245`;
+- best probe minus scalar: `0.3438 +/- 0.0241`;
+- best probe minus shared-gradient: `0.3384 +/- 0.0234`;
+- best probe minus shuffled: `0.1217 +/- 0.0237`.
+
+Interpretation: the probe-set idea is now the live positive branch. The probe
+set is not reconstructing a dense local map; it is buying nonlinear scalar
+action-value evidence. The remaining burden is cost accounting and transfer:
+prove the same value labels beat matched-cost extra SGD and survive real-path
+workloads.
+
+E028 ran the heterogeneous async query-channel gate and returned
+`TAGGED_GLOBAL_POSTERIOR_LIVE`.
+
+Summary:
+
+- homogeneous regime tied averaging exactly (`0.04634` vs `0.04634`);
+- heterogeneous final objective improved from equal averaging `0.33736` to
+  tagged posterior `0.08990`, with oracle at `0.05158`;
+- tagged-vs-true reliability correlation in the heterogeneous regime was
+  `0.941`, compared with `0.487` for noise-only reliability.
+
+Interpretation: tagged async/global evidence can beat homogeneous averaging
+under strong channel heterogeneity while degrading gracefully to averaging when
+workers are actually homogeneous. This is the current clean positive.
+
+E029 first returned `BOOTSTRAP_LEGITIMACY_FAIL`, then its source-bundle requeue
+returned `NO_GPU_HARNESS`.
+
+The first worker lacked `/data/users/atavory/local_gp` and the Mr.
+Gitties/context bootstrap needed to clone it. The requeue used the staged source
+bundle but had no usable GPU harness: ad hoc Python lacked `torch`, and the
+bundle had no `BUCK`, `BUCK.v2`, or `TARGETS` file. Its CPU fallback is
+diagnostic only.
+
+E030 first returned `BOOTSTRAP_LEGITIMACY_FAIL`, then its source-bundle requeue
+ran on real PyTorch CUDA and returned `SCALAR_EXPLAINS_REAL_PATH`.
+
+Summary:
+
+- compute: `REAL_GPU`, `torch=2.14.1+cu130`, device `NVIDIA PG509-210`;
+- workload: torch two-layer binary classifier, real local-SGD worker paths,
+  `D=97`, input 10, hidden 8, `K=4`, `eta=0.04`;
+- main local-map arms used `2N` seeded one-sided probes;
+- residual-shrunk local map minus tuned scalar: `-5.460 +/- 1.570`;
+- validation-shrunk local map minus tuned scalar: `-0.497 +/- 0.909`;
+- validation-shrunk local map minus server/time secant: `0.413 +/- 0.985`;
+- validation-shrunk minus best of scalar/server: `-0.654 +/- 0.964`.
+
+Interpretation: the real-GPU local-map gate did not support a product claim.
+Tuned scalar FedAvg matched or beat the local-map arms. This strengthens the
+case for action-value/probe-set scoring rather than dense local-map estimation
+on real paths.
+
+E031 first failed the same bootstrap gate, then its source-bundle requeue ran
+and returned `REAL_TRUST_NO_SIGNAL` with `CPU_FALLBACK`.
+
+Summary:
+
+- the bundle had no Buck target and ad hoc Python lacked `torch`;
+- a pure-Python two-layer classifier fallback was run with real local-SGD paths;
+- same-round minus scalar was `-9.880 +/- 2.083`;
+- lag-1 minus scalar was `-9.913 +/- 2.147`;
+- lag-1 minus shuffled was `-0.052 +/- 0.152`.
+
+Interpretation: on this CPU fallback, neither same-round nor delayed path-derived
+trust cleared scalar/shuffled controls. This is useful negative evidence for the
+fallback workload, but it is not a GPU/Buck2 real-path verdict.
+
 Updated local-GP state:
 
 - gamma automation from the old aggregator line is dead;
@@ -486,17 +1296,18 @@ Updated local-GP state:
   `N >= 32` on the rotated CPU bed;
 - dense low-rank-plus-diagonal geometry has oracle headroom; E022/E025 show a
   held-out validation-gamma layer can recover a small same-round safe gain at
-  priced cost, but E024 weakens that gain under delayed application and the
-  representation still misses most oracle-H benefit;
+  priced cost, but E026 says the delayed/reusable trust signal does not
+  replicate;
+- tagged heterogeneous async evidence is live from E028 and should now face
+  stronger distributed-training controls;
 - the controller should use empirical-Bayes local-map fitting plus stochastic
   trust-region adaptation, not Optuna/TPE over high-dimensional actions;
-- the next useful work is real-path plumbing (E018/E019), better dense
-  subspace/model identification, validation-budget accounting, and
-  function-space probes.
-- the E018/E019 GPU lane missed its 2026-10-03 16:00 PDT liveness deadline with
-  no result artifacts visible; it now has direct requeue aliases
-  `GPU_1_NEXT.md` / `GPU_2_NEXT.md` requiring the Buck2
-  `keep_gpu_sections` path before adjudication.
+- E030 is the first real-GPU local-map verdict and is negative against tuned
+  scalar;
+- E029 remains a harness failure on its worker; E031 produced only a CPU
+  fallback result;
+- the next useful work is hardening the live same-round action-value/probe-set
+  branch, stronger E028 controls, and costed validation/probe ledgers.
 
 ## Success Labels
 
@@ -535,17 +1346,19 @@ Updated local-GP state:
    function-space features, not only scalar endpoint summaries.
 8. Event-triggered multisecant branch: stop plain BB/L-BFGS consolidation; use
    the K-step local-map operator.
-9. Wait for the requeued E018/E019 GPU workers to report through the direct
-   `GPU_1_NEXT.md` / `GPU_2_NEXT.md` aliases; keep E018 as a real-path
-   readiness smoke, not a product claim.
+9. Treat E030's real-GPU `SCALAR_EXPLAINS_REAL_PATH` result as the current
+   local-map real-path verdict; do not spend more time on dense local-map gamma
+   polishing without a new observation model.
 10. Use residual-shrunk random probes as the default budget policy for now:
     around `2N` when `N >= 32`, full `N*K` for very small `N`.
 11. For dense low-rank-plus-diagonal geometry, keep the held-out validation
-    gate, but do not claim it until the delayed-gamma gate lands. E025 priced
-    the same-round validation cost; E026 still decides causal persistence.
+    gate as a same-round safety/selection layer. E026 says not to claim delayed
+    causal trust from it.
 12. Do not run a closed-loop optimizer before a held-out real-path/control gate
    passes against tuned scalar scale and best-worker fallback.
-13. Rewrite the paper around the reset thesis:
+13. Harden the same-round action-value / probe-set rung-2 experiment: matched
+    extra-SGD cost accounting, calibration drift, and real-path transfer.
+14. Rewrite the paper around the reset thesis:
     - Double Fan / same-point cloud momentum is archived as a failed approach;
     - FedAvg is the infinite-lengthscale / averaging baseline;
     - local drift/probes estimate local-map curvature unavailable to

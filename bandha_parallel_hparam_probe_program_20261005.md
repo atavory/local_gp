@@ -351,9 +351,10 @@ Decision: `DEFAULT_ANCHORED_PROBE_NEGATIVE`.
 
 This kills the naive "bad default" rescue for the existing softmax probe
 extractor.  The branch still has oracle headroom, but the probe forward
-differences do not extract it.  The next test should change the measurement,
-not the anchoring rule: use a validation-gradient marginal-value score
-`<g_val, u_i>` so one backward pass gives scores for all arms.
+differences do not extract it.  E085 later repairs the stale-default customer
+case by changing the decision rule, not by continuing soft mixing: keep the
+stale arm unless a guarded same-round comparison explicitly clears an
+abandonment test.
 
 ### E070: Validation-Gradient Marginal Value Does Not Rescue Extraction
 
@@ -499,13 +500,18 @@ The immediate next question is internal-HPO expansion:
 - extraction: can a default-anchored response model, not a same-round softmax,
   capture more than 4% of E065's large 2D oracle headroom without losing to the
   default-only control?
-- regime: can probes win when the default is stale or the best hyperparameter
-  changes, rather than when a tuned default is already known?
+- regime: E085 says probes can win when the default is stale, but only with a
+  guarded abandon-or-fallback rule rather than the old soft anchor.
 - measurement: E070 says the simple validation-gradient marginal-value score
   does not improve capture over forward-difference probes.
 - real path: E080 proves low-K probe content; E081 proves deployment shape.
   The next bar is not another same-family selector sweep, but whether internal
-  HPO extends to batch size / in-round resource controls.
+  HPO extends to batch size / in-round resource controls.  E082/E083 narrow
+  that expansion: LR-arm summaries do not show a safe-arm collapse, but exact
+  arm mass is missing; the simple batch-size value/FLOP selector has oracle
+  headroom but fails the shuffled-label gate.  E084 says the current
+  outer-control grid is not edge-pinned, and E085 says stale-default recovery
+  becomes live only with a guarded abandonment rule.
 
 ## New Program: Track The Hyperparameter Surface
 
@@ -1220,26 +1226,158 @@ experiments/dfw_e081_gpu_deployment_rule_audit_run_20261006.txt
 experiments/dfw_e081_gpu_deployment_rule_audit_LEGITIMACY_CHECK_20261006.md
 ```
 
-### E082: Moving-Arm / GP Bandit  [BLOCKED]
+### E082: LR-Arm Skew Summary Diagnostic  [DONE]
 
-Use the workers as a live design over hyperparameters:
+E082 reanalyzed the existing real-GPU E060/E061 grouped-LR artifacts.  It did
+not rerun GPU work; it parsed the durable E060/E061 tables to check whether
+the pilot-selected grouped-LR rule was collapsing to the most conservative
+default-preserving policy.
+
+Decision: `LR_SKEW_SUMMARY_NO_SAFE_COLLAPSE_TRACE_NEEDED`.
 
 ```text
-arms_t = GP/UCB/Thompson points over log_lr, K, momentum
-probes_t = cheap values of group-mean candidate updates
-server_t = conservative aggregate around posterior-best arms
+nontrivial cells = 10
+pilot-best policy counts:
+  group_mean2_l40_t2 = 8
+  group_l20_t2       = 1
+  group_l05_t4       = 1
+mean pilot-best - fixed    = +0.245 +/- 0.137
+mean pilot-best - shuffled = +0.447 +/- 0.231
+mean residual oracle headroom = +2.830 +/- 0.597
 ```
 
-The baseline is not "same fixed hyperparameters."  The baseline is E064's
-frozen grouped arms, the default-only arm, and offline tuned schedules.  E065
-is the reason to run this: 2D headroom exists and raw extraction is weak.  E066
-adds the constraint: the GP must be default-anchored or it will simply pay to
-include bad exploratory arms.  E078 adds the permission to continue: probe
-labels can beat shuffled labels in the restricted low-K regime.  E080
-replicates that at high power.  E081 packages the proven piece into a
-deployment rule.  GP remains blocked until the selected-arm trajectory
-diagnostic shows edge pinning or phase movement that a frozen grid cannot
-handle.
+Readout: there is no summary-level evidence that grouped LR probes simply
+retreat to the safest/default-like policy.  The caveat is important: the old
+artifacts do not store exact low/default/high LR arm mass, so free LR search
+remains gated behind an arm-mass/trajectory trace.
+
+Artifacts:
+
+```text
+experiments/dfw_e082_lr_skew_summary_diagnostic.py
+experiments/dfw_e082_lr_skew_summary_diagnostic_result_20261006.md
+experiments/dfw_e082_lr_skew_summary_diagnostic_run_20261006.txt
+experiments/dfw_e082_lr_skew_summary_diagnostic_LEGITIMACY_CHECK_20261006.md
+```
+
+### E083: Batch-Size Value-per-FLOP HPO  [DONE]
+
+E083 tested the cleanest in-round resource-control idea.  Worker groups started
+from the same state and ran local batch sizes `{8,16,32}` with default batch
+`16`.  The server used a default-anchored soft selector over probe-estimated
+value per training FLOP, with shuffled labels, default controls, equal-mix
+controls, and target-only oracle arm/subset diagnostics.
+
+Decision: `BATCH_VALUE_PER_FLOP_NEGATIVE`.
+
+Compute: `REAL_GPU` on `devvm52518`, PyTorch CUDA
+`2.14.1+cu130`, `NVIDIA PG509-210`.
+
+| K | default | value/FLOP probe | shuffled | oracle subset | vpf-default | vpf-shuffled | mixed cost | probe overhead |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 8 | `4.112+/-1.912` | `5.121+/-0.700` | `5.068+/-0.598` | `8.254+/-2.176` | `+1.009+/-1.254` | `+0.054+/-0.112` | `1.167x` | `10.71%` |
+| 16 | `0.307+/-4.333` | `5.954+/-5.256` | `5.667+/-4.861` | `17.689+/-23.614` | `+5.647+/-9.583` | `+0.287+/-0.405` | `1.167x` | `5.36%` |
+
+Readout: batch-size arms have target-oracle headroom, but the decisive
+selector-shuffled margins are tiny with CIs crossing zero.  The simple soft
+value/FLOP selector is not a method claim; future batch/resource work needs a
+stronger response model or a different resource control.
+
+Artifacts:
+
+```text
+experiments/dfw_e083_gpu_batch_value_per_flop_hpo.py
+experiments/dfw_e083_gpu_batch_value_per_flop_hpo_result_20261006.md
+experiments/dfw_e083_gpu_batch_value_per_flop_hpo_run_20261006.txt
+experiments/dfw_e083_gpu_batch_value_per_flop_hpo_LEGITIMACY_CHECK_20261006.md
+```
+
+### E084: Outer-Control Selected-Arm Trajectory Diagnostic  [DONE]
+
+E084 diagnosed the frozen E080/E081 low-K controller:
+
+```text
+design = scaled
+policy = soft_std2
+K      = {4, 8}
+N      = {8, 16}
+select = 384
+```
+
+Decision: `OUTER_TRAJECTORY_STABLE_SOFT_INTERIOR`.
+
+Compute: `REAL_GPU` on `devvm52518`, PyTorch CUDA
+`2.14.1+cu130`, `NVIDIA PG509-210`.
+
+| N | K | alpha | beta | alpha phase span | beta phase span | soft alpha edge | top1 alpha edge | entropy |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 4 | `19.714+/-0.330` | `0.116+/-0.001` | `0.005` | `0.004` | `0.082+/-0.007` | `0.164+/-0.064` | `0.977+/-0.001` |
+| 8 | 8 | `9.948+/-0.179` | `0.116+/-0.001` | `0.007` | `0.001` | `0.091+/-0.007` | `0.180+/-0.067` | `0.976+/-0.001` |
+| 16 | 4 | `19.935+/-0.348` | `0.116+/-0.001` | `0.004` | `0.003` | `0.089+/-0.007` | `0.258+/-0.076` | `0.976+/-0.001` |
+| 16 | 8 | `10.030+/-0.180` | `0.116+/-0.001` | `0.008` | `0.004` | `0.094+/-0.007` | `0.297+/-0.079` | `0.976+/-0.001` |
+
+Readout:
+
+- the deployed low-K controller is not pinned to alpha edges;
+- it is not moving meaningfully across early/middle/late training phases;
+- the soft selector is a high-entropy interior shrinkage rule centered near
+  the theory-scaled alpha and beta around `0.116`;
+- therefore moving-arm GP/UCB/Thompson machinery is not justified for the
+  current outer-control rule.
+
+Artifacts:
+
+```text
+experiments/dfw_e084_gpu_outer_control_trajectory_diagnostic.py
+experiments/dfw_e084_gpu_outer_control_trajectory_diagnostic_result_20261006.md
+experiments/dfw_e084_gpu_outer_control_trajectory_diagnostic_run_20261006.txt
+experiments/dfw_e084_gpu_outer_control_trajectory_diagnostic_LEGITIMACY_CHECK_20261006.md
+```
+
+### E085: Guarded Stale-Default HP Arm  [DONE]
+
+E085 retested the actual customer case: the default hyperparameter is stale or
+wrong, and probes may abandon it only under a conservative same-round guard.
+The stale fallback was the low LR group `lr_multiplier=0.25`; the fresh control
+was `lr_multiplier=1.0`; available arms were `{0.25,1,4}`.
+
+Decision: `STALE_DEFAULT_GUARDED_PROBE_LIVE`.
+
+Compute: `REAL_GPU` on `devvm52518`, PyTorch CUDA
+`2.14.1+cu130`, `NVIDIA PG509-210`.
+
+Guard:
+
+```text
+abandon stale default only if the best probe arm beats the stale arm by a
+slice-disagreement margin and at least 3/4 probe slices agree
+```
+
+| K | cost | stale only | fresh only | oracle single | guarded | guarded-stale | guarded-fresh | abandon | stale mass | fresh mass |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 8 | `1.34%` | `3.170+/-1.910` | `2.877+/-2.290` | `6.506+/-1.301` | `4.167+/-1.546` | `+0.997+/-0.739` | `+1.290+/-2.179` | `0.222+/-0.073` | `0.778+/-0.073` | `0.208+/-0.078` |
+| 16 | `0.67%` | `1.988+/-1.989` | `1.696+/-1.448` | `5.100+/-1.224` | `2.383+/-1.598` | `+0.395+/-0.654` | `+0.687+/-2.200` | `0.197+/-0.086` | `0.803+/-0.086` | `0.188+/-0.089` |
+| 32 | `0.33%` | `1.075+/-1.937` | `1.198+/-1.594` | `4.083+/-1.932` | `1.802+/-1.765` | `+0.727+/-1.114` | `+0.604+/-1.618` | `0.208+/-0.121` | `0.792+/-0.121` | `0.188+/-0.107` |
+
+Readout:
+
+- E069's soft stale-anchor rule was negative; E085's guarded abandon-or-fallback
+  rule is positive in the pooled decision;
+- the rule remains conservative, keeping the stale default about 80% of
+  rounds and mostly switching to the fresh lr=1 arm when it leaves;
+- oracle single-arm headroom remains substantial, so this is still not the
+  ceiling;
+- the live inner-HPO use case is now stale-default recovery, not free soft LR
+  search around a strong known default.
+
+Artifacts:
+
+```text
+experiments/dfw_e085_gpu_stale_default_guarded_hp_arm.py
+experiments/dfw_e085_gpu_stale_default_guarded_hp_arm_result_20261006.md
+experiments/dfw_e085_gpu_stale_default_guarded_hp_arm_run_20261006.txt
+experiments/dfw_e085_gpu_stale_default_guarded_hp_arm_LEGITIMACY_CHECK_20261006.md
+```
 
 ## Paper Shape
 
@@ -1306,6 +1444,19 @@ That claim fits the favorable evidence:
   (`+0.052+/-0.085`); the theory fallback is even cleaner, beating per-K fixed
   (`+0.119+/-0.066`) and schedule (`+0.298+/-0.075`) while preserving low-K
   shuffled-label content (`+0.175+/-0.065`).
+- E082 checks the LR-arm skew concern on E060/E061 summaries.  It finds no
+  summary-level safe/default collapse (`+0.245+/-0.137` versus fixed and
+  `+0.447+/-0.231` versus shuffled across nontrivial cells), but it does not
+  contain exact LR arm mass, so free LR search remains gated.
+- E083 tests batch-size/value-per-FLOP as the cleanest in-round resource arm.
+  The simple default-anchored soft selector is negative against shuffled labels
+  despite oracle headroom, so batch size is not promoted by this gate.
+- E084 shows the E080/E081 low-K outer controller sits in a stable soft
+  interior mixture rather than pinning to grid edges or moving across phases.
+  Moving-arm GP machinery is therefore not triggered.
+- E085 shows guarded stale-default LR-arm recovery is live: the server keeps a
+  bad low-LR fallback unless same-round probes clear an abandonment guard, and
+  the guarded policy beats the stale-only baseline in the pooled decision.
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped
