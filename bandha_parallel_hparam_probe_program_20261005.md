@@ -482,19 +482,20 @@ overfit.  E078 fixes that audit by testing only probe-active `K<=8` cells and
 replicates real probe content.  E079 showed that a 13-seed budget sweep was
 too noisy to adjudicate shuffled-label content, and E080 resolves that with a
 64-seed power replication: `+0.177+/-0.049` over shuffled and `+0.116+/-0.052`
-over fixed.  So the current live branch is:
+over fixed.  E081 packages it as a deployment rule: low-K probes plus frozen
+large-K fallback beat schedule and tie per-K fixed / best-control ceilings
+without importing per-K tuning.  So the current live branch is:
 
 > use aligned probes for low-dimensional optimizer-control decisions where the
 > candidate set is deliberately structured, the fallback is explicit, and the
 > selector is robust to noisy top-1 rankings.
 
-The immediate next question is fallback and extraction:
+The immediate next question is internal-HPO expansion:
 
-- deployment: can the replicated `K<=8` probe-content win be packaged as a
-  low-cost controller with frozen design, frozen policy, and an explicit
-  fallback outside its proven regime?
-- fallback: after the `K<=8` branch is costed, can a genuinely tuning-free
-  large-K fallback avoid importing per-K tuned `fixed` values?
+- deployment: E081 says yes.  The best shippable shapes are
+  `K<=8` probe + global fixed fallback and `K<=8` probe + theory fallback.
+- fallback: global fixed is safe but weak at small K; theory fallback is
+  surprisingly strong and should be the cleaner no-pilot deployment candidate.
 - extraction: can a default-anchored response model, not a same-round softmax,
   capture more than 4% of E065's large 2D oracle headroom without losing to the
   default-only control?
@@ -502,9 +503,9 @@ The immediate next question is fallback and extraction:
   changes, rather than when a tuned default is already known?
 - measurement: E070 says the simple validation-gradient marginal-value score
   does not improve capture over forward-difference probes.
-- real path: E080 says K-aware robust round-level outer control has proven
-  probe content at `K<=8`; the next bar is deployment shape, not another
-  same-family selector sweep.
+- real path: E080 proves low-K probe content; E081 proves deployment shape.
+  The next bar is not another same-family selector sweep, but whether internal
+  HPO extends to batch size / in-round resource controls.
 
 ## New Program: Track The Hyperparameter Surface
 
@@ -1147,7 +1148,7 @@ experiments/dfw_e080_gpu_kle8_probe_content_power_replication_run_20261006.txt
 experiments/dfw_e080_gpu_kle8_probe_content_power_replication_LEGITIMACY_CHECK_20261006.md
 ```
 
-### E081: Deployment Rule Audit  [NEXT]
+### E081: Deployment Rule Audit  [DONE]
 
 Build the shippable rule from the proven pieces:
 
@@ -1178,7 +1179,48 @@ cost ledger: include probe overhead and offline tuning sweeps separately
 This is the "you should use this" version: a frozen low-K probe controller plus
 honest fallback, not an adaptive method that keeps chasing a post-hoc schedule.
 
-### E082: Moving-Arm / GP Bandit  [BLOCKED UNTIL E081]
+Decision: `DEPLOYMENT_RULE_LIVE_GLOBAL_FIXED`.
+
+Compute: `REAL_GPU` on `devvm52518`, PyTorch CUDA
+`2.14.1+cu130`, `NVIDIA PG509-210`.
+
+Frozen pairs:
+
+```text
+global fixed pair from all pilot cells: (5.0, 0.05)
+K=8 transferred pair from K=8 pilot cells: (9.0, 0.05)
+theory fallback: (min(20, max(4, 72/K)), 0.15)
+```
+
+Pooled deployment rules:
+
+| rule | minus own no-probe baseline | minus per-K fixed | minus schedule | minus best-control ceiling | low-K minus shuffled |
+|---|---:|---:|---:|---:|---:|
+| probe small / global fixed large | `+2.166+/-0.367` | `+0.052+/-0.085` | `+0.231+/-0.090` | `-0.017+/-0.087` | `+0.175+/-0.065` |
+| probe small / K8 transfer large | `+1.044+/-0.231` | `-1.386+/-0.409` | `-1.207+/-0.401` | `-1.454+/-0.410` | `+0.175+/-0.065` |
+| probe small / theory large | `+0.073+/-0.029` | `+0.119+/-0.066` | `+0.298+/-0.075` | `+0.051+/-0.067` | `+0.175+/-0.065` |
+
+Readout:
+
+- low-K probe labels replicate again against shuffled labels;
+- K=8 transfer is a bad large-K fallback and should be dropped;
+- global fixed fallback gives the formal decision label because it strongly
+  beats its own no-probe baseline and ties per-K fixed;
+- theory fallback is cleaner and arguably better for deployment: it uses only
+  known `K`, beats per-K fixed and schedule, and ties/barely beats the
+  best-control ceiling;
+- this is now a method-shaped result, not just a selector screen.
+
+Artifacts:
+
+```text
+experiments/dfw_e081_gpu_deployment_rule_audit.py
+experiments/dfw_e081_gpu_deployment_rule_audit_result_20261006.md
+experiments/dfw_e081_gpu_deployment_rule_audit_run_20261006.txt
+experiments/dfw_e081_gpu_deployment_rule_audit_LEGITIMACY_CHECK_20261006.md
+```
+
+### E082: Moving-Arm / GP Bandit  [BLOCKED]
 
 Use the workers as a live design over hyperparameters:
 
@@ -1194,8 +1236,10 @@ is the reason to run this: 2D headroom exists and raw extraction is weak.  E066
 adds the constraint: the GP must be default-anchored or it will simply pay to
 include bad exploratory arms.  E078 adds the permission to continue: probe
 labels can beat shuffled labels in the restricted low-K regime.  E080
-replicates that at high power.  E081 must package the proven piece into a
-deployment rule before adding a GP layer.
+replicates that at high power.  E081 packages the proven piece into a
+deployment rule.  GP remains blocked until the selected-arm trajectory
+diagnostic shows edge pinning or phase movement that a frozen grid cannot
+handle.
 
 ## Paper Shape
 
@@ -1257,6 +1301,11 @@ That claim fits the favorable evidence:
 - E080 resolves that ambiguity in favor of E078: at `select=384` with 64
   held-out seeds, probe content replicates (`selector - shuffled =
   +0.177+/-0.049`) and the selector beats fixed (`+0.116+/-0.052`).
+- E081 packages the low-K probe controller into a deployment rule.  The global
+  fixed fallback version beats schedule (`+0.231+/-0.090`) and ties per-K fixed
+  (`+0.052+/-0.085`); the theory fallback is even cleaner, beating per-K fixed
+  (`+0.119+/-0.066`) and schedule (`+0.298+/-0.075`) while preserving low-K
+  shuffled-label content (`+0.175+/-0.065`).
 - Spread-1 collapse shows the rule does not invent signal.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped
