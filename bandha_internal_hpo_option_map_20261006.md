@@ -1,13 +1,20 @@
 # Internal HPO Option Map
 
-Status: live map, 2026-10-06.
+Status: live map, updated 2026-10-07.
 
 Purpose: make the internal-HPO option space explicit.  Do not let the project
 collapse back into "one clever adaptive method."  The research object is:
 
 > aligned distributed workers create a cheap in-round experimental design over
-> optimizer controls; probe sets decide which controls are worth using, with
-> shrinkage and fallback when evidence is weak.
+> optimizer controls; probe sets decide which controls are worth using; the
+> server reinvests the experiment into the same shared trajectory through
+> probe-weighted aggregation, shrinkage, and fallback.
+
+This is **HPO-aware aggregation**.  The comparison class is not only FedAvg and
+not only external HPO.  It is the fixed-compute question: with the same workers,
+is it better to fork arms into separate trajectories and keep one later, or to
+probe the arms and recombine their useful signal into the model being trained
+right now?
 
 ## Current Hard Facts
 
@@ -114,6 +121,21 @@ rescues the intended stale-default customer case, but only after changing the
 decision rule from soft mixing to a guarded abandonment test; that promotes
 stale-default recovery as an internal-HPO use case without reopening free LR
 search.
+
+HPO table requirement for the writeup:
+
+| column | reason |
+|---|---|
+| stale/default | what a user would have run |
+| best fixed / best schedule | hindsight target and tuned baseline |
+| naive fixed-compute HPO | the obvious "just run parallel HPO" alternative |
+| shuffled probe | label-content control |
+| probe-weighted internal HPO | our deployed rule |
+| oracle | headroom and gap-closure denominator |
+
+Do not report only "minus fixed" aggregation rows in the main text.  Report
+regret to tuned HPO baselines, oracle gap closed, and improvement per percent
+probe overhead.
 
 ## Status Labels
 
@@ -271,7 +293,7 @@ veto.
 
 | # | option | status | evidence | next gate |
 |---:|---|---|---|---|
-| E1 | exact collapse when evidence is uninformative | `LIVE` | spread-1 collapse | keep as invariant |
+| E1 | exchangeability null when evidence has no persistent arm signal | `LIVE` | spread-1 no-gain rows; needs explicit IID noise audit | keep as invariant and measure realized weight motion |
 | E2 | shuffled-label control | `LIVE` | E078/E080 decisive | keep in every content gate |
 | E3 | fault veto / bad round rejection | `GATED` | easier than ranking healthy workers | inject bad-worker/burst test |
 | E4 | conservative fallback outside proven regime | `LIVE` | E081 | freeze rule |
@@ -289,7 +311,7 @@ current proven action family before adding a GP or larger arm space.
 |---:|---|---|---|---|
 | F1 | forward-difference probe loss | `LIVE` | E078/E080 | current default |
 | F2 | larger probe batch | `KILL` as simple fix | E079: no clear gain 384→1536 | do not spend here blindly |
-| F3 | validation-gradient marginal score `<g_V,u>` | `GATED` | prior simple version failed in E070 | only with current outer-control rule |
+| F3 | validation-gradient marginal score `<g_V,u>` | `PENDING_RUN` | E070 simple default-anchored version failed; E086 current-rule raw-group comparison implemented; first worker-route attempts did not produce a real run | run E086 on the correct GPU lane |
 | F4 | response model over candidate features | `GATED` | may improve extraction | test after deployment rule |
 | F5 | split select/eval probe shards | `GATED` | selection-bias audit | use in real workload version |
 | F6 | rotating probe shards | `GATED` | avoids validation overfit | required for long runs |
@@ -321,20 +343,26 @@ Immediate:
    deployment candidate.
 3. Do not run another same-family selector sweep for the E080/E081 controller:
    E084 shows a stable soft interior mixture, not edge pinning.
+4. Add the fixed-compute HPO baseline and IID exchangeability audit before
+   calling the experimental package submission-ready.
 
 Then:
 
-4. E082 LR-arm skew summary is done: no summary safe-collapse, but exact arm
+5. E082 LR-arm skew summary is done: no summary safe-collapse, but exact arm
    mass is still missing.
-5. E083 batch-size/value-per-FLOP is done: simple soft value/FLOP is negative
+6. E083 batch-size/value-per-FLOP is done: simple soft value/FLOP is negative
    against shuffled labels despite oracle headroom.
-6. E084 selected-arm trajectory is done: the frozen grid sits in a stable,
+7. E084 selected-arm trajectory is done: the frozen grid sits in a stable,
    high-entropy interior mixture, so moving-arm/GP machinery is not justified
    for the current outer-control rule.
-7. E085 bad/stale-default HP-arm test is done: guarded abandonment from a
+8. E085 bad/stale-default HP-arm test is done: guarded abandonment from a
    stale LR default is live, while earlier soft default anchoring remains
    negative.
-8. Only consider GP/UCB/Thompson after a new regime-shift result shows frozen
+9. E086 marginal-value score in the current grouped-rule comparison is
+   implemented but not scientifically run.  The first worker-route attempts
+   lacked `torch` or did not expose CUDA device nodes inside the worker process;
+   do not record that as a project-level GPU blockage.
+10. Only consider GP/UCB/Thompson after a new regime-shift result shows frozen
    controls failing while probe labels still beat shuffled labels.
 
 ## Current Best Method Statement
@@ -358,5 +386,7 @@ is an option with a gate, not a claim.
 | 3 | batch-size arm | B1 | DONE E083: simple value/FLOP selector negative vs shuffled |
 | 4 | selected-arm trajectory | A8/A9/F10 | DONE E084: stable soft interior; moving grid not triggered |
 | 5 | bad/stale default HP-arm test | C2/C3 | DONE E085: guarded stale-default recovery live |
-| 6 | marginal-value score in current rule | F3 | improves shuffled contrast or capture at matched cost |
-| 7 | sequential K test prototype | D1/D2 | marginal local-step value predicts when to sync |
+| 6 | marginal-value score in current rule | F3 | PENDING E086: implemented; needs the correct real-GPU run for raw-vs-gradient result |
+| 7 | IID exchangeability/noise-selection audit | E1/G1 | realized probe weights may move, but no persistent HPO signal |
+| 8 | fixed-compute naive-HPO baseline | paper comparator | same workers: separate HPO trajectories vs recombined shared trajectory |
+| 9 | sequential K test prototype | D1/D2 | marginal local-step value predicts when to sync |

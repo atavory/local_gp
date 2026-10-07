@@ -1,0 +1,376 @@
+# HPO-Aware Aggregation in Distributed Training
+
+Status: first paper draft scaffold, 2026-10-07.
+
+Experiment launch state: E087/E088 were implemented and dispatched on
+2026-10-07.  Main worker job:
+`talsarig__devvm40229/dfw_e087_e088_hpo_strengthening`.  Reduced backup:
+`assafcohen__devvm52244/dfw_e087_e088_reduced_hpo_strengthening`.  Tables below
+must remain marked pending until result artifacts are uploaded and copied back.
+
+Target venue recommendation: **TMLR first** unless E087/E088 plus one broader
+real-path workload turn into a cleaner, wider empirical package.  The ICML
+version needs a stronger fixed-compute HPO table and at least one additional
+task family beyond the current local-SGD classifier bed.
+
+## Working Title
+
+Probe-Weighted Internal HPO for Distributed Optimization
+
+Alternative:
+
+- HPO-Aware Aggregation for Distributed Training
+- Reinvesting Hyperparameter Exploration in Distributed Optimization
+- Probe-Weighted Hyperparameter Arms in Local SGD
+
+## One-Sentence Claim
+
+Distributed training already pays for parallel worker updates; we turn those
+updates into an in-round hyperparameter experiment, use cheap probes to score
+candidate updates, and aggregate them back into the same shared trajectory so
+exploration is not discarded like ordinary parallel HPO.
+
+## Abstract Skeleton
+
+Hyperparameter tuning for distributed optimization is usually external to
+training: run multiple jobs, select a winner, and discard the losing
+trajectories.  This is wasteful when the training job already executes many
+workers in parallel.  We study **HPO-aware aggregation**, where workers or
+server-side candidate updates instantiate a small set of optimizer arms from a
+common parameter state, a cheap probe set estimates their value, and the server
+selects or weights the resulting updates into one shared trajectory.  The method
+is not a generic replacement for averaging exchangeable workers: under IID
+identical arms, probe weights can fluctuate from finite-sample noise but cannot
+identify a persistent hyperparameter advantage.  The useful regime is designed
+nonexchangeability: learning-rate arms, low-dimensional outer optimizer
+controls, and stale-default recovery.  Across controlled local-SGD experiments,
+probe-weighted internal HPO beats shuffled probes and fixed defaults at low
+probe overhead, recovers from stale hyperparameters with conservative guards,
+and exposes a fixed-compute alternative to naive parallel HPO.  The results
+identify both the opportunity and the boundary: probes are valuable when the
+arm choice affects same-round update quality and the action space is small
+enough for conservative shrinkage.
+
+## Main Contributions
+
+1. **Formulation.** HPO-aware aggregation: internal HPO whose exploration is
+   reinvested into the same distributed update.
+2. **Null model.** IID identical arms are exchangeable.  Realized probe weights
+   can move, but any gain is stochastic-update filtering rather than HPO.
+3. **Algorithm.** Group workers or server-side candidate updates into optimizer
+   arms; score candidate next states on probe batches; apply conservative
+   soft/shrunk weights or guarded fallback.
+4. **Efficiency accounting.** Probe cost amortizes over `K * N` local work, so
+   small validation probes cost sub-percent to low-single-digit overhead.
+5. **Empirical HPO wins.** Nonexchangeable LR arms, low-K outer controls, and
+   stale-default recovery show label-content gains over shuffled probes and
+   fixed/default baselines.
+6. **Boundary results.** Batch-size value/FLOP, naive validation-gradient
+   scoring, free LR search, and exchangeable worker ranking are not promoted.
+
+## Method
+
+At round `t`, all workers start from `theta_t`.  Instead of assigning every
+worker the same optimizer setting, define a small arm set
+`h in H_t`.
+
+Worker-arm version:
+
+```text
+worker/group i runs local optimizer h_i from theta_t
+returns update u_i
+probe scores theta_t + candidate(u_i)
+server applies theta_{t+1} = theta_t + sum_i w_i u_i
+```
+
+Server-control version:
+
+```text
+workers return a common pool of updates
+server forms candidate outer updates using (alpha, beta) arms
+probe scores the candidate next states
+server applies the selected/shrunk outer update
+```
+
+The second version answers the "fewer workers per parameter" objection: some
+controls can be probed from the same collected worker updates without splitting
+the training workers across arms.
+
+### Algorithm Box Draft
+
+Input: current parameters `theta_t`, worker count `N`, local steps `K`, arm set
+`H_t`, probe batch `P_t`, prior weights `pi`, shrinkage `lambda`, fallback
+policy `F`.
+
+1. Assign workers or candidate server updates to arms `h_i in H_t`.
+2. From common `theta_t`, obtain candidate updates `u_i`.
+3. Form candidate next states `theta_t + A(u_i, h_i)`.
+4. Evaluate probe losses `ell_i` on `P_t`.
+5. Convert losses to posterior weights:
+
+```text
+q_i proportional to exp(-(ell_i - mean(ell)) / tau(ell))
+w_i = (1 - lambda) pi_i + lambda q_i
+```
+
+6. If guard/fallback fails, use `F(theta_t)` or the prior/default arm.
+7. Apply:
+
+```text
+theta_{t+1} = theta_t + sum_i w_i A(u_i, h_i)
+```
+
+For outer-control arms, `u_i` can be replaced by candidate server updates
+constructed from the same worker-update pool.  For guarded stale-default
+recovery, the soft weights become a binary abandon-or-fallback decision.
+
+### Cost Accounting
+
+Let each worker perform `K` local steps and let there be `N` workers.  If each
+probe evaluation is a forward pass on `B_p` examples for `G` candidate groups
+and `S` probe slices, the overhead is approximately:
+
+```text
+probe_overhead ~= G * S * B_p / (3 * K * N * train_examples_per_step)
+```
+
+The `3` is the rough forward/backward ratio used in the existing ledger.  The
+important point is the amortization: the same probe cost is spread over `K*N`
+worker-step work, which is why held-out measurement that would be expensive on
+one machine becomes cheap in distributed training.
+
+## Core Baselines
+
+The main tables should use HPO columns, not only aggregation columns:
+
+| baseline | purpose |
+|---|---|
+| default / stale default | what a user would run |
+| best fixed arm | hindsight HPO target |
+| tuned schedule | strong no-probe baseline |
+| naive fixed-compute parallel HPO | same workers split across trajectories |
+| shuffled probe | label-content control |
+| internal HPO | our probe-weighted/guarded rule |
+| oracle | headroom and gap closure |
+
+Primary metrics:
+
+- final target score or normalized improvement;
+- internal HPO minus shuffled probe;
+- internal HPO minus default/fixed/schedule;
+- internal HPO minus naive parallel HPO at fixed worker budget;
+- oracle gap closed;
+- probe overhead percent.
+
+## Experiment Package
+
+### E063: Worker-Arm LR HPO
+
+Frozen grouped LR arms with raw probe weighting.
+
+Key evidence:
+
+- spread 1: no persistent HPO gain;
+- spread 16: raw probe beats fixed and shuffled at K=8,16,32;
+- cost: `0.33%` to `1.34%`;
+- capture is small, but label content is repeatable.
+
+Use this as the clean worker-arm mechanism result.
+
+### E080/E081: Outer-Control HPO
+
+Low-K `(alpha,beta)` control with `scaled/soft_std2`.
+
+Key evidence:
+
+- E080 K<=8: selector minus shuffled `+0.177 +/- 0.049`;
+- selector minus fixed `+0.116 +/- 0.052`;
+- selector minus schedule `+0.164 +/- 0.057`;
+- E081 packages this into a deployment rule with frozen large-K fallback.
+
+Use this as the strongest low-dimensional server-side HPO result.
+
+### E085: Stale-Default Recovery
+
+Guarded stale LR default abandonment.
+
+Key evidence:
+
+- stale default `lr_multiplier=0.25`;
+- guarded policy improves over stale-only at K=8/16/32;
+- abandon rate around 20%;
+- fallback remains the stale default unless probe slices agree.
+
+Use this as the most legible practical HPO win.
+
+### E087: IID Noise-Selection Null
+
+Pending run.
+
+Purpose:
+
+- fake arms with identical hyperparameters;
+- measure weight motion under finite batch noise;
+- report selector minus uniform and shuffled;
+- separate stochastic-update filtering from HPO.
+
+Expected paper role:
+
+- strengthens the null section regardless of sign;
+- if positive, call it filtering, not HPO;
+- if neutral/negative, supports the designed-spread requirement.
+
+### E088: Fixed-Compute Parallel HPO Baseline
+
+Pending run.
+
+Purpose:
+
+- same total workers;
+- external HPO splits them into separate LR-arm trajectories;
+- internal HPO uses arms inside one shared trajectory and recombines;
+- compare internal probe to external validation-selected and oracle HPO.
+
+Expected paper role:
+
+- directly answers "why not just run HPO in parallel?";
+- this is the highest-value missing table for TMLR.
+
+## Null / Theory Section
+
+State the null carefully:
+
+> With identical IID arms, worker labels are exchangeable.  A probe controller
+> may still produce non-uniform realized weights because both worker updates
+> and probe batches are finite-sample random variables.  However, no arm label
+> carries persistent hyperparameter information.  Any benefit in this regime is
+> stochastic-update filtering and must be validated separately from the HPO
+> claim.
+
+Then:
+
+- show symmetrization/Rao-Blackwell intuition;
+- explain winner's curse under top-1 noisy probe selection;
+- motivate shrinkage to the uniform/default prior;
+- transition to designed nonexchangeability as the useful door.
+
+## Introduction Draft Points
+
+Opening paragraph:
+
+Distributed optimization and hyperparameter optimization are usually treated as
+separate loops.  The training system allocates many workers to estimate one
+update, while HPO allocates many whole training runs to decide which optimizer
+configuration should have been used.  This separation wastes information:
+distributed workers already create parallel candidate computations from nearly
+the same state, but standard training collapses them by uniform averaging and
+standard HPO discards all but a winning trajectory.
+
+Problem paragraph:
+
+Naively combining the two loops is not enough.  If we simply run separate HPO
+trials in parallel, each hyperparameter receives fewer workers per update and
+the losing trials do not train the final model.  If we simply rank IID workers,
+the labels are exchangeable and probe scores mostly select noise.  The useful
+middle ground is to create **designed nonexchangeability** inside the
+distributed round: workers or candidate server updates represent deliberate
+optimizer arms.
+
+Thesis paragraph:
+
+We propose HPO-aware aggregation.  A training round becomes a paired experiment
+over a small optimizer-control set.  Because all arms start at the same
+`theta_t`, probe comparisons have far lower trajectory variance than
+independent training runs.  Because the result is aggregated back into the
+shared update, exploration contributes to the model rather than becoming
+dead-end tuning work.
+
+Boundary paragraph:
+
+The method is intentionally conservative.  It does not claim that probes can
+beat averaging for exchangeable workers, nor that every hyperparameter belongs
+inside a one-round decision.  Controls whose payoff is visible in the round
+such as LR multipliers, stale-default abandonment, and low-dimensional outer
+optimizer settings are natural.  Controls whose value is mostly cross-round,
+such as large changes in synchronization period, require a sequential objective
+instead.
+
+## Related Work Hooks
+
+- Population-based training: external online HPO, but trajectories branch and
+  exploit by copying; our arms are paired at the same state and recombined.
+- Hypergradient methods: differentiate through hyperparameters; our method uses
+  held-out probe comparisons and does not require differentiating the training
+  loop.
+- D-Adaptation / Prodigy / schedule-free methods: reduce LR tuning burden; our
+  setting uses distributed parallelism to cheaply test low-dimensional controls.
+- FedAvg / local SGD / DiLoCo: standard aggregation treats worker updates as
+  estimates of one optimizer setting; we intentionally create optimizer-arm
+  variation and aggregate with probe evidence.
+- Bandits / Bayesian optimization: standard BO spends trials; our feedback is
+  paired within one round and acts through the shared update.
+
+## Table Shells
+
+Table 1: IID null / fake arms.
+
+| K | selector-uniform | selector-shuffled | weight L1 | entropy | probe-target rho | top1 hit |
+|---:|---:|---:|---:|---:|---:|---:|
+| pending | pending | pending | pending | pending | pending | pending |
+
+Table 2: Worker LR arms.
+
+| K | fixed | shuffled | internal HPO | oracle | internal-fixed | internal-shuffled | cost |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 8 | E063 | E063 | E063 | E063 | E063 | E063 | E063 |
+| 16 | E063 | E063 | E063 | E063 | E063 | E063 | E063 |
+| 32 | E063 | E063 | E063 | E063 | E063 | E063 | E063 |
+
+Table 3: Low-K outer controls.
+
+| setting | fixed | schedule | shuffled | internal HPO | internal-fixed | internal-schedule | internal-shuffled |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| E080 pooled | recorded | recorded | recorded | recorded | +0.116 | +0.164 | +0.177 |
+
+Table 4: Stale-default recovery.
+
+| K | stale default | fresh/default | shuffled guard | guarded internal HPO | guarded-stale | abandon rate |
+|---:|---:|---:|---:|---:|---:|---:|
+| 8 | E085 | E085 | E085 | E085 | +0.997 | ~0.20 |
+| 16 | E085 | E085 | E085 | E085 | +0.395 | ~0.20 |
+| 32 | E085 | E085 | E085 | E085 | +0.727 | ~0.20 |
+
+Table 5: Fixed-compute external HPO.
+
+| K | default | external HPO | external oracle | internal HPO | internal-external | internal-shuffled | cost |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| pending | pending | pending | pending | pending | pending | pending | pending |
+
+## Claims To Avoid
+
+- "We improve distributed averaging in general."
+- "Probe weights should literally become uniform every IID round."
+- "This solves large-K communication adaptation."
+- "Batch size works" based on E083.
+- "Validation-gradient marginal scoring works" until E086 has a real run.
+- "GP/UCB is needed" before a new edge-pinning or regime-shift result.
+
+## Venue Read
+
+TMLR-ready shape:
+
+- honest null model;
+- HPO-first tables;
+- careful cost accounting;
+- positive core plus scoped failures.
+
+ICML-ready shape:
+
+- broader task family;
+- stronger fixed-compute HPO win;
+- one clean algorithm box;
+- fewer pending branches;
+- likely closed-loop experiment beyond the current diagnostic bed.
+
+Current recommendation: write the TMLR paper now, while using E087/E088 to
+decide how aggressive the HPO claim can be.

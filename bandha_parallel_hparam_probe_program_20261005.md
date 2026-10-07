@@ -1,17 +1,19 @@
 # Parallel Hyperparameter Probes
 
-Status: live synthesis, 2026-10-06.
+Status: live synthesis, updated 2026-10-07.
 
 This note supersedes the narrow "rank workers with probes" framing.  The useful
-object is not a set of exchangeable workers.  The useful object is a parallel
-experiment over optimizer hyperparameters.
+object is not a set of exchangeable workers.  The useful object is
+**HPO-aware aggregation**: a parallel experiment over optimizer
+hyperparameters whose results are folded back into the same shared update.
 
 ## One Sentence
 
-Use aligned workers as a live experimental design over inner optimizer
+Use aligned workers as a live experimental design over optimizer
 hyperparameters, use cheap probe sets to estimate the value of the returned
-candidate updates, and aggregate through a conservative posterior rule that
-shrinks back to averaging when the evidence is weak.
+candidate updates, and aggregate through a conservative posterior rule so the
+exploration improves the current shared trajectory instead of being thrown away
+like ordinary parallel HPO.
 
 ## Deployment Claim
 
@@ -22,8 +24,13 @@ model, data, batch size, optimizer, or training phase changes.
 The useful target is:
 
 > Match the per-regime tuned schedule without running a new tuning sweep, at
-> sub-1% to low-single-digit probe overhead, and collapse to the default when
-> the probe signal is uninformative.
+> sub-1% to low-single-digit probe overhead, and shrink to the default/uniform
+> rule when the probe signal is uninformative.
+
+The main baseline to add now is fixed-compute parallel HPO: same total workers,
+separate arm trajectories, and then choose/copy the winner.  Our method must
+show that recombining probed arms into one trajectory recovers more HPO value
+per unit compute than discarding non-winning trajectories.
 
 This already has one strong synthetic support point from the earlier
 round-level `(alpha,beta)` probe-control branch:
@@ -113,9 +120,10 @@ Key held-out rows:
 | 4 | `0.5,1,2` | 5.018 | 8.597 | 5.185 | 0.167+/-0.153 | 0.228+/-0.129 | 1.34% |
 | 16 | `0.25,1,4` | 3.226 | 7.644 | 3.531 | 0.304+/-0.175 | 0.691+/-0.325 | 1.34% |
 
-The important control is spread 1: the method collapses exactly to no effect
-when the arms are identical.  It is not hallucinating gains under
-exchangeability.
+The important control is spread 1: the method shows no persistent gain when
+the arms are identical.  Realized probe weights can still move under finite
+batch noise; the point is that without designed HPO spread, any improvement is
+stochastic-update filtering rather than hyperparameter learning.
 
 ### E061: K Sweep Confirms The Mechanism, With Fragility
 
@@ -180,15 +188,15 @@ Decision: `RAW_GROUP_PROBE_REPLICATES`.
 
 This is the cleanest favorable stationary result so far:
 
-- exact zero effect under exchangeability (`spread=1`);
+- no persistent gain under exchangeability (`spread=1`);
 - positive held-out gains at `K=8,16,32` when the LR arms are deliberately
   non-exchangeable;
 - positive shuffled-control gaps;
 - sub-1.5% probe cost.
 
 It is still a small-capture result, not a "smash everything" result.  The value
-is repeatability and collapse behavior: the signal is real, conservative, and
-not fabricated by noisy ranking.
+is repeatability and null behavior: the signal is real, conservative, and not
+fabricated by noisy ranking.
 
 ### E064: Sub-1% Probe Cost Frontier Is Live
 
@@ -612,7 +620,7 @@ Outcome:
 ### E063: Frozen Group-Probe Replication  [DONE]
 
 Freeze `group_mean2_l40_t2`, repeat across `K in {8,16,32}`, and verify
-collapse at spread 1.
+no persistent gain at spread 1.
 
 Outcome: replicated.  This is now the baseline to beat.
 
@@ -1379,6 +1387,31 @@ experiments/dfw_e085_gpu_stale_default_guarded_hp_arm_run_20261006.txt
 experiments/dfw_e085_gpu_stale_default_guarded_hp_arm_LEGITIMACY_CHECK_20261006.md
 ```
 
+### E086: Marginal-Value Group Probe Replication  [PENDING REAL RUN]
+
+E086 implements the stricter marginal-value test that was missing from the
+internal-HPO agenda: use one validation backward to score grouped LR candidate
+updates, then compare that scorer head-to-head with the frozen E063 raw
+`group_mean2_l40_t2` forward-probe rule at matched grouped-arm rows and cost.
+
+Run status: `PENDING_REAL_RUN`.
+
+The experiment script compiles, and a static Buck target packages E086 plus
+E030/E032/E059/E060 directly as source files with `//caffe2:torch`.  The first
+worker-route attempts were bad routes: direct worker Python on `devvm40229` and
+`devvm52244` lacked `torch`; Buck smokes imported Meta PyTorch but the checked
+worker processes did not expose CUDA devices.  Do not treat this as a
+project-level GPU blockage or as evidence about the marginal-value rule.
+
+Artifacts:
+
+```text
+experiments/dfw_e086_gpu_marginal_value_group_probe_replication.py
+experiments/dfw_e086_gpu_marginal_value_group_probe_replication_result_20261006.md
+experiments/dfw_e086_gpu_marginal_value_group_probe_replication_run_20261006.txt
+experiments/dfw_e086_gpu_marginal_value_group_probe_replication_LEGITIMACY_CHECK_20261006.md
+```
+
 ## Paper Shape
 
 The paper should not claim "Bayesian probes beat averaging" in full generality.
@@ -1390,12 +1423,13 @@ Better claim:
 > low-dimensional outer optimizer controls online, matching or exceeding
 > fixed/scheduled controls without a new per-regime sweep.  For worker/arm
 > weighting, the same evidence must be pooled and conservatively shrunk; it
-> collapses when arms are exchangeable.
+> has no persistent HPO signal when arms are exchangeable.
 
 That claim fits the favorable evidence:
 
 - E060/E061 show the stationary grouped-LR mechanism is live.
-- E063 replicates the frozen group-probe rule across K with exact collapse.
+- E063 replicates the frozen group-probe rule across K with a clean
+  exchangeability null.
 - E064 shows the edge survives below 1% probe overhead.
 - E065 shows the 2D hyperparameter arm space has large oracle headroom, while
   raw same-round weighting under-extracts it.
@@ -1457,7 +1491,8 @@ That claim fits the favorable evidence:
 - E085 shows guarded stale-default LR-arm recovery is live: the server keeps a
   bad low-LR fallback unless same-round probes clear an abandonment guard, and
   the guarded policy beats the stale-only baseline in the pooled decision.
-- Spread-1 collapse shows the rule does not invent signal.
+- Spread-1 rows show the rule does not invent persistent HPO signal; realized
+  noisy weight motion still needs the explicit IID audit.
 - E059 explains why individual-worker ranking failed.
 - E062 shows online surface tracking is not yet useful beyond raw grouped
   probes.

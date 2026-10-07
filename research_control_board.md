@@ -4,6 +4,39 @@
 
 Do not repeat the Double Fan failure mode.
 
+## 2026-10-07 Paper Claim Lock
+
+The live paper is now **HPO-aware aggregation inside distributed training**.
+Do not split the story into "HPO" on one side and "aggregation" on the other.
+The invention is their coupling:
+
+```text
+distributed workers create optimizer/hyperparameter arms;
+probes estimate arm value from the same base point;
+the server reinvests exploration into the shared trajectory by selecting or
+weighting candidate updates.
+```
+
+This is not external parallel HPO: separate HPO trials spend workers on
+trajectories that are later discarded or only copied from.  It is also not a
+claim that probe-weighted averaging of exchangeable IID workers is generically
+better than FedAvg.  Under identical IID arms the labels are exchangeable:
+realized probe weights can move because update/probe noise is finite, but there
+is no persistent hyperparameter signal to exploit.  That null is a control and
+a possible stochastic-update-filter diagnostic, not the headline.
+
+The HPO win must be reported in HPO terms:
+
+- default or stale default;
+- best fixed hyperparameter / schedule in hindsight;
+- naive fixed-compute parallel HPO;
+- shuffled-probe controller;
+- probe-weighted internal HPO;
+- oracle arm or oracle mixture.
+
+Primary metrics are final score, regret to best fixed/schedule, oracle gap
+closed, improvement over shuffled probes, and value per probe overhead.
+
 The goal is not to invent another controller and then explain away a loss. The
 old same-point cloud-momentum line is frozen in
 `double_fan_freeze_20261003.md`: reliable measurements, no surviving optimizer
@@ -98,11 +131,47 @@ E082-E085 completed the guarded internal-HPO agenda:
   low-LR default (`lr_multiplier=0.25`) improves over stale-only by
   `+0.997+/-0.739`, `+0.395+/-0.654`, and `+0.727+/-1.114` for K=8/16/32,
   while keeping the stale fallback about 80% of rounds.
+- E086, `experiments/dfw_e086_gpu_marginal_value_group_probe_replication.py`,
+  implements the stricter marginal-value gate against the frozen E063 raw
+  grouped LR probe.  It is not scientifically run yet.  The first worker-route
+  attempts were bad routes: direct worker Python lacked `torch`; static Buck
+  targets built and imported Meta PyTorch, but the checked worker processes on
+  `devvm40229`, `devvm24439`, and `devvm14473` did not expose CUDA device
+  nodes.  Treat this as failed route telemetry, not a project-level GPU
+  blockage and not a scientific negative.
 
 Current interpretation: preserve E080/E081 as the method core; do not expand
 the outer-control grid without new regime-shift evidence; do not promote the
 simple batch-size selector; do promote stale-default recovery only in the
-guarded abandon-or-fallback form.
+guarded abandon-or-fallback form; keep the marginal-value-vs-raw E086 gate
+queued for a correct real-GPU run.
+
+### HPO-Strengthening Queue - 2026-10-07
+
+The next experiments should make the HPO claim impossible to miss:
+
+1. **IID exchangeability/null audit.** Identical arms should show no persistent
+   arm advantage even though probe weights fluctuate round by round.  Report
+   weight entropy/L1, selected-arm identity persistence, selector minus uniform,
+   selector minus shuffled, and target/probe correlation.  This separates true
+   internal HPO from stochastic update filtering.
+2. **Fixed-compute naive-HPO baseline.** Compare the same total worker budget
+   spent on independent parallel HPO trajectories against probe-weighted
+   recombination on one shared trajectory.  The desired win is not "we tried
+   arms"; it is "the exploration contributed to the trained model instead of
+   being discarded."
+3. **Stale-default HPO table.** Promote E085 by adding best fixed/fresh,
+   stale-only, naive chooser, shuffled guard, guarded internal HPO, and oracle.
+   This is the most legible customer-facing HPO win.
+4. **E086 only if scientifically run.** The marginal-value scorer can enter
+   the paper only after a correct real-GPU lane produces raw-vs-gradient rows.
+
+Launch note: E087 and E088 scripts were added on 2026-10-07 and staged through
+the static Buck/PyTorch overlay.  Worker jobs are running on
+`talsarig__devvm40229` for the main profile and `assafcohen__devvm52244` for a
+reduced backup profile.  Treat them as pending until result markdowns are
+uploaded and copied back; do not infer scientific results from queue/runtime
+state.
 
 ### Round-Aligned Probe-Control Branch - 2026-10-04
 
