@@ -1,6 +1,6 @@
 # Parallel Hyperparameter Probes
 
-Status: live synthesis, updated 2026-10-07.
+Status: live synthesis, updated 2026-10-08.
 
 This note supersedes the narrow "rank workers with probes" framing.  The useful
 object is not a set of exchangeable workers.  The useful object is
@@ -31,6 +31,15 @@ The main baseline to add now is fixed-compute parallel HPO: same total workers,
 separate arm trajectories, and then choose/copy the winner.  Our method must
 show that recombining probed arms into one trajectory recovers more HPO value
 per unit compute than discarding non-winning trajectories.
+
+Update 2026-10-08: the final-trajectory grouped-LR and stale-LR ledgers are
+boundaries (E089 and E090), but the low-K outer-control setting now has a
+positive fixed-compute table.  E090B reports internal soft probe selection
+minus validation-selected external HPO `+1.354 +/- 0.463`, internal minus
+shuffled `+0.161 +/- 0.061`, and internal minus stale/default server pair
+`+3.789 +/- 0.515` at `0.89%` to `3.57%` probe overhead.  This is the main
+TMLR fixed-compute claim, scoped to an E080/E081-style one-step update-map
+ledger.
 
 This already has one strong synthetic support point from the earlier
 round-level `(alpha,beta)` probe-control branch:

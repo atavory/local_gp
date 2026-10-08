@@ -1,6 +1,6 @@
 # Internal HPO Option Map
 
-Status: live map, updated 2026-10-07.
+Status: live map, updated 2026-10-08.
 
 Purpose: make the internal-HPO option space explicit.  Do not let the project
 collapse back into "one clever adaptive method."  The research object is:
@@ -69,6 +69,21 @@ Interpretation: E080 was not merely a selector screen.  E081 gives a
 deployment-shaped method: use the low-K probe controller where it is proven,
 and use a frozen large-K fallback that does not import per-K tuning.
 
+Fixed-compute positive:
+
+```text
+E090B, K in {4,8}, N in {8,16}, outer-control arms:
+  internal - stale/default server pair = +3.789 +/- 0.515
+  internal - shuffled                 = +0.161 +/- 0.061
+  internal - external validation HPO  = +1.354 +/- 0.463
+  internal - external oracle HPO      = +0.605 +/- 0.340
+```
+
+Interpretation: this is the main fixed-compute win for TMLR.  It applies to the
+low-K outer-control update-map setting, where internal probing can evaluate
+multiple server-control arms from one shared worker-update pool while external
+HPO must split the same workers across separate arm budgets.
+
 Busy-loop gate updates:
 
 ```text
@@ -107,6 +122,20 @@ E085:
     guarded - stale = +0.395 +/- 0.654 at K=16
     guarded - stale = +0.727 +/- 1.114 at K=32
     abandon rate ~= 0.20 per round
+
+E090:
+  fixed-compute stale-LR final trajectory, TORCH_CPU:
+    decision = FIXED_COMPUTE_STALE_DEFAULT_NOT_CLEARED
+    guarded - stale full-worker = -0.008 +/- 0.002
+    guarded - shuffled = +6.117 +/- 1.841
+    guarded - external validation HPO = -0.007 +/- 0.003
+
+E090B:
+  fixed-compute outer-control HPO, TORCH_CPU:
+    decision = FIXED_COMPUTE_OUTER_CONTROL_HPO_WIN
+    internal - stale/default = +3.789 +/- 0.515
+    internal - shuffled = +0.161 +/- 0.061
+    internal - external validation HPO = +1.354 +/- 0.463
 ```
 
 Interpretation: E082 does not show a summary-level collapse to the small/safe
@@ -388,7 +417,7 @@ is an option with a gate, not a claim.
 | 5 | bad/stale default HP-arm test | C2/C3 | DONE E085: guarded stale-default recovery live |
 | 6 | marginal-value score in current rule | F3 | PENDING E086: implemented; needs the correct real-GPU run for raw-vs-gradient result |
 | 7 | IID exchangeability/noise-selection audit | E1/G1 | DONE E087: fake IID arms give stochastic-update filtering, not HPO |
-| 8 | fixed-compute naive-HPO baseline | paper comparator | DONE E089: serious grouped-LR table run; internal label content live, external validation-HPO not cleared |
+| 8 | fixed-compute naive-HPO baseline | paper comparator | DONE E089/E090/E090B: grouped-LR and stale-LR final-trajectory ledgers are boundaries; E090B outer-control clears external validation-HPO |
 | 9 | sequential K test prototype | D1/D2 | marginal local-step value predicts when to sync |
 
 ## Latest Result Addendum - 2026-10-08

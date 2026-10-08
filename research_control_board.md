@@ -198,6 +198,24 @@ Update: split finishable worker runs landed on 2026-10-08.
   fixed-compute negative/partial result, not a tiny smoke; it preserves live
   internal HPO label content but says validation-selected naive parallel HPO is
   still the binding comparator in this grouped-LR final-trajectory setting.
+- E090, `experiments/dfw_e090_fixed_compute_stale_default_recovery.py`, ran
+  the intended stale-default fixed-compute final-trajectory audit on
+  Buck/PyTorch `TORCH_CPU`.  Decision:
+  `FIXED_COMPUTE_STALE_DEFAULT_NOT_CLEARED`.  Pooled guarded internal minus
+  stale full-worker default was `-0.008 +/- 0.002`; guarded minus shuffled was
+  `+6.117 +/- 1.841`; guarded minus external validation-selected HPO was
+  `-0.007 +/- 0.003`.  Keep E085 as the practical guarded-recovery result, but
+  do not claim stale-LR recovery clears this stricter fixed-compute ledger.
+- E090B, `experiments/dfw_e090b_fixed_compute_outer_control_hpo.py`, ran the
+  next strongest fixed-compute comparator for the E080/E081 outer-control
+  method on Buck/PyTorch `TORCH_CPU`.  Decision:
+  `FIXED_COMPUTE_OUTER_CONTROL_HPO_WIN`.  Pooled internal minus stale/default
+  server pair was `+3.789 +/- 0.515`, internal minus shuffled was
+  `+0.161 +/- 0.061`, internal minus external validation-selected HPO was
+  `+1.354 +/- 0.463`, and internal minus external oracle was
+  `+0.605 +/- 0.340`.  This is the TMLR main fixed-compute positive, scoped as
+  an E080/E081-style one-step update-map ledger rather than a full
+  final-training-trajectory claim.
 
 ### Round-Aligned Probe-Control Branch - 2026-10-04
 

@@ -1,17 +1,17 @@
 # HPO-Aware Aggregation in Distributed Training
 
-Status: first paper draft scaffold, 2026-10-07.
+Status: TMLR submission packet scaffold, updated 2026-10-08.
 
 Experiment state: E087/E088 were implemented and dispatched on 2026-10-07.
 Finishable split runs landed on 2026-10-08.  E087 is a positive IID
 stochastic-filtering null; E088 ultra is a negative fixed-compute sanity check.
-The longer combined worker jobs may still be ignored until they upload proper
-artifacts.
+E089 is the serious grouped-LR fixed-compute boundary against external HPO.
+E090 is the stricter stale-LR final-trajectory audit and is negative. E090B is
+the positive fixed-compute outer-control HPO fallback.
 
-Target venue recommendation: **TMLR first** unless E087/E088 plus one broader
-real-path workload turn into a cleaner, wider empirical package.  The ICML
-version needs a stronger fixed-compute HPO table and at least one additional
-task family beyond the current local-SGD classifier bed.
+Target venue recommendation: **TMLR first** with narrowed claims. The ICML
+version would need another task family and a full final-trajectory win beyond
+the current local-SGD classifier/update-map bed.
 
 ## Working Title
 
@@ -297,6 +297,75 @@ Expected paper role:
 - use E080/E081 and E085 for positive HPO wins, with E089 as the honest
   external-HPO boundary.
 
+### E090: Fixed-Compute Stale-Default Recovery
+
+Result: final-trajectory stale-LR recovery returned
+`FIXED_COMPUTE_STALE_DEFAULT_NOT_CLEARED` on Buck/PyTorch `TORCH_CPU`.
+
+Purpose:
+
+- convert E085's guarded stale-default recovery into the same fixed-compute
+  external-HPO ledger used by E089;
+- include stale/fresh/high full-worker controls, shuffled guard, validation
+  external HPO, external oracle, abandonment rate, arm mass, and probe cost;
+- test whether the practical stale-default story survives a full-trajectory
+  comparator rather than only E085's per-round recovery score.
+
+Main readout:
+
+- `K in {8,16,32}`, `rounds=36`, `heldout=12`;
+- internal guarded minus stale full-worker default:
+  `-0.008 +/- 0.002`;
+- internal guarded minus fresh/default full-worker control:
+  `+0.005 +/- 0.004`;
+- internal guarded minus shuffled guard:
+  `+6.117 +/- 1.841`;
+- internal guarded minus external validation-selected HPO:
+  `-0.007 +/- 0.003`;
+- probe costs: `1.34%`, `0.67%`, and `0.33%`.
+
+Expected paper role:
+
+- keep E085 as a practical guarded-recovery result, but do not claim it clears
+  the full stale/default final-trajectory comparator;
+- use E090 as a limitation: a stale-default guard can have strong label-content
+  and still trail a full-worker stale/default or external-HPO ledger when the
+  fallback arm has more workers.
+
+### E090B: Fixed-Compute Outer-Control HPO
+
+Result: fallback fixed-compute outer-control audit returned
+`FIXED_COMPUTE_OUTER_CONTROL_HPO_WIN` on Buck/PyTorch `TORCH_CPU`.
+
+Purpose:
+
+- price the E080/E081 low-K outer-control method against validation-selected
+  external HPO at the same worker budget;
+- use a stale/default transferred server pair, K-aware fresh/theory pair, and
+  additional probe arms;
+- compare internal soft probe selection, shuffled probes, validation-selected
+  external HPO, and target-oracle diagnostics.
+
+Main readout:
+
+- `K in {4,8}`, `N in {8,16}`, `rounds=8`, `heldout=32`;
+- internal minus stale/default control: `+3.789 +/- 0.515`;
+- internal minus fresh/theory control: `+0.092 +/- 0.059`;
+- internal minus shuffled internal: `+0.161 +/- 0.061`;
+- internal minus external validation-selected HPO: `+1.354 +/- 0.463`;
+- internal minus external oracle HPO: `+0.605 +/- 0.340`;
+- external validation-selected HPO minus stale/default:
+  `+2.434 +/- 0.562`;
+- probe costs: `3.57%`, `1.79%`, `1.79%`, and `0.89%`.
+
+Expected paper role:
+
+- main positive fixed-compute HPO table for the TMLR version;
+- explicitly scoped as an E080/E081-style one-step local-SGD update-map ledger,
+  not a full final-training-trajectory claim;
+- pairs naturally with E089/E090 as boundary results showing where the stronger
+  external HPO comparator remains binding.
+
 ## Null / Theory Section
 
 State the null carefully:
@@ -404,12 +473,14 @@ Table 4: Stale-default recovery.
 
 Table 5: Fixed-compute external HPO.
 
-| K | default | external HPO | external oracle | internal HPO | internal-external | internal-shuffled | cost |
-|---:|---:|---:|---:|---:|---:|---:|---:|
+| setting | default | external HPO | external oracle | internal HPO | internal-external | internal-shuffled | cost |
+|---|---:|---:|---:|---:|---:|---:|---:|
 | 8 ultra | `0.092 +/- 0.045` | `0.092 +/- 0.048` | `0.093 +/- 0.046` | `0.086 +/- 0.046` | `-0.006 +/- 0.002` | `+0.003 +/- 0.003` | `1.34%` |
 | 8 E089 | `0.068 +/- 0.019` | `0.068 +/- 0.019` | `0.068 +/- 0.019` | `0.063 +/- 0.019` | `-0.004 +/- 0.005` | `+0.003 +/- 0.003` | `1.34%` |
 | 16 E089 | `0.068 +/- 0.019` | `0.068 +/- 0.018` | `0.069 +/- 0.018` | `0.062 +/- 0.020` | `-0.006 +/- 0.006` | `+0.004 +/- 0.003` | `0.67%` |
 | 32 E089 | `0.068 +/- 0.020` | `0.069 +/- 0.019` | `0.069 +/- 0.018` | `0.061 +/- 0.022` | `-0.007 +/- 0.007` | `+0.006 +/- 0.003` | `0.33%` |
+| E090 stale-LR pooled | stale full-worker | ext-valid | ext-oracle | guarded | `-0.007 +/- 0.003` | `+6.117 +/- 1.841` | `0.33%-1.34%` |
+| E090B outer-control pooled | stale server pair | ext-valid | ext-oracle | soft probe | `+1.354 +/- 0.463` | `+0.161 +/- 0.061` | `0.89%-3.57%` |
 
 ## Claims To Avoid
 
@@ -438,4 +509,6 @@ ICML-ready shape:
 - likely closed-loop experiment beyond the current diagnostic bed.
 
 Current recommendation: write the TMLR paper now, while using E087/E088 to
-decide how aggressive the HPO claim can be.
+keep the claim precise: E090B is the positive fixed-compute outer-control HPO
+result; E089 and E090 are honest boundaries; E087 is stochastic filtering under
+exchangeable fake labels rather than HPO.
