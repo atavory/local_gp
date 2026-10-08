@@ -387,6 +387,23 @@ is an option with a gate, not a claim.
 | 4 | selected-arm trajectory | A8/A9/F10 | DONE E084: stable soft interior; moving grid not triggered |
 | 5 | bad/stale default HP-arm test | C2/C3 | DONE E085: guarded stale-default recovery live |
 | 6 | marginal-value score in current rule | F3 | PENDING E086: implemented; needs the correct real-GPU run for raw-vs-gradient result |
-| 7 | IID exchangeability/noise-selection audit | E1/G1 | realized probe weights may move, but no persistent HPO signal |
-| 8 | fixed-compute naive-HPO baseline | paper comparator | same workers: separate HPO trajectories vs recombined shared trajectory |
+| 7 | IID exchangeability/noise-selection audit | E1/G1 | DONE E087: fake IID arms give stochastic-update filtering, not HPO |
+| 8 | fixed-compute naive-HPO baseline | paper comparator | PARTIAL E088 ultra: baseline not cleared; needs high-power/full run |
 | 9 | sequential K test prototype | D1/D2 | marginal local-step value predicts when to sync |
+
+## Latest Result Addendum - 2026-10-08
+
+E087 resolves the IID nuance.  Fake labels over identical workers do not create
+persistent hyperparameter signal, but the realized probe weights are not
+trivial: selector minus uniform was `+0.621 +/- 0.320` and selector minus
+shuffled was `+0.476 +/- 0.222`, with mean L1 from prior `0.137` and entropy
+`0.991`.  This belongs in the null section as **stochastic-update filtering**.
+Do not use it as an internal-HPO win.
+
+E088 ultra is the first fixed-compute external-HPO sanity check, and it did
+not clear the baseline: internal minus external validation-selected HPO was
+`-0.006 +/- 0.002`; internal minus shuffled was only `+0.003 +/- 0.003`.
+Because this was intentionally tiny (`K=8`, `rounds=8`, `heldout=2`), it is a
+negative smoke/sanity result, not the final fixed-compute table.  The full
+claim still needs a high-power fixed-compute comparison in a regime where E063
+or E085 has meaningful HPO headroom.

@@ -1412,6 +1412,51 @@ experiments/dfw_e086_gpu_marginal_value_group_probe_replication_run_20261006.txt
 experiments/dfw_e086_gpu_marginal_value_group_probe_replication_LEGITIMACY_CHECK_20261006.md
 ```
 
+### E087: IID Fake-Arm Noise Audit  [DONE]
+
+E087 assigns fake group labels to identical-IID workers.  It is the control the
+user correctly demanded: IID arms do not imply realized probe weights are
+uniform.  They can move because both worker updates and probe batches are noisy.
+
+Decision: `IID_STOCHASTIC_FILTERING_POSITIVE` on Buck/PyTorch `TORCH_CPU`.
+
+Pooled result:
+
+```text
+selector - uniform  = +0.621 +/- 0.320
+selector - shuffled = +0.476 +/- 0.222
+target oracle - uniform = +9.781 +/- 9.714
+mean weight L1 = 0.137
+entropy = 0.991
+probe/target Spearman = 0.406
+```
+
+Interpretation: this is real stochastic-update filtering under exchangeable
+labels, not HPO.  It strengthens the paper because the null is now empirical
+and nuanced: identical arms have no persistent hyperparameter signal, but
+finite-sample probe weighting is not literally inert.
+
+### E088: Fixed-Compute Parallel HPO Baseline  [ULTRA SMOKE DONE]
+
+E088 is the direct answer to "why not just run HPO in parallel?"  The first
+finishable run was intentionally tiny: `K=8`, `rounds=8`, two heldout seeds,
+three LR arms with worker counts `(2,4,2)`.
+
+Decision: `FIXED_COMPUTE_BASELINE_NOT_CLEARED` on Buck/PyTorch `TORCH_CPU`.
+
+```text
+internal - external validation-HPO = -0.006 +/- 0.002
+internal - external oracle-HPO     = -0.007 +/- 0.000
+internal - shuffled internal       = +0.003 +/- 0.003
+internal - parallel-arm average    = +0.000 +/- 0.001
+probe cost                         = 1.34%
+```
+
+Interpretation: fixed-compute HPO remains the right baseline, but this smoke
+does not support the claim.  The next version should not be another tiny
+sanity check; it should run where we already have HPO headroom, especially the
+E063 grouped-LR regime or the E085 stale-default recovery regime.
+
 ## Paper Shape
 
 The paper should not claim "Bayesian probes beat averaging" in full generality.

@@ -166,12 +166,24 @@ The next experiments should make the HPO claim impossible to miss:
 4. **E086 only if scientifically run.** The marginal-value scorer can enter
    the paper only after a correct real-GPU lane produces raw-vs-gradient rows.
 
-Launch note: E087 and E088 scripts were added on 2026-10-07 and staged through
-the static Buck/PyTorch overlay.  Worker jobs are running on
-`talsarig__devvm40229` for the main profile and `assafcohen__devvm52244` for a
-reduced backup profile.  Treat them as pending until result markdowns are
-uploaded and copied back; do not infer scientific results from queue/runtime
-state.
+Update: split finishable worker runs landed on 2026-10-08.
+
+- E087, `experiments/dfw_e087_iid_exchangeability_noise_audit.py`, ran through
+  the Buck/PyTorch path on `devvm24439` as `TORCH_CPU` and returned
+  `IID_STOCHASTIC_FILTERING_POSITIVE`.  Artificial IID fake arms had selector
+  minus uniform `+0.621 +/- 0.320`, selector minus shuffled
+  `+0.476 +/- 0.222`, mean weight L1 `0.137`, entropy `0.991`, and
+  probe/target Spearman `0.406`.  This is not HPO; it proves the user's point
+  that IID probe weights can move and can even help by stochastic-update
+  filtering.  The paper must separate this from designed hyperparameter signal.
+- E088, `experiments/dfw_e088_fixed_compute_parallel_hpo_baseline.py`, ran an
+  ultra-reduced fixed-compute sanity table through Buck/PyTorch on `devvm14473`
+  as `TORCH_CPU` and returned `FIXED_COMPUTE_BASELINE_NOT_CLEARED`.  At
+  `K=8`, `rounds=8`, `heldout=2`, internal probe minus external
+  validation-selected HPO was `-0.006 +/- 0.002`, internal minus shuffled was
+  `+0.003 +/- 0.003`, and internal minus parallel-arm average was
+  `0.000 +/- 0.001`.  This is a useful negative/sanity check, not a final
+  high-power table.
 
 ### Round-Aligned Probe-Control Branch - 2026-10-04
 

@@ -2,11 +2,11 @@
 
 Status: first paper draft scaffold, 2026-10-07.
 
-Experiment launch state: E087/E088 were implemented and dispatched on
-2026-10-07.  Main worker job:
-`talsarig__devvm40229/dfw_e087_e088_hpo_strengthening`.  Reduced backup:
-`assafcohen__devvm52244/dfw_e087_e088_reduced_hpo_strengthening`.  Tables below
-must remain marked pending until result artifacts are uploaded and copied back.
+Experiment state: E087/E088 were implemented and dispatched on 2026-10-07.
+Finishable split runs landed on 2026-10-08.  E087 is a positive IID
+stochastic-filtering null; E088 ultra is a negative fixed-compute sanity check.
+The longer combined worker jobs may still be ignored until they upload proper
+artifacts.
 
 Target venue recommendation: **TMLR first** unless E087/E088 plus one broader
 real-path workload turn into a cleaner, wider empirical package.  The ICML
@@ -205,7 +205,7 @@ Use this as the most legible practical HPO win.
 
 ### E087: IID Noise-Selection Null
 
-Pending run.
+Result: `IID_STOCHASTIC_FILTERING_POSITIVE` on Buck/PyTorch `TORCH_CPU`.
 
 Purpose:
 
@@ -216,13 +216,24 @@ Purpose:
 
 Expected paper role:
 
-- strengthens the null section regardless of sign;
-- if positive, call it filtering, not HPO;
-- if neutral/negative, supports the designed-spread requirement.
+- strengthens the null section;
+- call the positive result filtering, not HPO;
+- forces precise language: identical IID arms do not imply literal uniform
+  realized weights.
+
+Key rows:
+
+- selector minus uniform: `+0.621 +/- 0.320`;
+- selector minus shuffled: `+0.476 +/- 0.222`;
+- target oracle minus uniform: `+9.781 +/- 9.714`;
+- mean weight L1 from uniform prior: `0.137`;
+- entropy fraction: `0.991`;
+- probe/target Spearman: `0.406`.
 
 ### E088: Fixed-Compute Parallel HPO Baseline
 
-Pending run.
+Result: ultra-reduced smoke returned `FIXED_COMPUTE_BASELINE_NOT_CLEARED` on
+Buck/PyTorch `TORCH_CPU`.
 
 Purpose:
 
@@ -235,6 +246,20 @@ Expected paper role:
 
 - directly answers "why not just run HPO in parallel?";
 - this is the highest-value missing table for TMLR.
+
+Ultra-smoke readout:
+
+- `K=8`, `rounds=8`, `heldout=2`;
+- internal minus external validation-selected HPO: `-0.006 +/- 0.002`;
+- internal minus external oracle HPO: `-0.007 +/- 0.000`;
+- internal minus shuffled internal: `+0.003 +/- 0.003`;
+- internal minus parallel-arm average: `0.000 +/- 0.001`;
+- cost: `1.34%`.
+
+Interpretation: this does not support the fixed-compute claim yet.  It is a
+sanity/negative smoke, not the final table.  The next fixed-compute run should
+reuse a regime with demonstrated HPO headroom, likely E063 grouped LR with more
+heldout seeds or E085 stale-default recovery.
 
 ## Null / Theory Section
 
@@ -316,7 +341,8 @@ Table 1: IID null / fake arms.
 
 | K | selector-uniform | selector-shuffled | weight L1 | entropy | probe-target rho | top1 hit |
 |---:|---:|---:|---:|---:|---:|---:|
-| pending | pending | pending | pending | pending | pending | pending |
+| 8 | `+0.654 +/- 0.484` | `+0.586 +/- 0.400` | `0.137` | `0.991` | `0.446` | `0.438` |
+| 16 | `+0.588 +/- 0.489` | `+0.367 +/- 0.198` | `0.138` | `0.991` | `0.367` | `0.438` |
 
 Table 2: Worker LR arms.
 
@@ -344,7 +370,7 @@ Table 5: Fixed-compute external HPO.
 
 | K | default | external HPO | external oracle | internal HPO | internal-external | internal-shuffled | cost |
 |---:|---:|---:|---:|---:|---:|---:|---:|
-| pending | pending | pending | pending | pending | pending | pending | pending |
+| 8 ultra | `0.092 +/- 0.045` | `0.092 +/- 0.048` | `0.093 +/- 0.046` | `0.086 +/- 0.046` | `-0.006 +/- 0.002` | `+0.003 +/- 0.003` | `1.34%` |
 
 ## Claims To Avoid
 

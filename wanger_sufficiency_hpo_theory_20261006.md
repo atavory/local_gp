@@ -216,3 +216,21 @@ shrinkage first; response-surface modeling only behind demonstrated grid-edge
 pinning; $K$-adaptation behind a comm ledger.  The theory above is the referee
 for every future branch: name the exchangeability-breaker, measure the IID
 noise-selection null, and compare against fixed-compute external HPO.
+
+## 10. E087 Update: The IID Null Is Not Inert
+
+E087 measured fake arms over identical workers.  Result:
+`IID_STOCHASTIC_FILTERING_POSITIVE`, with selector minus uniform
+`+0.621 +/- 0.320` and selector minus shuffled `+0.476 +/- 0.222`.
+
+This does not overturn the sufficiency/HPO argument.  It refines it:
+
+- no arm label has persistent hyperparameter meaning;
+- realized probe weights do move under finite worker/probe noise;
+- the movement can improve held-out target score by filtering noisy updates;
+- this effect must be separated from designed-spread HPO.
+
+So the correct null sentence is:
+
+> IID identical arms do not provide persistent HPO signal, but finite-sample
+> probe weighting can act as stochastic-update filtering.
