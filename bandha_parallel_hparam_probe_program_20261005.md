@@ -1457,6 +1457,46 @@ does not support the claim.  The next version should not be another tiny
 sanity check; it should run where we already have HPO headroom, especially the
 E063 grouped-LR regime or the E085 stale-default recovery regime.
 
+### E089: Fixed-Compute Parallel HPO in E063 Headroom Regime  [DONE]
+
+E089 is the serious follow-up to E088.  It keeps the fixed-compute comparator
+but moves to the E063 grouped-LR spread-16 setting: `N=8`, LR arms
+`(0.25,1.0,4.0)`, worker counts `(2,4,2)`, `K in {8,16,32}`, 36 rounds, and
+eight held-out seeds.  It ran through the Buck/PyTorch lane as `TORCH_CPU`.
+
+Decision: `INTERNAL_HPO_CONTENT_LIVE_EXTERNAL_HPO_TIE`.
+
+Pooled readout:
+
+```text
+internal - external validation-HPO = -0.006 +/- 0.003
+internal - external oracle-HPO     = -0.007 +/- 0.003
+internal - shuffled internal       = +0.004 +/- 0.002
+internal - parallel-arm average    = +0.001 +/- 0.001
+internal - default full-worker arm = -0.006 +/- 0.003
+probe cost                         = 1.34%, 0.67%, 0.33% for K=8,16,32
+```
+
+Cell readout:
+
+```text
+K=8:  internal-external validation = -0.004 +/- 0.005; internal-shuffled = +0.003 +/- 0.003
+K=16: internal-external validation = -0.006 +/- 0.006; internal-shuffled = +0.004 +/- 0.003
+K=32: internal-external validation = -0.007 +/- 0.007; internal-shuffled = +0.006 +/- 0.003
+```
+
+A supplemental `pilot_parallel_average` pair-tuned branch also ran.  It
+tightened the pooled validation-HPO gap to `-0.004 +/- 0.003`, but still did
+not clear the fixed-compute external baseline.
+
+Interpretation: E089 is no longer a smoke.  It confirms that grouped probe
+labels contain live HPO signal under honest fixed-compute accounting, because
+the shuffled-label control is positive across K.  It also says the paper should
+not claim the grouped-LR final-trajectory rule beats naive validation-selected
+parallel HPO in this setting.  The deployable HPO wins remain E080/E081
+low-K outer controls and E085 stale-default recovery; E089 is the honest
+external-HPO comparator and a constraint on the worker-arm story.
+
 ## Paper Shape
 
 The paper should not claim "Bayesian probes beat averaging" in full generality.

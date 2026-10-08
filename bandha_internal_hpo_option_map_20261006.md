@@ -388,7 +388,7 @@ is an option with a gate, not a claim.
 | 5 | bad/stale default HP-arm test | C2/C3 | DONE E085: guarded stale-default recovery live |
 | 6 | marginal-value score in current rule | F3 | PENDING E086: implemented; needs the correct real-GPU run for raw-vs-gradient result |
 | 7 | IID exchangeability/noise-selection audit | E1/G1 | DONE E087: fake IID arms give stochastic-update filtering, not HPO |
-| 8 | fixed-compute naive-HPO baseline | paper comparator | PARTIAL E088 ultra: baseline not cleared; needs high-power/full run |
+| 8 | fixed-compute naive-HPO baseline | paper comparator | DONE E089: serious grouped-LR table run; internal label content live, external validation-HPO not cleared |
 | 9 | sequential K test prototype | D1/D2 | marginal local-step value predicts when to sync |
 
 ## Latest Result Addendum - 2026-10-08
@@ -407,3 +407,17 @@ Because this was intentionally tiny (`K=8`, `rounds=8`, `heldout=2`), it is a
 negative smoke/sanity result, not the final fixed-compute table.  The full
 claim still needs a high-power fixed-compute comparison in a regime where E063
 or E085 has meaningful HPO headroom.
+
+E089 supplies that higher-power fixed-compute table in the E063 grouped-LR
+spread-16 regime.  It used `K in {8,16,32}`, 36 rounds, eight held-out seeds,
+LR arms `(0.25,1.0,4.0)`, and worker counts `(2,4,2)` under Buck/PyTorch
+`TORCH_CPU`.  Decision:
+`INTERNAL_HPO_CONTENT_LIVE_EXTERNAL_HPO_TIE`.  Pooled internal minus external
+validation-selected HPO was `-0.006 +/- 0.003`, internal minus external oracle
+was `-0.007 +/- 0.003`, internal minus shuffled was `+0.004 +/- 0.002`, and
+internal minus parallel-arm average was `+0.001 +/- 0.001`.  A supplemental
+pilot-tuned-pair branch reduced the external gap to `-0.004 +/- 0.003` but did
+not clear it.  This should now be cited as the serious fixed-compute
+negative/partial result: the grouped-LR probe has real label content, but
+validation-selected naive parallel HPO remains a stronger final-trajectory
+baseline at the same worker budget.

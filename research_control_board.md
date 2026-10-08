@@ -184,6 +184,20 @@ Update: split finishable worker runs landed on 2026-10-08.
   `+0.003 +/- 0.003`, and internal minus parallel-arm average was
   `0.000 +/- 0.001`.  This is a useful negative/sanity check, not a final
   high-power table.
+- E089, `experiments/dfw_e089_fixed_compute_parallel_hpo_headroom.py`, ran the
+  serious fixed-compute comparison in the E063 grouped-LR spread-16 regime
+  through Buck/PyTorch on `devvm44191` as `TORCH_CPU`.  It used
+  `K in {8,16,32}`, 36 rounds, 8 held-out seeds, LR arms `(0.25,1.0,4.0)`,
+  and worker counts `(2,4,2)`.  Decision:
+  `INTERNAL_HPO_CONTENT_LIVE_EXTERNAL_HPO_TIE`.  Pooled internal minus
+  external validation-selected HPO was `-0.006 +/- 0.003`; internal minus
+  shuffled was `+0.004 +/- 0.002`; internal minus parallel-arm average was
+  `+0.001 +/- 0.001`; probe cost ran from `1.34%` at K=8 to `0.33%` at K=32.
+  A supplemental pilot-pair run tightened but did not clear the external-HPO
+  gap (`-0.004 +/- 0.003`).  Interpretation: E089 is now the real
+  fixed-compute negative/partial result, not a tiny smoke; it preserves live
+  internal HPO label content but says validation-selected naive parallel HPO is
+  still the binding comparator in this grouped-LR final-trajectory setting.
 
 ### Round-Aligned Probe-Control Branch - 2026-10-04
 

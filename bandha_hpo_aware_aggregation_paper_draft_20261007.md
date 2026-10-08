@@ -261,6 +261,42 @@ sanity/negative smoke, not the final table.  The next fixed-compute run should
 reuse a regime with demonstrated HPO headroom, likely E063 grouped LR with more
 heldout seeds or E085 stale-default recovery.
 
+### E089: Fixed-Compute Parallel HPO in E063 Headroom Regime
+
+Result: serious grouped-LR run returned
+`INTERNAL_HPO_CONTENT_LIVE_EXTERNAL_HPO_TIE` on Buck/PyTorch `TORCH_CPU`.
+
+Purpose:
+
+- same fixed-compute comparator as E088;
+- E063 spread-16 grouped-LR headroom regime;
+- internal HPO recombines grouped candidate updates into one shared trajectory;
+- external HPO splits the same workers across separate LR-arm trajectories and
+  selects one by validation loss.
+
+Main readout:
+
+- `K in {8,16,32}`, `rounds=36`, `heldout=8`;
+- LR arms `(0.25,1.0,4.0)` with worker counts `(2,4,2)`;
+- internal minus external validation-selected HPO:
+  `-0.006 +/- 0.003`;
+- internal minus external oracle HPO: `-0.007 +/- 0.003`;
+- internal minus shuffled internal: `+0.004 +/- 0.002`;
+- internal minus parallel-arm average: `+0.001 +/- 0.001`;
+- probe costs: `1.34%`, `0.67%`, and `0.33%` for K=8/16/32.
+
+Supplemental check: pilot-tuned parallel-average pairs reduced the validation
+HPO gap to `-0.004 +/- 0.003`, but did not clear it.
+
+Expected paper role:
+
+- fixed-compute comparator is now real, not a tiny smoke;
+- grouped-LR probes have label content against shuffled labels;
+- do not claim this final-trajectory grouped-LR rule beats naive
+  validation-selected parallel HPO;
+- use E080/E081 and E085 for positive HPO wins, with E089 as the honest
+  external-HPO boundary.
+
 ## Null / Theory Section
 
 State the null carefully:
@@ -371,6 +407,9 @@ Table 5: Fixed-compute external HPO.
 | K | default | external HPO | external oracle | internal HPO | internal-external | internal-shuffled | cost |
 |---:|---:|---:|---:|---:|---:|---:|---:|
 | 8 ultra | `0.092 +/- 0.045` | `0.092 +/- 0.048` | `0.093 +/- 0.046` | `0.086 +/- 0.046` | `-0.006 +/- 0.002` | `+0.003 +/- 0.003` | `1.34%` |
+| 8 E089 | `0.068 +/- 0.019` | `0.068 +/- 0.019` | `0.068 +/- 0.019` | `0.063 +/- 0.019` | `-0.004 +/- 0.005` | `+0.003 +/- 0.003` | `1.34%` |
+| 16 E089 | `0.068 +/- 0.019` | `0.068 +/- 0.018` | `0.069 +/- 0.018` | `0.062 +/- 0.020` | `-0.006 +/- 0.006` | `+0.004 +/- 0.003` | `0.67%` |
+| 32 E089 | `0.068 +/- 0.020` | `0.069 +/- 0.019` | `0.069 +/- 0.018` | `0.061 +/- 0.022` | `-0.007 +/- 0.007` | `+0.006 +/- 0.003` | `0.33%` |
 
 ## Claims To Avoid
 
