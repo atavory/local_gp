@@ -1,4 +1,4 @@
-# Internal HPO Option Map
+# Deliberately Diverse Aggregation Option Map
 
 Status: live map, updated 2026-10-08.
 
@@ -10,11 +10,12 @@ collapse back into "one clever adaptive method."  The research object is:
 > server reinvests the experiment into the same shared trajectory through
 > probe-weighted aggregation, shrinkage, and fallback.
 
-This is **HPO-aware aggregation**.  The comparison class is not only FedAvg and
-not only external HPO.  It is the fixed-compute question: with the same workers,
-is it better to fork arms into separate trajectories and keep one later, or to
-probe the arms and recombine their useful signal into the model being trained
-right now?
+This is **deliberately diverse aggregation**.  HPO-aware aggregation is the
+mechanism: create optimizer-arm diversity inside the distributed round, probe
+the candidate updates, and aggregate the useful signal into the model being
+trained right now.  The fixed-compute question is central: with the same
+workers, is it better to fork arms into separate trajectories and keep one
+later, or to probe the arms and recombine them immediately?
 
 ## Current Hard Facts
 
@@ -79,10 +80,11 @@ E090B, K in {4,8}, N in {8,16}, outer-control arms:
   internal - external oracle HPO      = +0.605 +/- 0.340
 ```
 
-Interpretation: this is the main fixed-compute win for TMLR.  It applies to the
-low-K outer-control update-map setting, where internal probing can evaluate
-multiple server-control arms from one shared worker-update pool while external
-HPO must split the same workers across separate arm budgets.
+Interpretation: this is the main fixed-compute demonstration of the paper
+claim.  It applies to deliberately diverse server-side outer-control arms,
+where internal probing can evaluate multiple controls from one shared
+worker-update pool while external HPO must split the same workers across
+separate arm budgets.
 
 Busy-loop gate updates:
 

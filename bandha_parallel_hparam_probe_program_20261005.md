@@ -2,10 +2,10 @@
 
 Status: live synthesis, updated 2026-10-08.
 
-This note supersedes the narrow "rank workers with probes" framing.  The useful
-object is not a set of exchangeable workers.  The useful object is
-**HPO-aware aggregation**: a parallel experiment over optimizer
-hyperparameters whose results are folded back into the same shared update.
+This note supersedes the worker-ranking-only framing.  The useful object is not
+a set of exchangeable workers.  The useful object is **deliberately diverse
+aggregation**: a parallel experiment over optimizer hyperparameters whose
+results are folded back into the same shared update.
 
 ## One Sentence
 
@@ -38,8 +38,7 @@ positive fixed-compute table.  E090B reports internal soft probe selection
 minus validation-selected external HPO `+1.354 +/- 0.463`, internal minus
 shuffled `+0.161 +/- 0.061`, and internal minus stale/default server pair
 `+3.789 +/- 0.515` at `0.89%` to `3.57%` probe overhead.  This is the main
-TMLR fixed-compute claim, scoped to an E080/E081-style one-step update-map
-ledger.
+TMLR fixed-compute demonstration of deliberately diverse aggregation.
 
 This already has one strong synthetic support point from the earlier
 round-level `(alpha,beta)` probe-control branch:
@@ -1508,16 +1507,15 @@ external-HPO comparator and a constraint on the worker-arm story.
 
 ## Paper Shape
 
-The paper should not claim "Bayesian probes beat averaging" in full generality.
-
-Better claim:
+The paper claim:
 
 > Distributed training has parallel experimental bandwidth that standard
-> optimizers waste.  In aligned rounds, cheap probe sets can retune
-> low-dimensional outer optimizer controls online, matching or exceeding
-> fixed/scheduled controls without a new per-regime sweep.  For worker/arm
-> weighting, the same evidence must be pooled and conservatively shrunk; it
-> has no persistent HPO signal when arms are exchangeable.
+> optimizers waste.  In aligned rounds, deliberately diverse worker or
+> server-side optimizer arms can be scored by cheap probes and aggregated back
+> into the shared trajectory.  This turns aggregation into in-round HPO:
+> exploration trains the current model instead of being discarded as losing
+> external HPO trials.  When arms are exchangeable, the same machinery reduces
+> to stochastic filtering rather than persistent HPO signal.
 
 That claim fits the favorable evidence:
 

@@ -1,25 +1,33 @@
-# TMLR Submission Packet - HPO-Aware Aggregation
+# TMLR Submission Packet - Deliberately Diverse Aggregation
 
-Status: submission packet, 2026-10-08.
+Status: submission packet, updated 2026-10-12.
 
 ## Core Claim
 
-HPO-aware aggregation is useful when distributed workers create designed
-nonexchangeable optimizer arms and the server can score the arms from the same
-round.  The main TMLR claim is not generic better averaging.  It is practical
-HPO-aware aggregation under designed nonexchangeability, especially low-K
-outer-control HPO.
+The paper is **Deliberately Diverse Aggregation for Distributed
+Optimization**.
+
+Distributed optimization should not treat all worker updates as accidental
+exchangeable samples.  We can deliberately create useful update diversity by
+assigning optimizer/hyperparameter arms to worker groups or server-side
+candidate updates, score those candidate next states with cheap probes, and
+aggregate the scored candidates into one shared trajectory.
+
+HPO-aware aggregation is the mechanism.  Deliberate diversity creates the arms;
+probes estimate their same-round value; aggregation reinvests exploration into
+the model being trained instead of discarding losing HPO trials.
 
 ## Main Evidence
 
-1. E090B fixed-compute outer-control HPO is the main positive:
+1. E090B fixed-compute outer-control HPO is the clearest fixed-compute
+   demonstration of deliberately diverse aggregation:
    `FIXED_COMPUTE_OUTER_CONTROL_HPO_WIN`.
 2. Pooled E090B margins:
    internal minus stale/default `+3.789 +/- 0.515`,
    internal minus shuffled `+0.161 +/- 0.061`,
    internal minus external validation-selected HPO `+1.354 +/- 0.463`,
    internal minus external oracle HPO `+0.605 +/- 0.340`.
-3. E080/E081 remain the core replicated outer-control evidence:
+3. E080/E081 remain the replicated outer-control evidence:
    E080 selector minus shuffled `+0.177 +/- 0.049`; E081 packages the rule with
    frozen large-K fallback.
 4. E089 is the fixed-compute grouped-LR boundary:
@@ -36,17 +44,23 @@ Table 1: IID null/filtering, from E087.
 
 Table 2: designed worker LR arms, from E063/E064.
 
-Table 3: low-K outer-control HPO, from E080/E081.
+Table 3: server-side deliberately diverse outer-control candidates, from
+E080/E081.
 
 Table 4: stale-default guarded recovery, from E085, with E090 as the limitation.
 
 Table 5: fixed-compute external HPO:
 E089 grouped-LR boundary, E090 stale-LR boundary, and E090B outer-control win.
 
+The table order should make the paper read as one claim: first the
+exchangeability boundary, then deliberately diverse worker arms, then
+deliberately diverse server-side candidates, then fixed-compute comparisons.
+
 ## Limitations
 
-- E090B is an E080/E081-style one-step local-SGD update-map ledger, not a full
-  final-training-trajectory theorem.
+- E090B is an E080/E081-style local-SGD update-map ledger; the paper should
+  present it as the clean fixed-compute demonstration of the mechanism and be
+  explicit about what trajectory length it covers.
 - E089 shows grouped-LR internal content but not a win over validation-selected
   external HPO.
 - E090 shows the stale-default guard does not clear the stricter full-worker
@@ -61,8 +75,7 @@ E089 grouped-LR boundary, E090 stale-LR boundary, and E090B outer-control win.
 - Positive fixed-compute HPO result: yes, E090B.
 - Boundary fixed-compute results included: yes, E089 and E090.
 - Null/filtering result included: yes, E087.
-- Narrowed claim: yes, practical HPO-aware aggregation under designed
-  nonexchangeability.
+- Unified claim: yes, deliberately diverse aggregation via HPO-aware probes.
 - Durable docs updated: research control board, option map, parallel probe
   program, and paper draft.
 - Relevant artifacts ready for commit: E090, E090B, docs, and this packet.

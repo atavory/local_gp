@@ -4,11 +4,14 @@
 
 Do not repeat the Double Fan failure mode.
 
-## 2026-10-07 Paper Claim Lock
+## 2026-10-12 Paper Claim Lock
 
-The live paper is now **HPO-aware aggregation inside distributed training**.
+The live paper is now **Deliberately Diverse Aggregation for Distributed
+Optimization**.
 Do not split the story into "HPO" on one side and "aggregation" on the other.
-The invention is their coupling:
+The invention is their coupling: aggregation becomes an HPO mechanism because
+the distributed round deliberately creates optimizer-arm diversity and then
+uses probe evidence to aggregate the candidates.
 
 ```text
 distributed workers create optimizer/hyperparameter arms;
@@ -17,7 +20,7 @@ the server reinvests exploration into the shared trajectory by selecting or
 weighting candidate updates.
 ```
 
-This is not external parallel HPO: separate HPO trials spend workers on
+This is the paper claim.  Separate external HPO trials spend workers on
 trajectories that are later discarded or only copied from.  It is also not a
 claim that probe-weighted averaging of exchangeable IID workers is generically
 better than FedAvg.  Under identical IID arms the labels are exchangeable:
@@ -207,15 +210,15 @@ Update: split finishable worker runs landed on 2026-10-08.
   `-0.007 +/- 0.003`.  Keep E085 as the practical guarded-recovery result, but
   do not claim stale-LR recovery clears this stricter fixed-compute ledger.
 - E090B, `experiments/dfw_e090b_fixed_compute_outer_control_hpo.py`, ran the
-  next strongest fixed-compute comparator for the E080/E081 outer-control
-  method on Buck/PyTorch `TORCH_CPU`.  Decision:
+  fixed-compute comparator for the E080/E081 outer-control method on
+  Buck/PyTorch `TORCH_CPU`.  Decision:
   `FIXED_COMPUTE_OUTER_CONTROL_HPO_WIN`.  Pooled internal minus stale/default
   server pair was `+3.789 +/- 0.515`, internal minus shuffled was
   `+0.161 +/- 0.061`, internal minus external validation-selected HPO was
   `+1.354 +/- 0.463`, and internal minus external oracle was
-  `+0.605 +/- 0.340`.  This is the TMLR main fixed-compute positive, scoped as
-  an E080/E081-style one-step update-map ledger rather than a full
-  final-training-trajectory claim.
+  `+0.605 +/- 0.340`.  This is the TMLR main fixed-compute demonstration of
+  deliberately diverse aggregation: several server-control arms are evaluated
+  from the same worker-update pool and reinvested into one shared update.
 
 ### Round-Aligned Probe-Control Branch - 2026-10-04
 

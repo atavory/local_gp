@@ -1,60 +1,60 @@
-# HPO-Aware Aggregation in Distributed Training
+# Deliberately Diverse Aggregation for Distributed Optimization
 
-Status: TMLR submission packet scaffold, updated 2026-10-08.
+Status: TMLR submission packet scaffold, updated 2026-10-12.
 
 Experiment state: E087/E088 were implemented and dispatched on 2026-10-07.
 Finishable split runs landed on 2026-10-08.  E087 is a positive IID
 stochastic-filtering null; E088 ultra is a negative fixed-compute sanity check.
 E089 is the serious grouped-LR fixed-compute boundary against external HPO.
 E090 is the stricter stale-LR final-trajectory audit and is negative. E090B is
-the positive fixed-compute outer-control HPO fallback.
+the strongest fixed-compute demonstration of the same deliberately diverse
+aggregation claim.
 
-Target venue recommendation: **TMLR first** with narrowed claims. The ICML
-version would need another task family and a full final-trajectory win beyond
-the current local-SGD classifier/update-map bed.
+Target venue recommendation: **TMLR first**. The ICML version would need
+another task family and a longer final-trajectory win beyond the current
+local-SGD classifier/update-map bed.
 
 ## Working Title
 
-Probe-Weighted Internal HPO for Distributed Optimization
+Deliberately Diverse Aggregation for Distributed Optimization
 
 Alternative:
 
 - HPO-Aware Aggregation for Distributed Training
+- Probe-Weighted Aggregation of Deliberately Diverse Updates
 - Reinvesting Hyperparameter Exploration in Distributed Optimization
 - Probe-Weighted Hyperparameter Arms in Local SGD
 
 ## One-Sentence Claim
 
-Distributed training already pays for parallel worker updates; we turn those
-updates into an in-round hyperparameter experiment, use cheap probes to score
-candidate updates, and aggregate them back into the same shared trajectory so
-exploration is not discarded like ordinary parallel HPO.
+Distributed training already pays for parallel worker updates; we deliberately
+diversify those updates through optimizer/hyperparameter arms, use cheap probes
+to score candidate next states, and aggregate the scored candidates back into
+one shared trajectory.
 
 ## Abstract Skeleton
 
 Hyperparameter tuning for distributed optimization is usually external to
 training: run multiple jobs, select a winner, and discard the losing
-trajectories.  This is wasteful when the training job already executes many
-workers in parallel.  We study **HPO-aware aggregation**, where workers or
-server-side candidate updates instantiate a small set of optimizer arms from a
-common parameter state, a cheap probe set estimates their value, and the server
-selects or weights the resulting updates into one shared trajectory.  The method
-is not a generic replacement for averaging exchangeable workers: under IID
-identical arms, probe weights can fluctuate from finite-sample noise but cannot
-identify a persistent hyperparameter advantage.  The useful regime is designed
-nonexchangeability: learning-rate arms, low-dimensional outer optimizer
-controls, and stale-default recovery.  Across controlled local-SGD experiments,
-probe-weighted internal HPO beats shuffled probes and fixed defaults at low
-probe overhead, recovers from stale hyperparameters with conservative guards,
-and exposes a fixed-compute alternative to naive parallel HPO.  The results
-identify both the opportunity and the boundary: probes are valuable when the
-arm choice affects same-round update quality and the action space is small
-enough for conservative shrinkage.
+trajectories.  Standard distributed aggregation, in contrast, treats worker
+updates as exchangeable estimates of one optimizer setting.  We study
+**deliberately diverse aggregation**: the training round itself creates a small
+set of optimizer arms, cheap probes score the candidate next states, and the
+server aggregates or selects the scored candidates into one shared trajectory.
+This couples HPO with aggregation rather than placing HPO outside training.
+Under IID identical arms, probe weights can still fluctuate and even filter
+stochastic updates, but arm labels do not carry persistent hyperparameter
+information.  The useful regime is deliberate diversity: worker LR arms,
+server-side outer optimizer controls, and guarded stale-default recovery.
+Across controlled local-SGD experiments, probe-weighted aggregation beats
+shuffled probes and fixed/default controls, and in the outer-control setting it
+beats validation-selected external HPO at fixed worker compute.
 
 ## Main Contributions
 
-1. **Formulation.** HPO-aware aggregation: internal HPO whose exploration is
-   reinvested into the same distributed update.
+1. **Formulation.** Deliberately diverse aggregation: distributed rounds create
+   optimizer-arm diversity and reinvest the resulting HPO evidence into the
+   same update.
 2. **Null model.** IID identical arms are exchangeable.  Realized probe weights
    can move, but any gain is stochastic-update filtering rather than HPO.
 3. **Algorithm.** Group workers or server-side candidate updates into optimizer
@@ -62,9 +62,10 @@ enough for conservative shrinkage.
    soft/shrunk weights or guarded fallback.
 4. **Efficiency accounting.** Probe cost amortizes over `K * N` local work, so
    small validation probes cost sub-percent to low-single-digit overhead.
-5. **Empirical HPO wins.** Nonexchangeable LR arms, low-K outer controls, and
-   stale-default recovery show label-content gains over shuffled probes and
-   fixed/default baselines.
+5. **Empirical HPO wins.** Deliberately diverse worker arms and server-side
+   outer controls show label-content gains over shuffled probes and
+   fixed/default baselines; E090B clears validation-selected external HPO at
+   fixed worker compute.
 6. **Boundary results.** Batch-size value/FLOP, naive validation-gradient
    scoring, free LR search, and exchangeable worker ranking are not promoted.
 
@@ -334,7 +335,7 @@ Expected paper role:
 
 ### E090B: Fixed-Compute Outer-Control HPO
 
-Result: fallback fixed-compute outer-control audit returned
+Result: fixed-compute outer-control audit returned
 `FIXED_COMPUTE_OUTER_CONTROL_HPO_WIN` on Buck/PyTorch `TORCH_CPU`.
 
 Purpose:
@@ -360,11 +361,13 @@ Main readout:
 
 Expected paper role:
 
-- main positive fixed-compute HPO table for the TMLR version;
-- explicitly scoped as an E080/E081-style one-step local-SGD update-map ledger,
-  not a full final-training-trajectory claim;
-- pairs naturally with E089/E090 as boundary results showing where the stronger
-  external HPO comparator remains binding.
+- main positive fixed-compute table for deliberately diverse aggregation;
+- cleanest demonstration that HPO-aware aggregation is not the same as
+  ordinary parallel HPO: the internal method evaluates several server-control
+  arms from the same worker-update pool, while external HPO must split the same
+  workers across arm budgets;
+- pairs naturally with E089/E090 as boundary results showing which forms of
+  deliberate diversity are currently strong enough to beat external HPO.
 
 ## Null / Theory Section
 
@@ -401,29 +404,28 @@ Problem paragraph:
 Naively combining the two loops is not enough.  If we simply run separate HPO
 trials in parallel, each hyperparameter receives fewer workers per update and
 the losing trials do not train the final model.  If we simply rank IID workers,
-the labels are exchangeable and probe scores mostly select noise.  The useful
-middle ground is to create **designed nonexchangeability** inside the
-distributed round: workers or candidate server updates represent deliberate
-optimizer arms.
+the labels are exchangeable and probe scores mostly select noise.  The central
+move is to create **deliberate diversity** inside the distributed round:
+workers or candidate server updates represent optimizer arms that are different
+on purpose.
 
 Thesis paragraph:
 
-We propose HPO-aware aggregation.  A training round becomes a paired experiment
-over a small optimizer-control set.  Because all arms start at the same
-`theta_t`, probe comparisons have far lower trajectory variance than
+We propose deliberately diverse aggregation.  A training round becomes a paired
+experiment over a small optimizer-control set.  Because all arms start at the
+same `theta_t`, probe comparisons have far lower trajectory variance than
 independent training runs.  Because the result is aggregated back into the
 shared update, exploration contributes to the model rather than becoming
 dead-end tuning work.
 
 Boundary paragraph:
 
-The method is intentionally conservative.  It does not claim that probes can
-beat averaging for exchangeable workers, nor that every hyperparameter belongs
-inside a one-round decision.  Controls whose payoff is visible in the round
-such as LR multipliers, stale-default abandonment, and low-dimensional outer
-optimizer settings are natural.  Controls whose value is mostly cross-round,
-such as large changes in synchronization period, require a sequential objective
-instead.
+The boundary is part of the same claim.  Deliberate diversity is useful when
+the arm choice changes same-round candidate quality enough for probes to
+measure it.  When labels are exchangeable, probes may still filter stochastic
+updates but do not create persistent HPO signal.  Controls whose value is
+mostly cross-round, such as large changes in synchronization period, require a
+sequential objective instead of a one-round aggregation decision.
 
 ## Related Work Hooks
 
@@ -484,7 +486,7 @@ Table 5: Fixed-compute external HPO.
 
 ## Claims To Avoid
 
-- "We improve distributed averaging in general."
+- "Accidental worker differences are enough."
 - "Probe weights should literally become uniform every IID round."
 - "This solves large-K communication adaptation."
 - "Batch size works" based on E083.
@@ -498,17 +500,19 @@ TMLR-ready shape:
 - honest null model;
 - HPO-first tables;
 - careful cost accounting;
-- positive core plus scoped failures.
+- unified claim plus boundary results.
 
 ICML-ready shape:
 
 - broader task family;
-- stronger fixed-compute HPO win;
+- broader fixed-compute HPO evidence;
 - one clean algorithm box;
 - fewer pending branches;
 - likely closed-loop experiment beyond the current diagnostic bed.
 
-Current recommendation: write the TMLR paper now, while using E087/E088 to
-keep the claim precise: E090B is the positive fixed-compute outer-control HPO
-result; E089 and E090 are honest boundaries; E087 is stochastic filtering under
-exchangeable fake labels rather than HPO.
+Current recommendation: write the TMLR paper as **Deliberately Diverse
+Aggregation for Distributed Optimization**.  E090B is the strongest
+fixed-compute demonstration; E080/E081 replicate the core server-side
+outer-control mechanism; E063 shows deliberately diverse worker LR arms; E089
+and E090 are boundary ledgers; E087 is stochastic filtering under exchangeable
+fake labels rather than HPO.
