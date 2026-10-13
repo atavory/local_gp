@@ -9,7 +9,9 @@ E089 is the serious grouped-LR fixed-compute boundary against external HPO.
 E090 is the stricter stale-LR final-trajectory audit and is negative. E090B is
 the strongest fixed-compute demonstration of the same deliberately diverse
 aggregation claim. E091 reruns E090B with fresh held-out seeds and preserves
-the fixed-compute win.
+the fixed-compute win. E092 extends the same audit to `rounds=16`; it remains
+live against stale/default and shuffled controls, while the external-HPO margin
+is positive but not CI-cleared.
 
 Target venue recommendation: **TMLR first**. The ICML version would need
 another task family and a longer final-trajectory win beyond the current
@@ -373,6 +375,16 @@ Fresh-seed replication:
 - internal minus external oracle HPO: `+0.413 +/- 0.345`;
 - probe costs remain `3.57%`, `1.79%`, `1.79%`, and `0.89%`.
 
+Longer-round stress run:
+
+- E092 reran the audit with `rounds=16` and held-out seeds `998200..998231`;
+- decision: `FIXED_COMPUTE_OUTER_CONTROL_HPO_LIVE`;
+- internal minus stale/default control: `+2.838 +/- 1.979`;
+- internal minus fresh/theory control: `+0.619 +/- 0.472`;
+- internal minus shuffled internal: `+0.771 +/- 0.632`;
+- internal minus external validation-selected HPO: `+0.330 +/- 2.151`;
+- internal minus external oracle HPO: `-0.559 +/- 2.182`.
+
 Expected paper role:
 
 - main positive fixed-compute table for deliberately diverse aggregation;
@@ -498,6 +510,7 @@ Table 5: Fixed-compute external HPO.
 | E090 stale-LR pooled | stale full-worker | ext-valid | ext-oracle | guarded | `-0.007 +/- 0.003` | `+6.117 +/- 1.841` | `0.33%-1.34%` |
 | E090B outer-control pooled | stale server pair | ext-valid | ext-oracle | soft probe | `+1.354 +/- 0.463` | `+0.161 +/- 0.061` | `0.89%-3.57%` |
 | E091 outer-control fresh-seed replication | stale server pair | ext-valid | ext-oracle | soft probe | `+1.148 +/- 0.511` | `+0.093 +/- 0.073` | `0.89%-3.57%` |
+| E092 outer-control `rounds=16` stress | stale server pair | ext-valid | ext-oracle | soft probe | `+0.330 +/- 2.151` | `+0.771 +/- 0.632` | `0.89%-3.57%` |
 
 ## Claims To Avoid
 
@@ -528,6 +541,8 @@ ICML-ready shape:
 Current recommendation: write the TMLR paper as **Deliberately Diverse
 Aggregation for Distributed Optimization**.  E090B is the strongest
 fixed-compute demonstration and E091 replicates it with fresh held-out seeds;
-E080/E081 replicate the core server-side outer-control mechanism; E063 shows
-deliberately diverse worker LR arms; E089 and E090 are boundary ledgers; E087
-is stochastic filtering under exchangeable fake labels rather than HPO.
+E092 is a longer-round stress run that remains live but not externally
+CI-cleared; E080/E081 replicate the core server-side outer-control mechanism;
+E063 shows deliberately diverse worker LR arms; E089 and E090 are boundary
+ledgers; E087 is stochastic filtering under exchangeable fake labels rather
+than HPO.

@@ -231,6 +231,16 @@ Update: split finishable worker runs landed on 2026-10-08.
   HPO was `+1.148 +/- 0.511`, and internal minus external oracle was
   `+0.413 +/- 0.345`.  This strengthens the E090B table as a reproducible
   fixed-compute HPO win rather than a one-seed artifact.
+- E092, `bandha_e092_outer_control_longer_rounds_20261013/`, reran the same
+  fixed-compute outer-control audit with `rounds=16` and fresh held-out seeds
+  `998200..998231`.  Decision:
+  `FIXED_COMPUTE_OUTER_CONTROL_HPO_LIVE`.  Pooled internal minus stale/default
+  was `+2.838 +/- 1.979`, internal minus fresh/theory was
+  `+0.619 +/- 0.472`, internal minus shuffled was `+0.771 +/- 0.632`, and
+  internal minus external validation-selected HPO was `+0.330 +/- 2.151`.
+  Interpretation: longer slices preserve probe label content and control
+  improvement, but the external-HPO comparator is high-variance and not
+  cleared at this budget.
 
 ### Round-Aligned Probe-Control Branch - 2026-10-04
 
