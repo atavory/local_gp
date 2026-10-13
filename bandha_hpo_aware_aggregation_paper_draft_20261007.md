@@ -8,7 +8,8 @@ stochastic-filtering null; E088 ultra is a negative fixed-compute sanity check.
 E089 is the serious grouped-LR fixed-compute boundary against external HPO.
 E090 is the stricter stale-LR final-trajectory audit and is negative. E090B is
 the strongest fixed-compute demonstration of the same deliberately diverse
-aggregation claim.
+aggregation claim. E091 reruns E090B with fresh held-out seeds and preserves
+the fixed-compute win.
 
 Target venue recommendation: **TMLR first**. The ICML version would need
 another task family and a longer final-trajectory win beyond the current
@@ -68,7 +69,7 @@ beats validation-selected external HPO at fixed worker compute.
 5. **Empirical HPO wins.** Deliberately diverse worker arms and server-side
    outer controls show label-content gains over shuffled probes and
    fixed/default baselines; E090B clears validation-selected external HPO at
-   fixed worker compute.
+   fixed worker compute, with a fresh-seed E091 replication.
 6. **Boundary results.** Batch-size value/FLOP, naive validation-gradient
    scoring, free LR search, and exchangeable worker ranking are not promoted.
 
@@ -362,6 +363,16 @@ Main readout:
   `+2.434 +/- 0.562`;
 - probe costs: `3.57%`, `1.79%`, `1.79%`, and `0.89%`.
 
+Fresh-seed replication:
+
+- E091 reran the same audit with held-out seeds `998100..998131`;
+- decision: `FIXED_COMPUTE_OUTER_CONTROL_HPO_WIN`;
+- internal minus stale/default control: `+3.878 +/- 0.488`;
+- internal minus shuffled internal: `+0.093 +/- 0.073`;
+- internal minus external validation-selected HPO: `+1.148 +/- 0.511`;
+- internal minus external oracle HPO: `+0.413 +/- 0.345`;
+- probe costs remain `3.57%`, `1.79%`, `1.79%`, and `0.89%`.
+
 Expected paper role:
 
 - main positive fixed-compute table for deliberately diverse aggregation;
@@ -486,6 +497,7 @@ Table 5: Fixed-compute external HPO.
 | 32 E089 | `0.068 +/- 0.020` | `0.069 +/- 0.019` | `0.069 +/- 0.018` | `0.061 +/- 0.022` | `-0.007 +/- 0.007` | `+0.006 +/- 0.003` | `0.33%` |
 | E090 stale-LR pooled | stale full-worker | ext-valid | ext-oracle | guarded | `-0.007 +/- 0.003` | `+6.117 +/- 1.841` | `0.33%-1.34%` |
 | E090B outer-control pooled | stale server pair | ext-valid | ext-oracle | soft probe | `+1.354 +/- 0.463` | `+0.161 +/- 0.061` | `0.89%-3.57%` |
+| E091 outer-control fresh-seed replication | stale server pair | ext-valid | ext-oracle | soft probe | `+1.148 +/- 0.511` | `+0.093 +/- 0.073` | `0.89%-3.57%` |
 
 ## Claims To Avoid
 
@@ -515,7 +527,7 @@ ICML-ready shape:
 
 Current recommendation: write the TMLR paper as **Deliberately Diverse
 Aggregation for Distributed Optimization**.  E090B is the strongest
-fixed-compute demonstration; E080/E081 replicate the core server-side
-outer-control mechanism; E063 shows deliberately diverse worker LR arms; E089
-and E090 are boundary ledgers; E087 is stochastic filtering under exchangeable
-fake labels rather than HPO.
+fixed-compute demonstration and E091 replicates it with fresh held-out seeds;
+E080/E081 replicate the core server-side outer-control mechanism; E063 shows
+deliberately diverse worker LR arms; E089 and E090 are boundary ledgers; E087
+is stochastic filtering under exchangeable fake labels rather than HPO.

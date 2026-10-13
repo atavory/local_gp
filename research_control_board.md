@@ -223,6 +223,14 @@ Update: split finishable worker runs landed on 2026-10-08.
   `+0.605 +/- 0.340`.  This is the TMLR main fixed-compute demonstration of
   deliberately diverse aggregation: several server-control arms are evaluated
   from the same worker-update pool and reinvested into one shared update.
+- E091, `bandha_e091_outer_control_replication_20261013/`, reran the E090B
+  fixed-compute outer-control audit with fresh held-out seeds `998100..998131`.
+  The Buck/PyTorch run again returned `FIXED_COMPUTE_OUTER_CONTROL_HPO_WIN`.
+  Pooled internal minus stale/default was `+3.878 +/- 0.488`, internal minus
+  shuffled was `+0.093 +/- 0.073`, internal minus external validation-selected
+  HPO was `+1.148 +/- 0.511`, and internal minus external oracle was
+  `+0.413 +/- 0.345`.  This strengthens the E090B table as a reproducible
+  fixed-compute HPO win rather than a one-seed artifact.
 
 ### Round-Aligned Probe-Control Branch - 2026-10-04
 
