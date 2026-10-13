@@ -1,6 +1,6 @@
 # Deliberately Diverse Aggregation for Distributed Optimization
 
-Status: TMLR submission packet scaffold, updated 2026-10-12.
+Status: TMLR submission packet scaffold, updated 2026-10-13.
 
 Experiment state: E087/E088 were implemented and dispatched on 2026-10-07.
 Finishable split runs landed on 2026-10-08.  E087 is a positive IID
@@ -13,6 +13,9 @@ aggregation claim.
 Target venue recommendation: **TMLR first**. The ICML version would need
 another task family and a longer final-trajectory win beyond the current
 local-SGD classifier/update-map bed.
+
+Anonymous code and experiment artifacts:
+https://anonymous.4open.science/r/local_gp-9F83/
 
 ## Working Title
 

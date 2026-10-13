@@ -8,6 +8,10 @@ Do not repeat the Double Fan failure mode.
 
 The live paper is now **Deliberately Diverse Aggregation for Distributed
 Optimization**.
+
+Anonymous artifact URL for submission:
+https://anonymous.4open.science/r/local_gp-9F83/
+
 Do not split the story into "HPO" on one side and "aggregation" on the other.
 The invention is their coupling: aggregation becomes an HPO mechanism because
 the distributed round deliberately creates optimizer-arm diversity and then

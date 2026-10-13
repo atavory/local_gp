@@ -1,6 +1,9 @@
 # TMLR Submission Packet - Deliberately Diverse Aggregation
 
-Status: submission packet, updated 2026-10-12.
+Status: submission packet, updated 2026-10-13.
+
+Anonymous artifact URL:
+https://anonymous.4open.science/r/local_gp-9F83/
 
 ## Core Claim
 
@@ -76,6 +79,8 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
 - Boundary fixed-compute results included: yes, E089 and E090.
 - Null/filtering result included: yes, E087.
 - Unified claim: yes, deliberately diverse aggregation via HPO-aware probes.
+- Anonymous artifact link included: yes,
+  `https://anonymous.4open.science/r/local_gp-9F83/`.
 - Durable docs updated: research control board, option map, parallel probe
   program, and paper draft.
 - Relevant artifacts ready for commit: E090, E090B, docs, and this packet.
