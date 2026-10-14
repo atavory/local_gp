@@ -12,7 +12,9 @@ aggregation claim. E091 reruns E090B with fresh held-out seeds and preserves
 the fixed-compute win. E093 repeats the main setting at 64 seeds and tightens
 the external-HPO margin. E094 repeats the `rounds=16` stress run at 64 seeds
 and clears the fixed-compute external-HPO comparator. E095 extends the
-fixed-compute win to `K=16`.
+fixed-compute win to `K=16`. E096/E097 add lightweight tiny causal-LM tuning
+results: probe labels matter, but the tiny-LM fixed-LR grid is simple enough
+for external HPO to match the one-hot internal controller.
 
 Target venue recommendation: **TMLR first**. The ICML version would need
 another task family and a longer final-trajectory win beyond the current
@@ -417,6 +419,21 @@ Large-K support:
 - internal minus external oracle HPO: `-0.067 +/- 0.277`;
 - probe cost falls to `0.89%` at `N=8` and `0.45%` at `N=16`.
 
+Lightweight language-model tuning:
+
+- E096 trains a tiny character-level causal Transformer on an embedded text
+  corpus with LR arms `(0.5, 1, 2, 4)`, `rounds=12`, 16 held-out seeds, and a
+  fixed-compute external HPO comparator;
+- soft probe-weighted aggregation beats default fixed LR by
+  `+0.202 +/- 0.011` and shuffled probes by `+0.033 +/- 0.021`, but trails
+  validation-selected external HPO by `-0.096 +/- 0.015`;
+- E097 switches the same LM audit to one-hot probe selection;
+- one-hot internal selection beats default fixed LR by `+0.298 +/- 0.011`,
+  beats shuffled probes by `+0.177 +/- 0.015`, and ties validation-selected
+  external HPO (`-0.000 +/- 0.000`);
+- interpretation: the LM result supports probe-label content and gives a
+  language-model tuning sanity check, but it is not a full-scale LLM win.
+
 Expected paper role:
 
 - main positive fixed-compute table for deliberately diverse aggregation;
@@ -546,6 +563,8 @@ Table 5: Fixed-compute external HPO.
 | E092 outer-control `rounds=16` stress | stale server pair | ext-valid | ext-oracle | soft probe | `+0.330 +/- 2.151` | `+0.771 +/- 0.632` | `0.89%-3.57%` |
 | E094 outer-control `rounds=16` 64-seed | stale server pair | ext-valid | ext-oracle | soft probe | `+1.275 +/- 0.239` | `+0.233 +/- 0.076` | `0.89%-3.57%` |
 | E095 outer-control `K=16`, `rounds=16` | stale server pair | ext-valid | ext-oracle | soft probe | `+0.516 +/- 0.262` | `+0.075 +/- 0.048` | `0.45%-0.89%` |
+| E096 tiny causal-LM soft | fixed LR | ext-valid | ext-oracle | soft probe | `-0.096 +/- 0.015` | `+0.033 +/- 0.021` | `16.67%` |
+| E097 tiny causal-LM argmin | fixed LR | ext-valid | ext-oracle | one-hot probe | `-0.000 +/- 0.000` | `+0.177 +/- 0.015` | `16.67%` |
 
 ## Claims To Avoid
 
@@ -578,7 +597,9 @@ Aggregation for Distributed Optimization**.  E090B is the strongest
 fixed-compute demonstration; E091 and E093 replicate it, with E093 tightening
 the main fixed-compute external-HPO margin over 64 held-out seeds; E094 clears
 the longer `rounds=16` stress ledger over 64 held-out seeds; E095 extends the
-fixed-compute win to `K=16`; E080/E081 replicate the core server-side
-outer-control mechanism; E063 shows deliberately diverse worker LR arms; E089
-and E090 are boundary ledgers; E087 is stochastic filtering under exchangeable
-fake labels rather than HPO.
+fixed-compute win to `K=16`; E096/E097 add lightweight LM tuning sanity rows
+that should be framed as probe-label-content evidence, not as the main
+fixed-compute win; E080/E081 replicate the core server-side outer-control
+mechanism; E063 shows deliberately diverse worker LR arms; E089 and E090 are
+boundary ledgers; E087 is stochastic filtering under exchangeable fake labels
+rather than HPO.

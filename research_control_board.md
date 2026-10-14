@@ -258,6 +258,19 @@ Update: split finishable worker runs landed on 2026-10-08.
   oracle was `-0.067 +/- 0.277`.  This is the large-K support row: smaller
   absolute margins, lower probe cost, and still a fixed-compute external-HPO
   win.
+- E096, `bandha_e096_tiny_lm_probe_hpo_20261014/main/`, added a lightweight
+  tiny causal-LM tuning audit.  Soft probe-weighted LR-arm aggregation beat the
+  default fixed LR by `+0.202 +/- 0.011` and shuffled probes by
+  `+0.033 +/- 0.021`, but trailed validation-selected external HPO by
+  `-0.096 +/- 0.015`.  Treat this as LM label-content and a soft-averaging
+  boundary, not as the LM headline.
+- E097, `bandha_e097_tiny_lm_argmin_hpo_20261014/main/`, reran the tiny
+  causal-LM audit with one-hot probe selection.  Decision:
+  `TINY_LM_PROBE_LABEL_CONTENT`.  Internal probe selection beat the default
+  fixed LR by `+0.298 +/- 0.011`, beat shuffled probes by
+  `+0.177 +/- 0.015`, and tied validation-selected external HPO
+  (`-0.000 +/- 0.000`).  This is the honest LM tuning row: probe labels matter,
+  but the tiny-LM fixed-LR grid is simple enough that external HPO can match it.
 - E092, `bandha_e092_outer_control_longer_rounds_20261013/`, reran the same
   fixed-compute outer-control audit with `rounds=16` and fresh held-out seeds
   `998200..998231`.  Decision:

@@ -51,20 +51,25 @@ the model being trained instead of discarding losing HPO trials.
    `+0.094 +/- 0.061`, internal minus shuffled `+0.075 +/- 0.048`, internal
    minus external validation-selected HPO `+0.516 +/- 0.262`, and internal
    minus external oracle HPO `-0.067 +/- 0.277`.
-7. E092 longer-round stress run remains live but does not clear the
+7. E097 tiny causal-LM tuning sanity: one-hot probe selection beats default
+   fixed LR by `+0.298 +/- 0.011`, beats shuffled probes by
+   `+0.177 +/- 0.015`, and ties validation-selected external HPO
+   (`-0.000 +/- 0.000`).  E096 soft-weighted LM aggregation is the boundary:
+   it beats default and shuffled but trails external HPO by `-0.096 +/- 0.015`.
+8. E092 longer-round stress run remains live but does not clear the
    external-HPO CI: internal minus stale/default `+2.838 +/- 1.979`, internal
    minus shuffled `+0.771 +/- 0.632`, internal minus external
    validation-selected HPO `+0.330 +/- 2.151`.
-8. E080/E081 remain the replicated outer-control evidence:
+9. E080/E081 remain the replicated outer-control evidence:
    E080 selector minus shuffled `+0.177 +/- 0.049`; E081 packages the rule with
    frozen large-K fallback.
-9. E089 is the fixed-compute grouped-LR boundary:
+10. E089 is the fixed-compute grouped-LR boundary:
    internal minus external validation-selected HPO `-0.006 +/- 0.003`, while
    internal minus shuffled is `+0.004 +/- 0.002`.
-10. E090 is the stricter stale-LR final-trajectory boundary:
+11. E090 is the stricter stale-LR final-trajectory boundary:
    guarded minus stale full-worker `-0.008 +/- 0.002`, but guarded minus
    shuffled `+6.117 +/- 1.841`.
-11. E087 is stochastic filtering under exchangeable fake labels, not HPO.
+12. E087 is stochastic filtering under exchangeable fake labels, not HPO.
 
 ## TMLR Tables
 
@@ -82,6 +87,10 @@ E089 grouped-LR boundary, E090 stale-LR boundary, E090B outer-control win, E091
 fresh-seed replication, E093 64-seed replication, E092 longer-round stress
 run, E094 longer-round 64-seed win, and E095 large-K support row.
 
+Table 6: lightweight language-model tuning sanity:
+E096 soft probe-weighted tiny-LM boundary and E097 one-hot probe-selection
+tiny-LM tie against validation-selected external HPO.
+
 The table order should make the paper read as one claim: first the
 exchangeability boundary, then deliberately diverse worker arms, then
 deliberately diverse server-side candidates, then fixed-compute comparisons.
@@ -98,6 +107,9 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
   E092 in the main table if space is tight.
 - E095 extends the positive fixed-compute result to `K=16`; margins are smaller
   and oracle gap remains, but this directly addresses low-K-only concerns.
+- E096/E097 are tiny causal-LM tuning audits, not full-scale LLM pretraining
+  runs.  They can support task-family plausibility and probe-label content, but
+  should not be sold as the main empirical claim.
 - E089 shows grouped-LR internal content but not a win over validation-selected
   external HPO.
 - E090 shows the stale-default guard does not clear the stricter full-worker
@@ -114,6 +126,7 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
 - Longer-round fixed-compute HPO result included: yes, E094, with E092 as its
   noisy 32-seed precursor.
 - Large-K fixed-compute HPO result included: yes, E095.
+- Lightweight LM tuning result included: yes, E096/E097.
 - Boundary fixed-compute results included: yes, E089 and E090.
 - Null/filtering result included: yes, E087.
 - Unified claim: yes, deliberately diverse aggregation via HPO-aware probes.
@@ -122,4 +135,4 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
 - Durable docs updated: research control board, option map, parallel probe
   program, and paper draft.
 - Relevant artifacts ready for commit: E090, E090B, E091, E092, E093, E094,
-  E095, docs, and this packet.
+  E095, E096/E097, docs, and this packet.
