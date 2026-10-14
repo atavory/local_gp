@@ -297,6 +297,20 @@ Update: split finishable worker runs landed on 2026-10-08.
   time-series (`+0.017 +/- 0.008`); vision is a label-content row that clears
   default and shuffled but not external HPO.  This is now the broad synthetic
   domain-family support row.
+- E101, `bandha_e101_more_domains_shift_hpo_20261014/main64_antitarget/`,
+  adds six more adaptive-HPO domains without changing the controller:
+  multiclass tabular classification, sparse text-like bags, pairwise ranking,
+  graph/node summaries, sequence classification, and matrix-interaction
+  regression.  The corrected anti-target stream keeps early training genuinely
+  label-corrupted instead of accidentally target-compatible.  With the same SGD
+  LR arms `(0,0.25,0.5,1,2,4)`, one-hot same-round probe selection, 64 held-out
+  seeds, and `33.33%` probe overhead, the run returned
+  `MORE_DOMAINS_SHIFT_HPO_WIN`.  Pooled internal minus default was
+  `+0.125 +/- 0.024`, internal minus shuffled was `+0.137 +/- 0.026`, and
+  internal minus validation-selected external fixed-LR HPO was
+  `+0.085 +/- 0.016`.  All six added domains clear individually, with
+  external-HPO margins from `+0.005 +/- 0.001` on sparse text to
+  `+0.425 +/- 0.029` on matrix interaction.
 - E092, `bandha_e092_outer_control_longer_rounds_20261013/`, reran the same
   fixed-compute outer-control audit with `rounds=16` and fresh held-out seeds
   `998200..998231`.  Decision:

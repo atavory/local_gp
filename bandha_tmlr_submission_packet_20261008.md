@@ -69,20 +69,27 @@ the model being trained instead of discarding losing HPO trials.
    validation-selected external fixed-LR HPO by `+0.112 +/- 0.020` at
    `33.33%` probe overhead.  Four domains clear individually, including the
    PFN-style in-context row; synthetic vision is label-content only.
-10. E092 longer-round stress run remains live but does not clear the
+10. E101 64-seed added-domain shift audit returns
+   `MORE_DOMAINS_SHIFT_HPO_WIN` across multiclass tabular, sparse text-like
+   bags, pairwise ranking, graph/node summaries, sequence classification, and
+   matrix-interaction regression.  Same-round probe selection beats default
+   fixed LR by `+0.125 +/- 0.024`, shuffled probes by `+0.137 +/- 0.026`, and
+   validation-selected external fixed-LR HPO by `+0.085 +/- 0.016` at
+   `33.33%` probe overhead.  All six added domains clear individually.
+11. E092 longer-round stress run remains live but does not clear the
    external-HPO CI: internal minus stale/default `+2.838 +/- 1.979`, internal
    minus shuffled `+0.771 +/- 0.632`, internal minus external
    validation-selected HPO `+0.330 +/- 2.151`.
-11. E080/E081 remain the replicated outer-control evidence:
+12. E080/E081 remain the replicated outer-control evidence:
    E080 selector minus shuffled `+0.177 +/- 0.049`; E081 packages the rule with
    frozen large-K fallback.
-12. E089 is the fixed-compute grouped-LR boundary:
+13. E089 is the fixed-compute grouped-LR boundary:
    internal minus external validation-selected HPO `-0.006 +/- 0.003`, while
    internal minus shuffled is `+0.004 +/- 0.002`.
-13. E090 is the stricter stale-LR final-trajectory boundary:
+14. E090 is the stricter stale-LR final-trajectory boundary:
    guarded minus stale full-worker `-0.008 +/- 0.002`, but guarded minus
    shuffled `+6.117 +/- 1.841`.
-14. E087 is stochastic filtering under exchangeable fake labels, not HPO.
+15. E087 is stochastic filtering under exchangeable fake labels, not HPO.
 
 ## TMLR Tables
 
@@ -110,7 +117,9 @@ validation-selected external fixed-LR HPO.
 
 Table 8: multidomain adaptive HPO:
 E100 64-seed five-domain shift audit with tabular, PFN-style tabular-context,
-time-series, and synthetic-vision rows.
+time-series, and synthetic-vision rows; E101 64-seed six-added-domain audit
+with multiclass tabular, sparse text-like, ranking, graph/node, sequence, and
+matrix-interaction rows.
 
 The table order should make the paper read as one claim: first the
 exchangeability boundary, then deliberately diverse worker arms, then
@@ -134,7 +143,7 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
 - E098/E099 are stronger but still tiny-LM domain-shift audits.  They support
   the adaptive-HPO mechanism for language modeling, while the main claim should
   still rest on the fixed-compute local-SGD outer-control packet.
-- E100 adds breadth but remains a small synthetic domain-suite audit.  It
+- E100/E101 add breadth but remain small synthetic domain-suite audits.  They
   should be used as support that the adaptive-HPO mechanism is not unique to
   one local-SGD ledger or one tiny-LM text stream, not as a claim about
   foundation-scale training.
@@ -157,7 +166,7 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
 - Large-K fixed-compute HPO result included: yes, E095.
 - Lightweight LM tuning result included: yes, E096/E097.
 - Adaptive LM tuning win included: yes, E098/E099.
-- Multidomain adaptive-HPO support included: yes, E100.
+- Multidomain adaptive-HPO support included: yes, E100/E101.
 - Boundary fixed-compute results included: yes, E089 and E090.
 - Null/filtering result included: yes, E087.
 - Unified claim: yes, deliberately diverse aggregation via HPO-aware probes.
@@ -166,4 +175,4 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
 - Durable docs updated: research control board, option map, parallel probe
   program, and paper draft.
 - Relevant artifacts ready for commit: E090, E090B, E091, E092, E093, E094,
-  E095, E096/E097, E098/E099, E100, docs, and this packet.
+  E095, E096/E097, E098/E099, E100, E101, docs, and this packet.

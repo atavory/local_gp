@@ -20,7 +20,9 @@ probe selection beats validation-selected external fixed-LR HPO. E100 adds a
 five-domain synthetic shift audit, including tabular classification, tabular
 regression, PFN-style tabular in-context classification, time-series
 forecasting, and synthetic vision; its 64-seed run clears the fixed-compute
-external-HPO comparator at lower probe overhead.
+external-HPO comparator at lower probe overhead. E101 adds six more synthetic
+domain shapes and again clears the validation-selected external fixed-LR HPO
+comparator over 64 held-out seeds.
 
 Target venue recommendation: **TMLR first**. The ICML version would need
 larger real-data task families beyond the current local-SGD, tiny-LM, and
@@ -82,8 +84,8 @@ also beats validation-selected external HPO at fixed worker compute.
    controls, and shifted-domain LR arms show label-content gains over shuffled
    probes and fixed/default baselines.  E090B clears validation-selected
    external HPO at fixed worker compute, with fresh-seed and 64-seed
-   replications, while E099 and E100 show the adaptive-HPO version in language
-   modeling and a five-domain synthetic suite.
+   replications, while E099, E100, and E101 show the adaptive-HPO version in
+   language modeling and eleven total synthetic domain shapes.
 6. **Boundary results.** Batch-size value/FLOP, naive validation-gradient
    scoring, free LR search, and exchangeable worker ranking are not promoted.
 
@@ -490,6 +492,29 @@ Multidomain adaptive-HPO shift audit:
   mechanism.  It is not foundation-scale training, but it directly answers the
   "find more domains, including tabular" concern.
 
+Additional-domain adaptive-HPO shift audit:
+
+- E101 keeps the E100 controller and fixed-compute comparator but adds six new
+  domain shapes: multiclass tabular classification, sparse text-like bags,
+  pairwise ranking, graph/node neighborhood summaries, sequence
+  classification, and matrix-interaction regression;
+- the corrected early stream is anti-target or label-corrupted, while
+  probe/select and target batches stay target-domain;
+- E101, the 64-seed added-domain run at `33.33%` probe overhead, returns
+  `MORE_DOMAINS_SHIFT_HPO_WIN`;
+- pooled internal minus default fixed LR: `+0.125 +/- 0.024`;
+- pooled internal minus shuffled probes: `+0.137 +/- 0.026`;
+- pooled internal minus validation-selected external fixed-LR HPO:
+  `+0.085 +/- 0.016`;
+- all six added domains clear individually against validation-selected external
+  fixed-LR HPO: multiclass tabular `+0.022 +/- 0.002`, sparse text
+  `+0.005 +/- 0.001`, ranking `+0.019 +/- 0.001`, graph/node
+  `+0.005 +/- 0.001`, sequence `+0.036 +/- 0.002`, and matrix interaction
+  `+0.425 +/- 0.029`;
+- interpretation: E101 is the breadth extension.  E100 plus E101 now cover
+  eleven small domains; this still is not foundation-scale training, but it
+  makes the adaptive-HPO result much less domain-specific.
+
 Expected paper role:
 
 - main positive fixed-compute table for deliberately diverse aggregation;
@@ -623,6 +648,7 @@ Table 5: Fixed-compute external HPO.
 | E097 tiny causal-LM argmin | fixed LR | ext-valid | ext-oracle | one-hot probe | `-0.000 +/- 0.000` | `+0.177 +/- 0.015` | `16.67%` |
 | E099 tiny causal-LM domain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.043 +/- 0.026` | `+0.466 +/- 0.029` | `16.67%` |
 | E100 multidomain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.112 +/- 0.020` | `+0.206 +/- 0.029` | `33.33%` |
+| E101 added-domain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.085 +/- 0.016` | `+0.137 +/- 0.026` | `33.33%` |
 
 ## Claims To Avoid
 
@@ -659,7 +685,8 @@ fixed-compute win to `K=16`; E096/E097 add lightweight LM tuning sanity rows
 that should be framed as probe-label-content evidence, not as the main
 fixed-compute win; E099 gives a stronger tiny-LM adaptive/domain-shift win;
 E100 adds five-domain synthetic breadth, including PFN-style tabular-context
-classification; E080/E081 replicate the core server-side outer-control
-mechanism; E063 shows deliberately diverse worker LR arms; E089 and E090 are
-boundary ledgers; E087 is stochastic filtering under exchangeable fake labels
-rather than HPO.
+classification; E101 adds six more synthetic domain shapes with all six
+clearing validation-selected external fixed-LR HPO; E080/E081 replicate the
+core server-side outer-control mechanism; E063 shows deliberately diverse
+worker LR arms; E089 and E090 are boundary ledgers; E087 is stochastic
+filtering under exchangeable fake labels rather than HPO.
