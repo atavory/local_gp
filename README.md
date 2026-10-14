@@ -1,4 +1,4 @@
-# Beyond Averaging: Distributed Training as Sequential Experimental Design
+# Deliberately Diverse Aggregation for Distributed Optimization
 
 Start here:
 
@@ -10,7 +10,20 @@ Start here:
 
 ## What This Project Is
 
-This project treats distributed training as a sequential experiment.
+This project treats distributed training as a coupled optimization and HPO
+system.  Instead of spending parallel workers only to estimate one update, we
+deliberately create optimizer/hyperparameter-arm diversity inside a distributed
+round, score the candidate next states with cheap probes, and aggregate or
+select the scored candidates back into one shared trajectory.
+
+The current paper claim is:
+
+```text
+distributed workers create optimizer/hyperparameter arms;
+probes estimate arm value from the same base point;
+the server reinvests exploration into the shared trajectory by selecting or
+weighting candidate updates.
+```
 
 A single worker naturally forms a time series, so momentum and acceleration are
 reasonable summaries of that worker's past and predicted future. With many
@@ -53,6 +66,21 @@ channels, or async tags to create action-relevant evidence.
 ## Current Evidence
 
 Positive or live:
+
+- E100 adds five-domain adaptive-HPO breadth.  On 32 held-out seeds across
+  tabular classification, tabular regression, PFN-style tabular in-context
+  classification, time-series forecasting, and synthetic 8x8 vision, same-round
+  probe aggregation beats validation-selected external fixed-LR HPO by
+  `+0.108 +/- 0.026` at `33.33%` probe overhead.  The three tabular-style
+  domains clear individually.
+- E099 is the usable tiny-LM adaptive tuning result: a tiny causal-LM stream
+  shifts from off-domain prose to code-like text, and same-round probe
+  selection beats validation-selected external fixed-LR HPO by
+  `+0.043 +/- 0.026`.
+- E093/E094/E095 are the strongest fixed-compute outer-control packet:
+  64-seed main replication, longer-round 64-seed win, and large-K support,
+  each beating validation-selected external HPO in the deliberately diverse
+  outer-control setting.
 
 - Local path/probe geometry can expose information that server-side temporal
   secants miss on synthetic beds.

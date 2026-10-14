@@ -1,6 +1,6 @@
 # Deliberately Diverse Aggregation for Distributed Optimization
 
-Status: TMLR submission packet scaffold, updated 2026-10-13.
+Status: TMLR submission packet scaffold, updated 2026-10-14.
 
 Experiment state: E087/E088 were implemented and dispatched on 2026-10-07.
 Finishable split runs landed on 2026-10-08.  E087 is a positive IID
@@ -16,11 +16,15 @@ fixed-compute win to `K=16`. E096/E097 add lightweight tiny causal-LM tuning
 results: probe labels matter, but the tiny-LM fixed-LR grid is simple enough
 for external HPO to match the one-hot internal controller. E098/E099 add the
 adaptive LM setting where the stream shifts domains and internal same-round
-probe selection beats validation-selected external fixed-LR HPO.
+probe selection beats validation-selected external fixed-LR HPO. E100 adds a
+five-domain synthetic shift audit, including tabular classification, tabular
+regression, PFN-style tabular in-context classification, time-series
+forecasting, and synthetic vision; its 32-seed run clears the fixed-compute
+external-HPO comparator at lower probe overhead.
 
 Target venue recommendation: **TMLR first**. The ICML version would need
-another task family and a longer final-trajectory win beyond the current
-local-SGD classifier/update-map bed.
+larger real-data task families beyond the current local-SGD, tiny-LM, and
+small synthetic multidomain packet.
 
 Anonymous code and experiment artifacts:
 https://anonymous.4open.science/r/local_gp-9F83/
@@ -56,10 +60,11 @@ This couples HPO with aggregation rather than placing HPO outside training.
 Under IID identical arms, probe weights can still fluctuate and even filter
 stochastic updates, but arm labels do not carry persistent hyperparameter
 information.  The useful regime is deliberate diversity: worker LR arms,
-server-side outer optimizer controls, and guarded stale-default recovery.
-Across controlled local-SGD experiments, probe-weighted aggregation beats
-shuffled probes and fixed/default controls, and in the outer-control setting it
-beats validation-selected external HPO at fixed worker compute.
+server-side outer optimizer controls, domain-shift LR arms, and guarded
+stale-default recovery.  Across controlled local-SGD, tiny-LM, and small
+multidomain shift experiments, probe-weighted aggregation beats shuffled probes
+and fixed/default controls; in the outer-control and adaptive shift settings it
+also beats validation-selected external HPO at fixed worker compute.
 
 ## Main Contributions
 
@@ -73,10 +78,12 @@ beats validation-selected external HPO at fixed worker compute.
    soft/shrunk weights or guarded fallback.
 4. **Efficiency accounting.** Probe cost amortizes over `K * N` local work, so
    small validation probes cost sub-percent to low-single-digit overhead.
-5. **Empirical HPO wins.** Deliberately diverse worker arms and server-side
-   outer controls show label-content gains over shuffled probes and
-   fixed/default baselines; E090B clears validation-selected external HPO at
-   fixed worker compute, with a fresh-seed E091 replication.
+5. **Empirical HPO wins.** Deliberately diverse worker arms, server-side outer
+   controls, and shifted-domain LR arms show label-content gains over shuffled
+   probes and fixed/default baselines.  E090B clears validation-selected
+   external HPO at fixed worker compute, with fresh-seed and 64-seed
+   replications, while E099 and E100 show the adaptive-HPO version in language
+   modeling and a five-domain synthetic suite.
 6. **Boundary results.** Batch-size value/FLOP, naive validation-gradient
    scoring, free LR search, and exchangeable worker ranking are not promoted.
 
@@ -455,6 +462,34 @@ Adaptive language-model tuning:
   but it demonstrates the intended adaptive-HPO mechanism in a language-model
   setting.
 
+Multidomain adaptive-HPO shift audit:
+
+- E100 extends the same adaptive-HPO logic beyond text to five small domains:
+  tabular classification, tabular regression, PFN-style tabular in-context
+  classification, time-series next-step forecasting, and synthetic 8x8 image
+  classification;
+- the stream is deliberately shifted: early rounds are off-target or
+  label-corrupted, while probe/select and target batches stay target-domain;
+- internal HPO evaluates SGD LR-arm candidate next states from one shared base
+  model and applies one-hot probe-weighted aggregation;
+- external HPO spends the same candidate-update budget on separate fixed-LR
+  trajectories and selects one by held-out validation loss;
+- E100, the 32-seed five-domain run at `33.33%` probe overhead, returns
+  `MULTIDOMAIN_SHIFT_HPO_WIN`;
+- pooled internal minus default fixed LR: `+0.189 +/- 0.036`;
+- pooled internal minus shuffled probes: `+0.199 +/- 0.040`;
+- pooled internal minus validation-selected external fixed-LR HPO:
+  `+0.108 +/- 0.026`;
+- tabular classification clears external HPO by `+0.013 +/- 0.001`;
+- tabular regression clears external HPO by `+0.426 +/- 0.035`;
+- PFN-style tabular context clears external HPO by `+0.093 +/- 0.007`;
+- time-series is positive/live against external HPO at `+0.008 +/- 0.009`;
+- synthetic vision is a near-tie against external HPO at `+0.000 +/- 0.005`
+  while clearing default and shuffled probes;
+- interpretation: E100 is broad synthetic support for the adaptive-HPO
+  mechanism.  It is not foundation-scale training, but it directly answers the
+  "find more domains, including tabular" concern.
+
 Expected paper role:
 
 - main positive fixed-compute table for deliberately diverse aggregation;
@@ -587,6 +622,7 @@ Table 5: Fixed-compute external HPO.
 | E096 tiny causal-LM soft | fixed LR | ext-valid | ext-oracle | soft probe | `-0.096 +/- 0.015` | `+0.033 +/- 0.021` | `16.67%` |
 | E097 tiny causal-LM argmin | fixed LR | ext-valid | ext-oracle | one-hot probe | `-0.000 +/- 0.000` | `+0.177 +/- 0.015` | `16.67%` |
 | E099 tiny causal-LM domain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.043 +/- 0.026` | `+0.466 +/- 0.029` | `16.67%` |
+| E100 multidomain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.108 +/- 0.026` | `+0.199 +/- 0.040` | `33.33%` |
 
 ## Claims To Avoid
 
@@ -622,6 +658,8 @@ the longer `rounds=16` stress ledger over 64 held-out seeds; E095 extends the
 fixed-compute win to `K=16`; E096/E097 add lightweight LM tuning sanity rows
 that should be framed as probe-label-content evidence, not as the main
 fixed-compute win; E099 gives a stronger tiny-LM adaptive/domain-shift win;
-E080/E081 replicate the core server-side outer-control mechanism; E063 shows
-deliberately diverse worker LR arms; E089 and E090 are boundary ledgers; E087
-is stochastic filtering under exchangeable fake labels rather than HPO.
+E100 adds five-domain synthetic breadth, including PFN-style tabular-context
+classification; E080/E081 replicate the core server-side outer-control
+mechanism; E063 shows deliberately diverse worker LR arms; E089 and E090 are
+boundary ledgers; E087 is stochastic filtering under exchangeable fake labels
+rather than HPO.
