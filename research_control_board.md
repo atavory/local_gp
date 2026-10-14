@@ -248,6 +248,16 @@ Update: split finishable worker runs landed on 2026-10-08.
   `+1.275 +/- 0.239`, and internal minus external oracle was
   `+0.465 +/- 0.222`.  This upgrades the longer-round story from E092's
   high-variance live result to a CI-cleared fixed-compute HPO win.
+- E095, `bandha_e095_outer_control_k16_64seed_20261013/`, extended the
+  outer-control fixed-compute audit to `K=16`, `rounds=16`, and 64 fresh
+  held-out seeds `998500..998563`.  Decision:
+  `FIXED_COMPUTE_OUTER_CONTROL_HPO_WIN`.  Pooled internal minus stale/default
+  was `+0.094 +/- 0.061`, internal minus fresh/theory was `+0.115 +/- 0.056`,
+  internal minus shuffled was `+0.075 +/- 0.048`, internal minus external
+  validation-selected HPO was `+0.516 +/- 0.262`, and internal minus external
+  oracle was `-0.067 +/- 0.277`.  This is the large-K support row: smaller
+  absolute margins, lower probe cost, and still a fixed-compute external-HPO
+  win.
 - E092, `bandha_e092_outer_control_longer_rounds_20261013/`, reran the same
   fixed-compute outer-control audit with `rounds=16` and fresh held-out seeds
   `998200..998231`.  Decision:

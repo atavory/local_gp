@@ -11,7 +11,8 @@ the strongest fixed-compute demonstration of the same deliberately diverse
 aggregation claim. E091 reruns E090B with fresh held-out seeds and preserves
 the fixed-compute win. E093 repeats the main setting at 64 seeds and tightens
 the external-HPO margin. E094 repeats the `rounds=16` stress run at 64 seeds
-and clears the fixed-compute external-HPO comparator.
+and clears the fixed-compute external-HPO comparator. E095 extends the
+fixed-compute win to `K=16`.
 
 Target venue recommendation: **TMLR first**. The ICML version would need
 another task family and a longer final-trajectory win beyond the current
@@ -404,6 +405,18 @@ Longer-round 64-seed win:
 - internal minus external validation-selected HPO: `+1.275 +/- 0.239`;
 - internal minus external oracle HPO: `+0.465 +/- 0.222`.
 
+Large-K support:
+
+- E095 reran the fixed-compute audit at `K=16`, `rounds=16`, with held-out
+  seeds `998500..998563`;
+- decision: `FIXED_COMPUTE_OUTER_CONTROL_HPO_WIN`;
+- internal minus stale/default control: `+0.094 +/- 0.061`;
+- internal minus fresh/theory control: `+0.115 +/- 0.056`;
+- internal minus shuffled internal: `+0.075 +/- 0.048`;
+- internal minus external validation-selected HPO: `+0.516 +/- 0.262`;
+- internal minus external oracle HPO: `-0.067 +/- 0.277`;
+- probe cost falls to `0.89%` at `N=8` and `0.45%` at `N=16`.
+
 Expected paper role:
 
 - main positive fixed-compute table for deliberately diverse aggregation;
@@ -532,6 +545,7 @@ Table 5: Fixed-compute external HPO.
 | E093 outer-control 64-seed replication | stale server pair | ext-valid | ext-oracle | soft probe | `+1.224 +/- 0.313` | `+0.140 +/- 0.058` | `0.89%-3.57%` |
 | E092 outer-control `rounds=16` stress | stale server pair | ext-valid | ext-oracle | soft probe | `+0.330 +/- 2.151` | `+0.771 +/- 0.632` | `0.89%-3.57%` |
 | E094 outer-control `rounds=16` 64-seed | stale server pair | ext-valid | ext-oracle | soft probe | `+1.275 +/- 0.239` | `+0.233 +/- 0.076` | `0.89%-3.57%` |
+| E095 outer-control `K=16`, `rounds=16` | stale server pair | ext-valid | ext-oracle | soft probe | `+0.516 +/- 0.262` | `+0.075 +/- 0.048` | `0.45%-0.89%` |
 
 ## Claims To Avoid
 
@@ -563,7 +577,8 @@ Current recommendation: write the TMLR paper as **Deliberately Diverse
 Aggregation for Distributed Optimization**.  E090B is the strongest
 fixed-compute demonstration; E091 and E093 replicate it, with E093 tightening
 the main fixed-compute external-HPO margin over 64 held-out seeds; E094 clears
-the longer `rounds=16` stress ledger over 64 held-out seeds; E080/E081
-replicate the core server-side outer-control mechanism; E063 shows
-deliberately diverse worker LR arms; E089 and E090 are boundary ledgers; E087
-is stochastic filtering under exchangeable fake labels rather than HPO.
+the longer `rounds=16` stress ledger over 64 held-out seeds; E095 extends the
+fixed-compute win to `K=16`; E080/E081 replicate the core server-side
+outer-control mechanism; E063 shows deliberately diverse worker LR arms; E089
+and E090 are boundary ledgers; E087 is stochastic filtering under exchangeable
+fake labels rather than HPO.
