@@ -72,7 +72,8 @@ Positive or live:
   graph/node summaries, sequence classification, and matrix-interaction
   regression.  On 64 held-out seeds, same-round probe selection beats
   validation-selected external fixed-LR HPO by `+0.085 +/- 0.016` at `33.33%`
-  probe overhead, and all six domains clear individually.
+  probe overhead, and a probe-batch-16 rerun still clears by
+  `+0.077 +/- 0.016` at `8.33%`; all six domains clear individually.
 - E100 adds five-domain adaptive-HPO breadth.  On 64 held-out seeds across
   tabular classification, tabular regression, PFN-style tabular in-context
   classification, time-series forecasting, and synthetic 8x8 vision, same-round

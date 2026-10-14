@@ -310,7 +310,12 @@ Update: split finishable worker runs landed on 2026-10-08.
   internal minus validation-selected external fixed-LR HPO was
   `+0.085 +/- 0.016`.  All six added domains clear individually, with
   external-HPO margins from `+0.005 +/- 0.001` on sparse text to
-  `+0.425 +/- 0.029` on matrix interaction.
+  `+0.425 +/- 0.029` on matrix interaction.  The lower-cost probe-batch-16
+  rerun, `bandha_e101_more_domains_shift_hpo_20261014/main64_probe16_antitarget/`,
+  also returned `MORE_DOMAINS_SHIFT_HPO_WIN`: pooled internal minus default
+  `+0.118 +/- 0.024`, internal minus shuffled `+0.133 +/- 0.028`, and internal
+  minus validation-selected external fixed-LR HPO `+0.077 +/- 0.016` at only
+  `8.33%` probe overhead, again with all six domains clearing individually.
 - E092, `bandha_e092_outer_control_longer_rounds_20261013/`, reran the same
   fixed-compute outer-control audit with `rounds=16` and fresh held-out seeds
   `998200..998231`.  Decision:

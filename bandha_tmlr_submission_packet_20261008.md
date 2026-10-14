@@ -75,7 +75,11 @@ the model being trained instead of discarding losing HPO trials.
    matrix-interaction regression.  Same-round probe selection beats default
    fixed LR by `+0.125 +/- 0.024`, shuffled probes by `+0.137 +/- 0.026`, and
    validation-selected external fixed-LR HPO by `+0.085 +/- 0.016` at
-   `33.33%` probe overhead.  All six added domains clear individually.
+   `33.33%` probe overhead.  The probe-batch-16 rerun keeps the win at
+   `8.33%` overhead: internal minus default `+0.118 +/- 0.024`, internal minus
+   shuffled `+0.133 +/- 0.028`, and internal minus validation-selected
+   external fixed-LR HPO `+0.077 +/- 0.016`.  All six added domains clear
+   individually in both runs.
 11. E092 longer-round stress run remains live but does not clear the
    external-HPO CI: internal minus stale/default `+2.838 +/- 1.979`, internal
    minus shuffled `+0.771 +/- 0.632`, internal minus external
@@ -119,7 +123,7 @@ Table 8: multidomain adaptive HPO:
 E100 64-seed five-domain shift audit with tabular, PFN-style tabular-context,
 time-series, and synthetic-vision rows; E101 64-seed six-added-domain audit
 with multiclass tabular, sparse text-like, ranking, graph/node, sequence, and
-matrix-interaction rows.
+matrix-interaction rows, including the `8.33%` probe-overhead rerun.
 
 The table order should make the paper read as one claim: first the
 exchangeability boundary, then deliberately diverse worker arms, then
