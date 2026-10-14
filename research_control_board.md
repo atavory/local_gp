@@ -271,6 +271,16 @@ Update: split finishable worker runs landed on 2026-10-08.
   `+0.177 +/- 0.015`, and tied validation-selected external HPO
   (`-0.000 +/- 0.000`).  This is the honest LM tuning row: probe labels matter,
   but the tiny-LM fixed-LR grid is simple enough that external HPO can match it.
+- E098/E099 add the missing adaptive LM regime: a tiny causal-LM training
+  stream shifts from off-domain prose to code-like text, while probe/select and
+  target text are code-like.  E098 cleared on 16 seeds; E099,
+  `bandha_e099_tiny_lm_domain_shift_32seed_20261014/main/`, reran 32 seeds and
+  returned `TINY_LM_DOMAIN_SHIFT_HPO_WIN`.  Pooled internal minus default was
+  `+0.452 +/- 0.022`, internal minus shuffled was `+0.466 +/- 0.029`, and
+  internal minus validation-selected external fixed-LR HPO was
+  `+0.043 +/- 0.026` at `16.67%` probe overhead.  This is the usable LM tuning
+  win: same-round probe selection adapts across the domain shift, whereas
+  fixed external HPO must choose one LR for the whole trajectory.
 - E092, `bandha_e092_outer_control_longer_rounds_20261013/`, reran the same
   fixed-compute outer-control audit with `rounds=16` and fresh held-out seeds
   `998200..998231`.  Decision:

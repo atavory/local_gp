@@ -56,20 +56,25 @@ the model being trained instead of discarding losing HPO trials.
    `+0.177 +/- 0.015`, and ties validation-selected external HPO
    (`-0.000 +/- 0.000`).  E096 soft-weighted LM aggregation is the boundary:
    it beats default and shuffled but trails external HPO by `-0.096 +/- 0.015`.
-8. E092 longer-round stress run remains live but does not clear the
+8. E099 tiny causal-LM domain-shift audit returns
+   `TINY_LM_DOMAIN_SHIFT_HPO_WIN`: same-round probe selection beats default
+   fixed LR by `+0.452 +/- 0.022`, beats shuffled probes by
+   `+0.466 +/- 0.029`, and beats validation-selected external fixed-LR HPO by
+   `+0.043 +/- 0.026` at `16.67%` probe overhead.
+9. E092 longer-round stress run remains live but does not clear the
    external-HPO CI: internal minus stale/default `+2.838 +/- 1.979`, internal
    minus shuffled `+0.771 +/- 0.632`, internal minus external
    validation-selected HPO `+0.330 +/- 2.151`.
-9. E080/E081 remain the replicated outer-control evidence:
+10. E080/E081 remain the replicated outer-control evidence:
    E080 selector minus shuffled `+0.177 +/- 0.049`; E081 packages the rule with
    frozen large-K fallback.
-10. E089 is the fixed-compute grouped-LR boundary:
+11. E089 is the fixed-compute grouped-LR boundary:
    internal minus external validation-selected HPO `-0.006 +/- 0.003`, while
    internal minus shuffled is `+0.004 +/- 0.002`.
-11. E090 is the stricter stale-LR final-trajectory boundary:
+12. E090 is the stricter stale-LR final-trajectory boundary:
    guarded minus stale full-worker `-0.008 +/- 0.002`, but guarded minus
    shuffled `+6.117 +/- 1.841`.
-12. E087 is stochastic filtering under exchangeable fake labels, not HPO.
+13. E087 is stochastic filtering under exchangeable fake labels, not HPO.
 
 ## TMLR Tables
 
@@ -91,6 +96,10 @@ Table 6: lightweight language-model tuning sanity:
 E096 soft probe-weighted tiny-LM boundary and E097 one-hot probe-selection
 tiny-LM tie against validation-selected external HPO.
 
+Table 7: adaptive language-model tuning:
+E098 16-seed and E099 32-seed tiny causal-LM domain-shift wins over
+validation-selected external fixed-LR HPO.
+
 The table order should make the paper read as one claim: first the
 exchangeability boundary, then deliberately diverse worker arms, then
 deliberately diverse server-side candidates, then fixed-compute comparisons.
@@ -110,6 +119,9 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
 - E096/E097 are tiny causal-LM tuning audits, not full-scale LLM pretraining
   runs.  They can support task-family plausibility and probe-label content, but
   should not be sold as the main empirical claim.
+- E098/E099 are stronger but still tiny-LM domain-shift audits.  They support
+  the adaptive-HPO mechanism for language modeling, while the main claim should
+  still rest on the fixed-compute local-SGD outer-control packet.
 - E089 shows grouped-LR internal content but not a win over validation-selected
   external HPO.
 - E090 shows the stale-default guard does not clear the stricter full-worker
@@ -127,6 +139,7 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
   noisy 32-seed precursor.
 - Large-K fixed-compute HPO result included: yes, E095.
 - Lightweight LM tuning result included: yes, E096/E097.
+- Adaptive LM tuning win included: yes, E098/E099.
 - Boundary fixed-compute results included: yes, E089 and E090.
 - Null/filtering result included: yes, E087.
 - Unified claim: yes, deliberately diverse aggregation via HPO-aware probes.
@@ -135,4 +148,4 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
 - Durable docs updated: research control board, option map, parallel probe
   program, and paper draft.
 - Relevant artifacts ready for commit: E090, E090B, E091, E092, E093, E094,
-  E095, E096/E097, docs, and this packet.
+  E095, E096/E097, E098/E099, docs, and this packet.
