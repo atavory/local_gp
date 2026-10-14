@@ -239,6 +239,15 @@ Update: split finishable worker runs landed on 2026-10-08.
   `+1.224 +/- 0.313`, and internal minus external oracle was
   `+0.343 +/- 0.255`.  This is the strongest replication packet for the TMLR
   fixed-compute HPO claim.
+- E094, `bandha_e094_outer_control_longer_64seed_20261013/`, reran the
+  longer `rounds=16` outer-control audit with 64 fresh held-out seeds
+  `998400..998463`.  Decision: `FIXED_COMPUTE_OUTER_CONTROL_HPO_WIN`.  Pooled
+  internal minus stale/default was `+4.403 +/- 0.417`, internal minus
+  fresh/theory was `+0.194 +/- 0.072`, internal minus shuffled was
+  `+0.233 +/- 0.076`, internal minus external validation-selected HPO was
+  `+1.275 +/- 0.239`, and internal minus external oracle was
+  `+0.465 +/- 0.222`.  This upgrades the longer-round story from E092's
+  high-variance live result to a CI-cleared fixed-compute HPO win.
 - E092, `bandha_e092_outer_control_longer_rounds_20261013/`, reran the same
   fixed-compute outer-control audit with `rounds=16` and fresh held-out seeds
   `998200..998231`.  Decision:

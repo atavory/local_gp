@@ -1,0 +1,54 @@
+# DFW-E090B Result - Fixed-Compute Outer-Control HPO
+
+Decision label: `FIXED_COMPUTE_OUTER_CONTROL_HPO_WIN`
+
+## Compute Status
+
+`TORCH_CPU`: `torch=2.16.0a0+fb cuda_available=False`.
+
+## Design
+
+This is the fallback fixed-compute table after E090 stale-LR recovery did not clear. The stale/default arm is a transferred global server pair `(5.0, 0.05)`; the fresh arm is the K-aware theory pair; and the high arm is a more aggressive probe arm.
+
+Internal HPO evaluates the outer-control arms from one shared worker-update pool and uses the E080 soft probe selector. External HPO spends the same total workers by splitting them across independent arm budgets and selecting by validation/select improvement. Target selection is reported only as an oracle diagnostic.
+
+## Pooled
+
+- internal minus stale/default control: `4.403+/-0.417`
+- internal minus fresh/theory control: `0.194+/-0.072`
+- internal minus shuffled internal: `0.233+/-0.076`
+- internal minus external validation-selected HPO: `1.275+/-0.239`
+- internal minus external oracle HPO: `0.465+/-0.222`
+- external validation-selected HPO minus stale/default: `3.128+/-0.396`
+- internal minus internal target oracle: `-1.620+/-0.151`
+
+## Cells
+
+| N | K | stale/default | fresh/theory | high | internal | internal-stale | internal-shuffled | internal-ext-valid | ext-valid | ext-oracle | probe cost |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 4 | 4.718+/-0.045 | 11.192+/-0.828 | 9.523+/-1.846 | 11.492+/-0.823 | 6.774+/-0.779 | 0.394+/-0.156 | 2.118+/-0.583 | 9.374+/-0.830 | 10.309+/-0.634 | 3.57% |
+| 8 | 8 | 4.217+/-0.104 | 5.921+/-0.462 | 5.236+/-1.065 | 6.088+/-0.492 | 1.871+/-0.391 | 0.173+/-0.123 | 0.932+/-0.344 | 5.155+/-0.518 | 5.834+/-0.398 | 1.79% |
+| 16 | 4 | 4.741+/-0.039 | 11.553+/-0.716 | 10.212+/-1.609 | 11.719+/-0.703 | 6.978+/-0.666 | 0.233+/-0.190 | 1.509+/-0.545 | 10.210+/-0.785 | 11.239+/-0.778 | 1.79% |
+| 16 | 8 | 4.262+/-0.093 | 6.108+/-0.416 | 5.623+/-0.957 | 6.252+/-0.426 | 1.990+/-0.337 | 0.133+/-0.123 | 0.540+/-0.283 | 5.712+/-0.497 | 6.308+/-0.475 | 0.89% |
+
+## Interpretation
+
+The outer-control fallback clears the fixed-compute external-HPO comparator: the internal probe selector beats the stale/default control, shuffled labels, and validation-selected external HPO with the same worker budget.
+
+## Run Log
+
+```text
+DFW-E090B fixed-compute outer-control HPO
+host=devvm44191.lla0.facebook.com python=/data/users/atavory/fbsource/buck-out/v2/art/fbcode/c95bb19b4474c2e4/aai/double_fan_gpu_runner/__run_local_gp_script_static__/run_local_gp_script_static#link-tree/runtime/bin/run_local_gp_script_static#native-main#platform-runtime#python#py_version_3_12 compute_status=TORCH_CPU torch=2.16.0a0+fb cuda_available=False
+K=(4, 8) N=(8, 16) rounds=16 select_batch=384 heldout_seeds=64
+arms=stale_global_default,fresh_theory,high_probe_arm policy=soft_std2
+
+CELL N=8 K=4 arms=stale_global_default:(5.0, 0.05)/count=1;fresh_theory:(18.0, 0.15)/count=1;high_probe_arm:(22.5, 0.3)/count=1;low_safe:(9.0, 0.05)/count=1;mid_nomomentum:(18.0, 0.0)/count=1;mid_low_momentum:(13.5, 0.15)/count=1;aggressive_low_momentum:(27.0, 0.15)/count=1;double_nomomentum:(36.0, 0.0)/count=1 stale=  4.718+/-0.045 fresh= 11.192+/-0.828 high=  9.523+/-1.846 internal= 11.492+/-0.823 internal-stale=  6.774+/-0.779 internal-shuffled=  0.394+/-0.156 external_valid=  9.374+/-0.830 internal-external_valid=  2.118+/-0.583 external_oracle= 10.309+/-0.634 internal-external_oracle=  1.183+/-0.587 external_stale=  4.593+/-0.050 external_fresh=  9.445+/-0.874 external_high=  7.080+/-1.874 internal_oracle= 13.545+/-0.737 capture_vs_stale_internal_oracle=  0.733+/-0.081 cost=3.57%
+CELL N=8 K=8 arms=stale_global_default:(5.0, 0.05)/count=1;fresh_theory:(9.0, 0.15)/count=1;high_probe_arm:(11.25, 0.3)/count=1;low_safe:(4.5, 0.05)/count=1;mid_nomomentum:(9.0, 0.0)/count=1;mid_low_momentum:(6.75, 0.15)/count=1;aggressive_low_momentum:(13.5, 0.15)/count=1;double_nomomentum:(18.0, 0.0)/count=1 stale=  4.217+/-0.104 fresh=  5.921+/-0.462 high=  5.236+/-1.065 internal=  6.088+/-0.492 internal-stale=  1.871+/-0.391 internal-shuffled=  0.173+/-0.123 external_valid=  5.155+/-0.518 internal-external_valid=  0.932+/-0.344 external_oracle=  5.834+/-0.398 internal-external_oracle=  0.253+/-0.311 external_stale=  4.010+/-0.150 external_fresh=  5.197+/-0.655 external_high=  4.123+/-1.461 internal_oracle=  7.436+/-0.424 capture_vs_stale_internal_oracle=  0.491+/-0.142 cost=1.79%
+CELL N=16 K=4 arms=stale_global_default:(5.0, 0.05)/count=2;fresh_theory:(18.0, 0.15)/count=2;high_probe_arm:(22.5, 0.3)/count=2;low_safe:(9.0, 0.05)/count=2;mid_nomomentum:(18.0, 0.0)/count=2;mid_low_momentum:(13.5, 0.15)/count=2;aggressive_low_momentum:(27.0, 0.15)/count=2;double_nomomentum:(36.0, 0.0)/count=2 stale=  4.741+/-0.039 fresh= 11.553+/-0.716 high= 10.212+/-1.609 internal= 11.719+/-0.703 internal-stale=  6.978+/-0.666 internal-shuffled=  0.233+/-0.190 external_valid= 10.210+/-0.785 internal-external_valid=  1.509+/-0.545 external_oracle= 11.239+/-0.778 internal-external_oracle=  0.480+/-0.484 external_stale=  4.658+/-0.046 external_fresh= 10.327+/-0.820 external_high=  8.237+/-1.773 internal_oracle= 13.558+/-0.716 capture_vs_stale_internal_oracle=  0.766+/-0.058 cost=1.79%
+CELL N=16 K=8 arms=stale_global_default:(5.0, 0.05)/count=2;fresh_theory:(9.0, 0.15)/count=2;high_probe_arm:(11.25, 0.3)/count=2;low_safe:(4.5, 0.05)/count=2;mid_nomomentum:(9.0, 0.0)/count=2;mid_low_momentum:(6.75, 0.15)/count=2;aggressive_low_momentum:(13.5, 0.15)/count=2;double_nomomentum:(18.0, 0.0)/count=2 stale=  4.262+/-0.093 fresh=  6.108+/-0.416 high=  5.623+/-0.957 internal=  6.252+/-0.426 internal-stale=  1.990+/-0.337 internal-shuffled=  0.133+/-0.123 external_valid=  5.712+/-0.497 internal-external_valid=  0.540+/-0.283 external_oracle=  6.308+/-0.475 internal-external_oracle= -0.056+/-0.272 external_stale=  4.132+/-0.106 external_fresh=  5.624+/-0.468 external_high=  4.782+/-1.064 internal_oracle=  7.491+/-0.422 capture_vs_stale_internal_oracle=  0.512+/-0.148 cost=0.89%
+
+POOLED internal-stale=  4.403+/-0.417 internal-fresh=  0.194+/-0.072 internal-shuffled=  0.233+/-0.076 internal-external_valid=  1.275+/-0.239 internal-external_oracle=  0.465+/-0.222 external_valid-stale=  3.128+/-0.396 internal-internal_oracle= -1.620+/-0.151
+DECISION FIXED_COMPUTE_OUTER_CONTROL_HPO_WIN
+compute_status=TORCH_CPU
+```
