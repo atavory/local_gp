@@ -67,12 +67,12 @@ channels, or async tags to create action-relevant evidence.
 
 Positive or live:
 
-- E100 adds five-domain adaptive-HPO breadth.  On 32 held-out seeds across
+- E100 adds five-domain adaptive-HPO breadth.  On 64 held-out seeds across
   tabular classification, tabular regression, PFN-style tabular in-context
   classification, time-series forecasting, and synthetic 8x8 vision, same-round
   probe aggregation beats validation-selected external fixed-LR HPO by
-  `+0.108 +/- 0.026` at `33.33%` probe overhead.  The three tabular-style
-  domains clear individually.
+  `+0.112 +/- 0.020` at `33.33%` probe overhead.  Four domains clear
+  individually; synthetic vision is label-content only.
 - E099 is the usable tiny-LM adaptive tuning result: a tiny causal-LM stream
   shifts from off-domain prose to code-like text, and same-round probe
   selection beats validation-selected external fixed-LR HPO by

@@ -281,21 +281,22 @@ Update: split finishable worker runs landed on 2026-10-08.
   `+0.043 +/- 0.026` at `16.67%` probe overhead.  This is the usable LM tuning
   win: same-round probe selection adapts across the domain shift, whereas
   fixed external HPO must choose one LR for the whole trajectory.
-- E100, `bandha_e100_multidomain_shift_hpo_20261014/main32_5domain_sgd_lr0.02_probe64/`,
+- E100, `bandha_e100_multidomain_shift_hpo_20261014/main64_5domain_sgd_lr0.02_probe64/`,
   broadens the adaptive-HPO win to five small domains: tabular classification,
   tabular regression, PFN-style tabular in-context classification, time-series
   forecasting, and synthetic 8x8 vision.  The stream is deliberately shifted:
   early rounds are off-target or label-corrupted, while probe/select and target
   batches are target-domain.  With SGD LR arms `(0,0.25,0.5,1,2,4)`, one-hot
-  same-round probe aggregation, 32 held-out seeds, and `33.33%` probe overhead,
+  same-round probe aggregation, 64 held-out seeds, and `33.33%` probe overhead,
   the run returned `MULTIDOMAIN_SHIFT_HPO_WIN`.  Pooled internal minus default
-  was `+0.189 +/- 0.036`, internal minus shuffled was `+0.199 +/- 0.040`, and
+  was `+0.194 +/- 0.026`, internal minus shuffled was `+0.206 +/- 0.029`, and
   internal minus validation-selected external fixed-LR HPO was
-  `+0.108 +/- 0.026`.  Three domains clear individually: tabular
+  `+0.112 +/- 0.020`.  Four domains clear individually: tabular
   classification (`+0.013 +/- 0.001` vs external), tabular regression
-  (`+0.426 +/- 0.035`), and PFN-style tabular context (`+0.093 +/- 0.007`);
-  time-series and vision are positive/live near ties.  This is now the broad
-  synthetic domain-family support row.
+  (`+0.450 +/- 0.025`), PFN-style tabular context (`+0.090 +/- 0.005`), and
+  time-series (`+0.017 +/- 0.008`); vision is a label-content row that clears
+  default and shuffled but not external HPO.  This is now the broad synthetic
+  domain-family support row.
 - E092, `bandha_e092_outer_control_longer_rounds_20261013/`, reran the same
   fixed-compute outer-control audit with `rounds=16` and fresh held-out seeds
   `998200..998231`.  Decision:

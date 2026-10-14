@@ -61,14 +61,14 @@ the model being trained instead of discarding losing HPO trials.
    fixed LR by `+0.452 +/- 0.022`, beats shuffled probes by
    `+0.466 +/- 0.029`, and beats validation-selected external fixed-LR HPO by
    `+0.043 +/- 0.026` at `16.67%` probe overhead.
-9. E100 multidomain shift audit returns `MULTIDOMAIN_SHIFT_HPO_WIN` across
+9. E100 64-seed multidomain shift audit returns `MULTIDOMAIN_SHIFT_HPO_WIN` across
    tabular classification, tabular regression, PFN-style tabular in-context
-   classification, time-series forecasting, and synthetic 8x8 vision.  On 32
+   classification, time-series forecasting, and synthetic 8x8 vision.  On 64
    held-out seeds, one-hot same-round probe aggregation beats default fixed LR
-   by `+0.189 +/- 0.036`, shuffled probes by `+0.199 +/- 0.040`, and
-   validation-selected external fixed-LR HPO by `+0.108 +/- 0.026` at
-   `33.33%` probe overhead.  The three tabular-style domains clear
-   individually, including the PFN-style in-context row.
+   by `+0.194 +/- 0.026`, shuffled probes by `+0.206 +/- 0.029`, and
+   validation-selected external fixed-LR HPO by `+0.112 +/- 0.020` at
+   `33.33%` probe overhead.  Four domains clear individually, including the
+   PFN-style in-context row; synthetic vision is label-content only.
 10. E092 longer-round stress run remains live but does not clear the
    external-HPO CI: internal minus stale/default `+2.838 +/- 1.979`, internal
    minus shuffled `+0.771 +/- 0.632`, internal minus external
@@ -109,7 +109,7 @@ E098 16-seed and E099 32-seed tiny causal-LM domain-shift wins over
 validation-selected external fixed-LR HPO.
 
 Table 8: multidomain adaptive HPO:
-E100 32-seed five-domain shift audit with tabular, PFN-style tabular-context,
+E100 64-seed five-domain shift audit with tabular, PFN-style tabular-context,
 time-series, and synthetic-vision rows.
 
 The table order should make the paper read as one claim: first the

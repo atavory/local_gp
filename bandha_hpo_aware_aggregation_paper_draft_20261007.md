@@ -19,7 +19,7 @@ adaptive LM setting where the stream shifts domains and internal same-round
 probe selection beats validation-selected external fixed-LR HPO. E100 adds a
 five-domain synthetic shift audit, including tabular classification, tabular
 regression, PFN-style tabular in-context classification, time-series
-forecasting, and synthetic vision; its 32-seed run clears the fixed-compute
+forecasting, and synthetic vision; its 64-seed run clears the fixed-compute
 external-HPO comparator at lower probe overhead.
 
 Target venue recommendation: **TMLR first**. The ICML version would need
@@ -474,18 +474,18 @@ Multidomain adaptive-HPO shift audit:
   model and applies one-hot probe-weighted aggregation;
 - external HPO spends the same candidate-update budget on separate fixed-LR
   trajectories and selects one by held-out validation loss;
-- E100, the 32-seed five-domain run at `33.33%` probe overhead, returns
+- E100, the 64-seed five-domain run at `33.33%` probe overhead, returns
   `MULTIDOMAIN_SHIFT_HPO_WIN`;
-- pooled internal minus default fixed LR: `+0.189 +/- 0.036`;
-- pooled internal minus shuffled probes: `+0.199 +/- 0.040`;
+- pooled internal minus default fixed LR: `+0.194 +/- 0.026`;
+- pooled internal minus shuffled probes: `+0.206 +/- 0.029`;
 - pooled internal minus validation-selected external fixed-LR HPO:
-  `+0.108 +/- 0.026`;
+  `+0.112 +/- 0.020`;
 - tabular classification clears external HPO by `+0.013 +/- 0.001`;
-- tabular regression clears external HPO by `+0.426 +/- 0.035`;
-- PFN-style tabular context clears external HPO by `+0.093 +/- 0.007`;
-- time-series is positive/live against external HPO at `+0.008 +/- 0.009`;
-- synthetic vision is a near-tie against external HPO at `+0.000 +/- 0.005`
-  while clearing default and shuffled probes;
+- tabular regression clears external HPO by `+0.450 +/- 0.025`;
+- PFN-style tabular context clears external HPO by `+0.090 +/- 0.005`;
+- time-series clears external HPO by `+0.017 +/- 0.008`;
+- synthetic vision is label-content only at `-0.007 +/- 0.012` against
+  external HPO while clearing default and shuffled probes;
 - interpretation: E100 is broad synthetic support for the adaptive-HPO
   mechanism.  It is not foundation-scale training, but it directly answers the
   "find more domains, including tabular" concern.
@@ -622,7 +622,7 @@ Table 5: Fixed-compute external HPO.
 | E096 tiny causal-LM soft | fixed LR | ext-valid | ext-oracle | soft probe | `-0.096 +/- 0.015` | `+0.033 +/- 0.021` | `16.67%` |
 | E097 tiny causal-LM argmin | fixed LR | ext-valid | ext-oracle | one-hot probe | `-0.000 +/- 0.000` | `+0.177 +/- 0.015` | `16.67%` |
 | E099 tiny causal-LM domain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.043 +/- 0.026` | `+0.466 +/- 0.029` | `16.67%` |
-| E100 multidomain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.108 +/- 0.026` | `+0.199 +/- 0.040` | `33.33%` |
+| E100 multidomain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.112 +/- 0.020` | `+0.206 +/- 0.029` | `33.33%` |
 
 ## Claims To Avoid
 
