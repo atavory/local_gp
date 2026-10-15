@@ -25,9 +25,9 @@ domain shapes and again clears the validation-selected external fixed-LR HPO
 comparator over 64 held-out seeds, including an `8.33%` probe-overhead rerun.
 E102 adds a character-level adversarial LM stress test across Transformer and
 GRU families. E103 moves the LM evidence to token-level natural text-domain
-shifts; the 32-seed Transformer/GRU headline clears external HPO in all cells,
-while the broad four-family run is pooled-positive and marks LSTM/causal-conv
-as boundary families.
+shifts; the 64-seed Transformer/GRU headline clears external HPO in all cells,
+a heavier 32-round/block-48 rerun also clears all cells, and the broad
+four-family plus LSTM/causal-conv runs mark architecture boundaries.
 
 Target venue recommendation: **TMLR first**. The ICML version would need
 larger real-data task families beyond the current local-SGD, token-level LM,
@@ -498,23 +498,32 @@ Token-level natural LM audit:
 - E103 moves the LM evidence from character prediction to word/punctuation
   token prediction and from substitution-cipher shifts to natural text-domain
   shifts;
-- the core 32-seed run uses token-level Transformer and GRU causal LMs over
+- the core 64-seed run uses token-level Transformer and GRU causal LMs over
   four shifts: prose-to-code, dialogue-to-JSON, manual-to-SQL, and
   recipe-to-math;
 - E103 core returns `TOKEN_LM_SCALE_HPO_WIN`;
-- pooled internal minus default fixed LR: `+1.331 +/- 0.068`;
-- pooled internal minus shuffled probes: `+1.632 +/- 0.076`;
+- pooled internal minus default fixed LR: `+1.332 +/- 0.048`;
+- pooled internal minus shuffled probes: `+1.639 +/- 0.055`;
 - pooled internal minus validation-selected external fixed-LR HPO:
-  `+0.482 +/- 0.042`;
+  `+0.474 +/- 0.030`;
 - all eight Transformer/GRU family-domain cells clear individually at `8.33%`
   probe overhead;
-- the broad four-family E103 run adds LSTM and causal-conv at 8 seeds per cell:
-  pooled internal minus external HPO is `+0.205 +/- 0.071`, with Transformer
-  and GRU clearing all cells, LSTM clearing 2/4, and causal-conv clearing 0/4;
+- the heavier Transformer/GRU rerun doubles the trajectory to 32 rounds and
+  uses token block 48/batch 48; it again returns `TOKEN_LM_SCALE_HPO_WIN` with
+  pooled internal minus external HPO `+0.221 +/- 0.033` and all eight cells
+  clearing at `8.33%` probe overhead;
+- the broad four-family E103 run adds LSTM and causal-conv at 32 seeds per
+  cell: pooled internal minus external HPO is `+0.196 +/- 0.036`, with
+  Transformer and GRU clearing all cells, LSTM clearing 2/4, and causal-conv
+  clearing 0/4;
+- the 64-seed LSTM/causal-conv boundary rerun returns
+  `TOKEN_LM_SCALE_LABEL_CONTENT`: internal beats default
+  `+1.030 +/- 0.056` and shuffled probes `+1.531 +/- 0.061`, but trails
+  validation-selected external HPO by `-0.104 +/- 0.023`;
 - interpretation: this is the LM headline now.  It is still an embedded
   small-corpus causal-LM audit rather than foundation-scale pretraining, but it
   removes the character-level/adversarial-shift objection from the main LM
-  evidence.
+  evidence and gives an honest architecture boundary.
 
 Multidomain adaptive-HPO shift audit:
 
@@ -705,8 +714,10 @@ Table 5: Fixed-compute external HPO.
 | E099 tiny causal-LM domain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.043 +/- 0.026` | `+0.466 +/- 0.029` | `16.67%` |
 | E102 LM family/domain cipher shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.098 +/- 0.011` | `+0.605 +/- 0.030` | `16.67%` |
 | E102 LM family/domain low-probe | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.098 +/- 0.012` | `+0.603 +/- 0.032` | `8.33%` |
-| E103 token-LM natural shifts core | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.482 +/- 0.042` | `+1.632 +/- 0.076` | `8.33%` |
-| E103 token-LM broad families | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.205 +/- 0.071` | `+1.519 +/- 0.115` | `8.33%` |
+| E103 token-LM natural shifts core | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.474 +/- 0.030` | `+1.639 +/- 0.055` | `8.33%` |
+| E103 token-LM heavier core | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.221 +/- 0.033` | `+1.495 +/- 0.092` | `8.33%` |
+| E103 token-LM broad families | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.196 +/- 0.036` | `+1.569 +/- 0.057` | `8.33%` |
+| E103 token-LM LSTM/conv boundary | fixed LR | ext-valid | ext-oracle | one-hot probe | `-0.104 +/- 0.023` | `+1.531 +/- 0.061` | `8.33%` |
 | E100 multidomain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.112 +/- 0.020` | `+0.206 +/- 0.029` | `33.33%` |
 | E101 added-domain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.085 +/- 0.016` | `+0.137 +/- 0.026` | `33.33%` |
 | E101 added-domain low-probe | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.077 +/- 0.016` | `+0.133 +/- 0.028` | `8.33%` |
@@ -746,7 +757,8 @@ fixed-compute win to `K=16`; E096/E097 add lightweight LM tuning sanity rows
 that should be framed as probe-label-content evidence, not as the main
 fixed-compute win; E099 gives a stronger tiny-LM adaptive/domain-shift win;
 E102 is the adversarial character-level LM stress test; E103 is the stronger
-natural token-level LM headline, with broad-family boundary evidence;
+natural token-level LM headline, now with 64-seed core evidence, a heavier
+32-round support run, and broad-family boundary evidence;
 E100 adds five-domain synthetic breadth, including PFN-style tabular-context
 classification; E101 adds six more synthetic domain shapes with all six
 clearing validation-selected external fixed-LR HPO, including an `8.33%`

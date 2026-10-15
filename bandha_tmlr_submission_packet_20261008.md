@@ -92,14 +92,19 @@ the model being trained instead of discarding losing HPO trials.
    and internal minus validation-selected external fixed-LR HPO
    `+0.098 +/- 0.012`, again with all four cells clear.
 12. E103 token-level natural LM audit returns `TOKEN_LM_SCALE_HPO_WIN` across
-   Transformer and GRU causal LMs and four natural text-domain shifts.  On 32
+   Transformer and GRU causal LMs and four natural text-domain shifts.  On 64
    held-out seeds per family/domain cell, same-round probe selection beats
-   default fixed LR by `+1.331 +/- 0.068`, shuffled probes by
-   `+1.632 +/- 0.076`, and validation-selected external fixed-LR HPO by
-   `+0.482 +/- 0.042` at `8.33%` probe overhead; all eight core
-   family/domain cells clear individually.  The broad four-family E103 audit
-   remains pooled-positive (`+0.205 +/- 0.071` vs external HPO), with
-   Transformer/GRU clean, LSTM partial, and causal-conv a boundary.
+   default fixed LR by `+1.332 +/- 0.048`, shuffled probes by
+   `+1.639 +/- 0.055`, and validation-selected external fixed-LR HPO by
+   `+0.474 +/- 0.030` at `8.33%` probe overhead; all eight core
+   family/domain cells clear individually.  A heavier 32-round/block-48 rerun
+   also clears all eight Transformer/GRU cells (`+0.221 +/- 0.033` vs
+   external HPO).  The broad four-family E103 audit remains pooled-positive
+   at 32 seeds per cell (`+0.196 +/- 0.036` vs external HPO), with
+   Transformer/GRU clean, LSTM partial, and causal-conv a boundary.  The
+   64-seed LSTM/causal-conv slice confirms that boundary: label content is
+   strong versus shuffled probes, but the pooled external-HPO margin is
+   `-0.104 +/- 0.023`.
 13. E092 longer-round stress run remains live but does not clear the
    external-HPO CI: internal minus stale/default `+2.838 +/- 1.979`, internal
    minus shuffled `+0.771 +/- 0.632`, internal minus external
@@ -140,8 +145,9 @@ E098 16-seed and E099 32-seed tiny causal-LM domain-shift wins over
 validation-selected external fixed-LR HPO; E102 32-seed LM-family/domain
 stress audit with Transformer-small and GRU on cipher-to-code and
 cipher-to-math shifts, including the `8.33%` probe-overhead rerun; E103
-natural token-level LM audit with Transformer/GRU as the 32-seed headline and
-the four-family run as robustness/boundary evidence.
+natural token-level LM audit with Transformer/GRU as the 64-seed headline, a
+heavier 32-round support run, and the four-family plus LSTM/causal-conv runs
+as robustness/boundary evidence.
 
 Table 8: multidomain adaptive HPO:
 E100 64-seed five-domain shift audit with tabular, PFN-style tabular-context,
@@ -176,9 +182,11 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
   substitution-cipher stress test.
 - E103 is stronger LM evidence because it is token-level and uses natural text
   domain shifts, but it is still a small embedded-corpus causal-LM audit, not a
-  foundation-scale pretraining result.  The clean headline is Transformer/GRU;
-  the broad four-family run is pooled-positive but shows LSTM partial and
-  causal-conv negative family slices.
+  foundation-scale pretraining result.  The clean headline is the 64-seed
+  Transformer/GRU run, supported by a heavier 32-round/block-48 rerun.  The
+  broad four-family run is pooled-positive but shows LSTM partial and
+  causal-conv negative family slices; the 64-seed LSTM/causal-conv rerun
+  confirms this as a boundary rather than an underpowered fluke.
 - E100/E101 add breadth but remain small synthetic domain-suite audits.  They
   should be used as support that the adaptive-HPO mechanism is not unique to
   one local-SGD ledger or one tiny-LM text stream, not as a claim about
@@ -205,7 +213,8 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
 - LM family/domain adaptive-HPO support included: yes, E102, including the
   `8.33%` low-probe rerun.
 - Natural token-level LM adaptive-HPO support included: yes, E103, with a
-  32-seed Transformer/GRU headline and a broad four-family boundary run.
+  64-seed Transformer/GRU headline, a heavier 32-round support run, a broad
+  four-family boundary run, and a 64-seed LSTM/causal-conv boundary rerun.
 - Multidomain adaptive-HPO support included: yes, E100/E101.
 - Boundary fixed-compute results included: yes, E089 and E090.
 - Null/filtering result included: yes, E087.
