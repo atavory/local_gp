@@ -1,6 +1,6 @@
 # Deliberately Diverse Aggregation for Distributed Optimization
 
-Status: TMLR submission packet scaffold, updated 2026-10-14.
+Status: TMLR submission packet scaffold, updated 2026-10-15.
 
 Experiment state: E087/E088 were implemented and dispatched on 2026-10-07.
 Finishable split runs landed on 2026-10-08.  E087 is a positive IID
@@ -23,10 +23,15 @@ forecasting, and synthetic vision; its 64-seed run clears the fixed-compute
 external-HPO comparator at lower probe overhead. E101 adds six more synthetic
 domain shapes and again clears the validation-selected external fixed-LR HPO
 comparator over 64 held-out seeds, including an `8.33%` probe-overhead rerun.
+E102 adds a character-level adversarial LM stress test across Transformer and
+GRU families. E103 moves the LM evidence to token-level natural text-domain
+shifts; the 32-seed Transformer/GRU headline clears external HPO in all cells,
+while the broad four-family run is pooled-positive and marks LSTM/causal-conv
+as boundary families.
 
 Target venue recommendation: **TMLR first**. The ICML version would need
-larger real-data task families beyond the current local-SGD, tiny-LM, and
-small synthetic multidomain packet.
+larger real-data task families beyond the current local-SGD, token-level LM,
+and small synthetic multidomain packet.
 
 Anonymous code and experiment artifacts:
 https://anonymous.4open.science/r/local_gp-9F83/
@@ -63,10 +68,11 @@ Under IID identical arms, probe weights can still fluctuate and even filter
 stochastic updates, but arm labels do not carry persistent hyperparameter
 information.  The useful regime is deliberate diversity: worker LR arms,
 server-side outer optimizer controls, domain-shift LR arms, and guarded
-stale-default recovery.  Across controlled local-SGD, tiny-LM, and small
-multidomain shift experiments, probe-weighted aggregation beats shuffled probes
-and fixed/default controls; in the outer-control and adaptive shift settings it
-also beats validation-selected external HPO at fixed worker compute.
+stale-default recovery.  Across controlled local-SGD, token-level LM, and
+small multidomain shift experiments, probe-weighted aggregation beats shuffled
+probes and fixed/default controls; in the outer-control and adaptive shift
+settings it also beats validation-selected external HPO at fixed worker
+compute.
 
 ## Main Contributions
 
@@ -84,8 +90,8 @@ also beats validation-selected external HPO at fixed worker compute.
    controls, and shifted-domain LR arms show label-content gains over shuffled
    probes and fixed/default baselines.  E090B clears validation-selected
    external HPO at fixed worker compute, with fresh-seed and 64-seed
-   replications, while E099, E100, and E101 show the adaptive-HPO version in
-   language modeling and eleven total synthetic domain shapes.
+   replications, while E099, E100, E101, and E103 show the adaptive-HPO
+   version in language modeling and eleven total synthetic domain shapes.
 6. **Boundary results.** Batch-size value/FLOP, naive validation-gradient
    scoring, free LR search, and exchangeable worker ranking are not promoted.
 
@@ -487,6 +493,29 @@ LM family/domain adaptive-HPO stress audit:
   answers the "one tiny Transformer" weakness with multiple model families and
   multiple language-like target domains.
 
+Token-level natural LM audit:
+
+- E103 moves the LM evidence from character prediction to word/punctuation
+  token prediction and from substitution-cipher shifts to natural text-domain
+  shifts;
+- the core 32-seed run uses token-level Transformer and GRU causal LMs over
+  four shifts: prose-to-code, dialogue-to-JSON, manual-to-SQL, and
+  recipe-to-math;
+- E103 core returns `TOKEN_LM_SCALE_HPO_WIN`;
+- pooled internal minus default fixed LR: `+1.331 +/- 0.068`;
+- pooled internal minus shuffled probes: `+1.632 +/- 0.076`;
+- pooled internal minus validation-selected external fixed-LR HPO:
+  `+0.482 +/- 0.042`;
+- all eight Transformer/GRU family-domain cells clear individually at `8.33%`
+  probe overhead;
+- the broad four-family E103 run adds LSTM and causal-conv at 8 seeds per cell:
+  pooled internal minus external HPO is `+0.205 +/- 0.071`, with Transformer
+  and GRU clearing all cells, LSTM clearing 2/4, and causal-conv clearing 0/4;
+- interpretation: this is the LM headline now.  It is still an embedded
+  small-corpus causal-LM audit rather than foundation-scale pretraining, but it
+  removes the character-level/adversarial-shift objection from the main LM
+  evidence.
+
 Multidomain adaptive-HPO shift audit:
 
 - E100 extends the same adaptive-HPO logic beyond text to five small domains:
@@ -676,6 +705,8 @@ Table 5: Fixed-compute external HPO.
 | E099 tiny causal-LM domain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.043 +/- 0.026` | `+0.466 +/- 0.029` | `16.67%` |
 | E102 LM family/domain cipher shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.098 +/- 0.011` | `+0.605 +/- 0.030` | `16.67%` |
 | E102 LM family/domain low-probe | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.098 +/- 0.012` | `+0.603 +/- 0.032` | `8.33%` |
+| E103 token-LM natural shifts core | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.482 +/- 0.042` | `+1.632 +/- 0.076` | `8.33%` |
+| E103 token-LM broad families | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.205 +/- 0.071` | `+1.519 +/- 0.115` | `8.33%` |
 | E100 multidomain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.112 +/- 0.020` | `+0.206 +/- 0.029` | `33.33%` |
 | E101 added-domain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.085 +/- 0.016` | `+0.137 +/- 0.026` | `33.33%` |
 | E101 added-domain low-probe | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.077 +/- 0.016` | `+0.133 +/- 0.028` | `8.33%` |
@@ -714,6 +745,8 @@ the longer `rounds=16` stress ledger over 64 held-out seeds; E095 extends the
 fixed-compute win to `K=16`; E096/E097 add lightweight LM tuning sanity rows
 that should be framed as probe-label-content evidence, not as the main
 fixed-compute win; E099 gives a stronger tiny-LM adaptive/domain-shift win;
+E102 is the adversarial character-level LM stress test; E103 is the stronger
+natural token-level LM headline, with broad-family boundary evidence;
 E100 adds five-domain synthetic breadth, including PFN-style tabular-context
 classification; E101 adds six more synthetic domain shapes with all six
 clearing validation-selected external fixed-LR HPO, including an `8.33%`

@@ -1,6 +1,6 @@
 # TMLR Submission Packet - Deliberately Diverse Aggregation
 
-Status: submission packet, updated 2026-10-14.
+Status: submission packet, updated 2026-10-15.
 
 Anonymous artifact URL:
 https://anonymous.4open.science/r/local_gp-9F83/
@@ -91,20 +91,29 @@ the model being trained instead of discarding losing HPO trials.
    default `+0.662 +/- 0.027`, internal minus shuffled `+0.603 +/- 0.032`,
    and internal minus validation-selected external fixed-LR HPO
    `+0.098 +/- 0.012`, again with all four cells clear.
-12. E092 longer-round stress run remains live but does not clear the
+12. E103 token-level natural LM audit returns `TOKEN_LM_SCALE_HPO_WIN` across
+   Transformer and GRU causal LMs and four natural text-domain shifts.  On 32
+   held-out seeds per family/domain cell, same-round probe selection beats
+   default fixed LR by `+1.331 +/- 0.068`, shuffled probes by
+   `+1.632 +/- 0.076`, and validation-selected external fixed-LR HPO by
+   `+0.482 +/- 0.042` at `8.33%` probe overhead; all eight core
+   family/domain cells clear individually.  The broad four-family E103 audit
+   remains pooled-positive (`+0.205 +/- 0.071` vs external HPO), with
+   Transformer/GRU clean, LSTM partial, and causal-conv a boundary.
+13. E092 longer-round stress run remains live but does not clear the
    external-HPO CI: internal minus stale/default `+2.838 +/- 1.979`, internal
    minus shuffled `+0.771 +/- 0.632`, internal minus external
    validation-selected HPO `+0.330 +/- 2.151`.
-13. E080/E081 remain the replicated outer-control evidence:
+14. E080/E081 remain the replicated outer-control evidence:
    E080 selector minus shuffled `+0.177 +/- 0.049`; E081 packages the rule with
    frozen large-K fallback.
-14. E089 is the fixed-compute grouped-LR boundary:
+15. E089 is the fixed-compute grouped-LR boundary:
    internal minus external validation-selected HPO `-0.006 +/- 0.003`, while
    internal minus shuffled is `+0.004 +/- 0.002`.
-15. E090 is the stricter stale-LR final-trajectory boundary:
+16. E090 is the stricter stale-LR final-trajectory boundary:
    guarded minus stale full-worker `-0.008 +/- 0.002`, but guarded minus
    shuffled `+6.117 +/- 1.841`.
-16. E087 is stochastic filtering under exchangeable fake labels, not HPO.
+17. E087 is stochastic filtering under exchangeable fake labels, not HPO.
 
 ## TMLR Tables
 
@@ -130,7 +139,9 @@ Table 7: adaptive language-model tuning:
 E098 16-seed and E099 32-seed tiny causal-LM domain-shift wins over
 validation-selected external fixed-LR HPO; E102 32-seed LM-family/domain
 stress audit with Transformer-small and GRU on cipher-to-code and
-cipher-to-math shifts, including the `8.33%` probe-overhead rerun.
+cipher-to-math shifts, including the `8.33%` probe-overhead rerun; E103
+natural token-level LM audit with Transformer/GRU as the 32-seed headline and
+the four-family run as robustness/boundary evidence.
 
 Table 8: multidomain adaptive HPO:
 E100 64-seed five-domain shift audit with tabular, PFN-style tabular-context,
@@ -162,8 +173,12 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
   still rest on the fixed-compute local-SGD outer-control packet.
 - E102 strengthens the LM section across two model families and two textual
   target domains, but it is still a character-level, adversarial
-  substitution-cipher stress test.  The broad benign-shift E102 pilot is
-  label-content only, and causal-conv does not clear external HPO.
+  substitution-cipher stress test.
+- E103 is stronger LM evidence because it is token-level and uses natural text
+  domain shifts, but it is still a small embedded-corpus causal-LM audit, not a
+  foundation-scale pretraining result.  The clean headline is Transformer/GRU;
+  the broad four-family run is pooled-positive but shows LSTM partial and
+  causal-conv negative family slices.
 - E100/E101 add breadth but remain small synthetic domain-suite audits.  They
   should be used as support that the adaptive-HPO mechanism is not unique to
   one local-SGD ledger or one tiny-LM text stream, not as a claim about
@@ -174,7 +189,7 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
   stale/default final-trajectory comparator.
 - E087 prevents claiming that exchangeable IID worker labels create persistent
   HPO information.
-- The current package now has local-SGD, tiny-LM, and small multidomain
+- The current package now has local-SGD, token-level LM, and small multidomain
   synthetic evidence.  Large real-data benchmarks and foundation-scale runs
   remain future work.
 
@@ -189,6 +204,8 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
 - Adaptive LM tuning win included: yes, E098/E099.
 - LM family/domain adaptive-HPO support included: yes, E102, including the
   `8.33%` low-probe rerun.
+- Natural token-level LM adaptive-HPO support included: yes, E103, with a
+  32-seed Transformer/GRU headline and a broad four-family boundary run.
 - Multidomain adaptive-HPO support included: yes, E100/E101.
 - Boundary fixed-compute results included: yes, E089 and E090.
 - Null/filtering result included: yes, E087.
@@ -198,4 +215,4 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
 - Durable docs updated: research control board, option map, parallel probe
   program, and paper draft.
 - Relevant artifacts ready for commit: E090, E090B, E091, E092, E093, E094,
-  E095, E096/E097, E098/E099, E100, E101, docs, and this packet.
+  E095, E096/E097, E098/E099, E100, E101, E102, E103, docs, and this packet.

@@ -296,9 +296,30 @@ Update: split finishable worker runs landed on 2026-10-08.
   keeps the result at `8.33%` overhead: internal minus default
   `+0.662 +/- 0.027`, internal minus shuffled `+0.603 +/- 0.032`, and
   internal minus validation-selected external fixed-LR HPO
-  `+0.098 +/- 0.012`, again with all four cells clearing.  Treat this as the
-  strongest current LM-family result, while noting that the broad benign-shift
-  pilot is label-content only and causal-conv remains a boundary.
+  `+0.098 +/- 0.012`, again with all four cells clearing.  Treat this as a
+  useful adversarial stress test, not the LM headline: it is character-level
+  and intentionally shifted by a substitution cipher.
+- E103, `bandha_e103_token_lm_scale_hpo_20261015/main32_core_natural/`,
+  moves the LM evidence to word/punctuation token prediction and natural text
+  domain shifts.  Transformer and GRU causal LMs train early on off-domain
+  natural text and later on target-domain text; probe/select and target-eval
+  splits are held-out target-domain tokens.  With LR arms
+  `(0,0.25,0.5,1,2,4)`, one-hot same-round probe selection, four shifts
+  (`prose_to_code`, `dialogue_to_json`, `manual_to_sql`,
+  `recipe_to_math`), and 32 held-out seeds per family/domain cell, the run
+  returns `TOKEN_LM_SCALE_HPO_WIN`: pooled internal minus default
+  `+1.331 +/- 0.068`, internal minus shuffled `+1.632 +/- 0.076`, and
+  internal minus validation-selected external fixed-LR HPO
+  `+0.482 +/- 0.042` at `8.33%` probe overhead.  All eight
+  Transformer/GRU natural-shift cells clear individually.
+- E103 broad-family audit,
+  `bandha_e103_token_lm_scale_hpo_20261015/main8_all4_natural/`, adds LSTM
+  and causal-conv token-level causal LMs at 8 seeds per cell.  The pooled row
+  remains positive against external HPO (`+0.205 +/- 0.071`) and shuffled
+  probes (`+1.519 +/- 0.115`), but the family slices are the honest boundary:
+  Transformer and GRU clear all cells, LSTM clears 2/4, and causal-conv clears
+  0/4 against external HPO.  Use this as robustness and limitation evidence,
+  not as an all-family headline.
 - E100, `bandha_e100_multidomain_shift_hpo_20261014/main64_5domain_sgd_lr0.02_probe64/`,
   broadens the adaptive-HPO win to five small domains: tabular classification,
   tabular regression, PFN-style tabular in-context classification, time-series

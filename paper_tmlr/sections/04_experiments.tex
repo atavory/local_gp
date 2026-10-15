@@ -87,16 +87,17 @@ default and shuffled controls but loses to validation-selected external HPO.
 E097 switches to one-hot selection and ties the validation-selected external
 fixed-LR arm. E099 introduces a shifted text stream where same-round probe
 selection beats default, shuffled probes, and validation-selected external
-fixed-LR HPO. E102 broadens the adaptive LM evidence to multiple model
-families: Transformer-small and GRU character-level causal LMs trained under
-adversarial textual shifts from substitution-cipher target text to real
-target-domain code or theorem/math text. This is still small-scale, but it is
-no longer a single Transformer/code anecdote.
+fixed-LR HPO. E102 is an adversarial character-level stress test across
+Transformer-small and GRU families. E103 is the stronger LM row: token-level
+causal LMs trained under natural text-domain shifts. The 32-seed Transformer
+and GRU core clears every family/domain cell; a broader four-family run remains
+pooled-positive and identifies LSTM and causal-conv as boundary families. These
+are still small embedded-corpus audits, not frontier-scale pretraining.
 
 \begin{table}[t]
 \centering
 \small
-\caption{Tiny causal-LM tuning audits. These rows test whether the mechanism
+\caption{Language-model tuning audits. These rows test whether the mechanism
 survives in a model-training setting beyond the local-SGD ledger.}
 \label{tab:lm}
 \begin{tabular}{@{}p{0.12\linewidth}p{0.36\linewidth}p{0.16\linewidth}p{0.16\linewidth}p{0.14\linewidth}@{}}
@@ -108,6 +109,8 @@ E097 & one-hot tiny-LM tuning sanity & $+0.298 \pm 0.011$ & $+0.177 \pm 0.015$ &
 E099 & domain-shift tiny-LM, 16.67\% overhead & $+0.452 \pm 0.022$ & $+0.466 \pm 0.029$ & $+0.043 \pm 0.026$ \\
 E102 & LM family/domain cipher shift, 16.67\% overhead & $+0.661 \pm 0.025$ & $+0.605 \pm 0.030$ & $+0.098 \pm 0.011$ \\
 E102-low & LM family/domain cipher shift, 8.33\% overhead & $+0.662 \pm 0.027$ & $+0.603 \pm 0.032$ & $+0.098 \pm 0.012$ \\
+E103-core & natural token-LM shifts, Transformer/GRU, 8.33\% overhead & $+1.331 \pm 0.068$ & $+1.632 \pm 0.076$ & $+0.482 \pm 0.042$ \\
+E103-broad & natural token-LM shifts, four families, 8.33\% overhead & $+1.190 \pm 0.107$ & $+1.519 \pm 0.115$ & $+0.205 \pm 0.071$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -148,4 +151,6 @@ repeatable label-content gains over shuffled probes. The strongest evidence is
 the fixed-compute outer-control packet, where internal aggregation beats
 external HPO without giving itself extra worker compute. The adaptive LM and
 multi-domain experiments extend the mechanism to shifted settings where a
-fixed validation-selected arm is less able to track the current round.
+fixed validation-selected arm is less able to track the current round; E103
+shows that this survives natural token-level language-model shifts, while the
+broad-family audit marks architectural boundaries.
