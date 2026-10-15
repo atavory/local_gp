@@ -87,7 +87,11 @@ default and shuffled controls but loses to validation-selected external HPO.
 E097 switches to one-hot selection and ties the validation-selected external
 fixed-LR arm. E099 introduces a shifted text stream where same-round probe
 selection beats default, shuffled probes, and validation-selected external
-fixed-LR HPO.
+fixed-LR HPO. E102 broadens the adaptive LM evidence to multiple model
+families: Transformer-small and GRU character-level causal LMs trained under
+adversarial textual shifts from substitution-cipher target text to real
+target-domain code or theorem/math text. This is still small-scale, but it is
+no longer a single Transformer/code anecdote.
 
 \begin{table}[t]
 \centering
@@ -102,6 +106,8 @@ Exp. & Setting & vs default & vs shuffled & vs external HPO \\
 E096 & soft probe-weighted tiny-LM boundary & positive & positive & $-0.096 \pm 0.015$ \\
 E097 & one-hot tiny-LM tuning sanity & $+0.298 \pm 0.011$ & $+0.177 \pm 0.015$ & $-0.000 \pm 0.000$ \\
 E099 & domain-shift tiny-LM, 16.67\% overhead & $+0.452 \pm 0.022$ & $+0.466 \pm 0.029$ & $+0.043 \pm 0.026$ \\
+E102 & LM family/domain cipher shift, 16.67\% overhead & $+0.661 \pm 0.025$ & $+0.605 \pm 0.030$ & $+0.098 \pm 0.011$ \\
+E102-low & LM family/domain cipher shift, 8.33\% overhead & $+0.662 \pm 0.027$ & $+0.603 \pm 0.032$ & $+0.098 \pm 0.012$ \\
 \bottomrule
 \end{tabular}
 \end{table}

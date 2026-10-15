@@ -281,6 +281,24 @@ Update: split finishable worker runs landed on 2026-10-08.
   `+0.043 +/- 0.026` at `16.67%` probe overhead.  This is the usable LM tuning
   win: same-round probe selection adapts across the domain shift, whereas
   fixed external HPO must choose one LR for the whole trajectory.
+- E102, `bandha_e102_lm_family_domain_hpo_20261015/main32_cipher_transformer_gru_code_math/`,
+  expands the LM evidence from one tiny Transformer/code shift to two LM model
+  families and two adversarial textual shifts.  Transformer-small and GRU
+  character-level causal LMs train on a substitution-cipher version of the
+  target text for the early rounds and real target-domain text for later
+  rounds; domains are code and theorem/math text.  On 32 held-out seeds per
+  cell, same-round one-hot probe selection returns `LM_FAMILY_DOMAIN_HPO_WIN`:
+  internal minus default `+0.661 +/- 0.025`, internal minus shuffled
+  `+0.605 +/- 0.030`, and internal minus validation-selected external fixed-LR
+  HPO `+0.098 +/- 0.011` at `16.67%` probe overhead.  All four
+  family/domain cells clear individually.  The low-probe rerun,
+  `bandha_e102_lm_family_domain_hpo_20261015/main32_probe6_cipher_transformer_gru_code_math/`,
+  keeps the result at `8.33%` overhead: internal minus default
+  `+0.662 +/- 0.027`, internal minus shuffled `+0.603 +/- 0.032`, and
+  internal minus validation-selected external fixed-LR HPO
+  `+0.098 +/- 0.012`, again with all four cells clearing.  Treat this as the
+  strongest current LM-family result, while noting that the broad benign-shift
+  pilot is label-content only and causal-conv remains a boundary.
 - E100, `bandha_e100_multidomain_shift_hpo_20261014/main64_5domain_sgd_lr0.02_probe64/`,
   broadens the adaptive-HPO win to five small domains: tabular classification,
   tabular regression, PFN-style tabular in-context classification, time-series

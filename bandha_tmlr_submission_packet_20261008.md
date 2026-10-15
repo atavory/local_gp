@@ -80,20 +80,31 @@ the model being trained instead of discarding losing HPO trials.
    shuffled `+0.133 +/- 0.028`, and internal minus validation-selected
    external fixed-LR HPO `+0.077 +/- 0.016`.  All six added domains clear
    individually in both runs.
-11. E092 longer-round stress run remains live but does not clear the
+11. E102 LM family/domain audit returns `LM_FAMILY_DOMAIN_HPO_WIN` across two
+   character-level causal-LM model families, Transformer-small and GRU, and two
+   adversarial textual shifts, cipher-to-code and cipher-to-math.  On 32
+   held-out seeds per cell, same-round probe selection beats default fixed LR
+   by `+0.661 +/- 0.025`, shuffled probes by `+0.605 +/- 0.030`, and
+   validation-selected external fixed-LR HPO by `+0.098 +/- 0.011` at
+   `16.67%` probe overhead; all four family/domain cells clear individually.
+   The probe-batch-6 rerun keeps the win at `8.33%` overhead: internal minus
+   default `+0.662 +/- 0.027`, internal minus shuffled `+0.603 +/- 0.032`,
+   and internal minus validation-selected external fixed-LR HPO
+   `+0.098 +/- 0.012`, again with all four cells clear.
+12. E092 longer-round stress run remains live but does not clear the
    external-HPO CI: internal minus stale/default `+2.838 +/- 1.979`, internal
    minus shuffled `+0.771 +/- 0.632`, internal minus external
    validation-selected HPO `+0.330 +/- 2.151`.
-12. E080/E081 remain the replicated outer-control evidence:
+13. E080/E081 remain the replicated outer-control evidence:
    E080 selector minus shuffled `+0.177 +/- 0.049`; E081 packages the rule with
    frozen large-K fallback.
-13. E089 is the fixed-compute grouped-LR boundary:
+14. E089 is the fixed-compute grouped-LR boundary:
    internal minus external validation-selected HPO `-0.006 +/- 0.003`, while
    internal minus shuffled is `+0.004 +/- 0.002`.
-14. E090 is the stricter stale-LR final-trajectory boundary:
+15. E090 is the stricter stale-LR final-trajectory boundary:
    guarded minus stale full-worker `-0.008 +/- 0.002`, but guarded minus
    shuffled `+6.117 +/- 1.841`.
-15. E087 is stochastic filtering under exchangeable fake labels, not HPO.
+16. E087 is stochastic filtering under exchangeable fake labels, not HPO.
 
 ## TMLR Tables
 
@@ -117,7 +128,9 @@ tiny-LM tie against validation-selected external HPO.
 
 Table 7: adaptive language-model tuning:
 E098 16-seed and E099 32-seed tiny causal-LM domain-shift wins over
-validation-selected external fixed-LR HPO.
+validation-selected external fixed-LR HPO; E102 32-seed LM-family/domain
+stress audit with Transformer-small and GRU on cipher-to-code and
+cipher-to-math shifts, including the `8.33%` probe-overhead rerun.
 
 Table 8: multidomain adaptive HPO:
 E100 64-seed five-domain shift audit with tabular, PFN-style tabular-context,
@@ -147,6 +160,10 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
 - E098/E099 are stronger but still tiny-LM domain-shift audits.  They support
   the adaptive-HPO mechanism for language modeling, while the main claim should
   still rest on the fixed-compute local-SGD outer-control packet.
+- E102 strengthens the LM section across two model families and two textual
+  target domains, but it is still a character-level, adversarial
+  substitution-cipher stress test.  The broad benign-shift E102 pilot is
+  label-content only, and causal-conv does not clear external HPO.
 - E100/E101 add breadth but remain small synthetic domain-suite audits.  They
   should be used as support that the adaptive-HPO mechanism is not unique to
   one local-SGD ledger or one tiny-LM text stream, not as a claim about
@@ -170,6 +187,8 @@ deliberately diverse server-side candidates, then fixed-compute comparisons.
 - Large-K fixed-compute HPO result included: yes, E095.
 - Lightweight LM tuning result included: yes, E096/E097.
 - Adaptive LM tuning win included: yes, E098/E099.
+- LM family/domain adaptive-HPO support included: yes, E102, including the
+  `8.33%` low-probe rerun.
 - Multidomain adaptive-HPO support included: yes, E100/E101.
 - Boundary fixed-compute results included: yes, E089 and E090.
 - Null/filtering result included: yes, E087.

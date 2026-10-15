@@ -1,0 +1,8 @@
+DFW-E102 LM family/domain adaptive HPO
+host=devvm44191.lla0.facebook.com python=/data/users/atavory/fbsource/buck-out/v2/art/fbcode/c95bb19b4474c2e4/aai/double_fan_gpu_runner/__run_local_gp_script_static__/run_local_gp_script_static#link-tree/runtime/bin/run_local_gp_script_static#native-main#platform-runtime#python#py_version_3_12 compute_status=TORCH_CPU torch=2.16.0a0+fb cuda_available=False
+rounds=12 switch_round=6 block=40 batch=24 probe_batch=12 eval_batches=2
+base_lr=0.004 weight_decay=0.01 lr_mults=(0, 0.25, 0.5, 1, 2, 4) families=(transformer_small, gru) domains=(cipher_to_code, cipher_to_math) seeds=32
+POOLED internal-default=  0.661+/-0.025 internal-shuffled=  0.605+/-0.030 internal-external_valid=  0.098+/-0.011 internal-external_oracle=  0.098+/-0.011
+clear_cells=4/4
+DECISION LM_FAMILY_DOMAIN_HPO_WIN
+compute_status=TORCH_CPU

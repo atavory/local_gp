@@ -464,6 +464,29 @@ Adaptive language-model tuning:
   but it demonstrates the intended adaptive-HPO mechanism in a language-model
   setting.
 
+LM family/domain adaptive-HPO stress audit:
+
+- E102 expands the LM evidence beyond one tiny Transformer/code shift.  It uses
+  two character-level causal-LM model families, Transformer-small and GRU, and
+  two target domains, code and theorem/math text;
+- the early training stream is a substitution-cipher version of the target
+  domain, while later training, probe/select, and target evaluation use the
+  real target-domain text;
+- on 32 held-out seeds per family/domain cell, E102 returns
+  `LM_FAMILY_DOMAIN_HPO_WIN`;
+- pooled internal minus default fixed LR: `+0.661 +/- 0.025`;
+- pooled internal minus shuffled probes: `+0.605 +/- 0.030`;
+- pooled internal minus validation-selected external fixed-LR HPO:
+  `+0.098 +/- 0.011`;
+- all four family/domain cells clear individually;
+- the probe-batch-6 rerun keeps the same external-HPO margin at `8.33%`
+  overhead: internal minus default `+0.662 +/- 0.027`, internal minus shuffled
+  `+0.603 +/- 0.032`, and internal minus external HPO `+0.098 +/- 0.012`;
+- interpretation: this is now the strongest LM support row.  It is still
+  character-level and adversarial-shift, not foundation-scale, but it directly
+  answers the "one tiny Transformer" weakness with multiple model families and
+  multiple language-like target domains.
+
 Multidomain adaptive-HPO shift audit:
 
 - E100 extends the same adaptive-HPO logic beyond text to five small domains:
@@ -651,6 +674,8 @@ Table 5: Fixed-compute external HPO.
 | E096 tiny causal-LM soft | fixed LR | ext-valid | ext-oracle | soft probe | `-0.096 +/- 0.015` | `+0.033 +/- 0.021` | `16.67%` |
 | E097 tiny causal-LM argmin | fixed LR | ext-valid | ext-oracle | one-hot probe | `-0.000 +/- 0.000` | `+0.177 +/- 0.015` | `16.67%` |
 | E099 tiny causal-LM domain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.043 +/- 0.026` | `+0.466 +/- 0.029` | `16.67%` |
+| E102 LM family/domain cipher shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.098 +/- 0.011` | `+0.605 +/- 0.030` | `16.67%` |
+| E102 LM family/domain low-probe | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.098 +/- 0.012` | `+0.603 +/- 0.032` | `8.33%` |
 | E100 multidomain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.112 +/- 0.020` | `+0.206 +/- 0.029` | `33.33%` |
 | E101 added-domain shift | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.085 +/- 0.016` | `+0.137 +/- 0.026` | `33.33%` |
 | E101 added-domain low-probe | fixed LR | ext-valid | ext-oracle | one-hot probe | `+0.077 +/- 0.016` | `+0.133 +/- 0.028` | `8.33%` |
