@@ -1,0 +1,72 @@
+\documentclass[10pt]{article}
+
+\usepackage{tmlr}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{url}
+
+\newtheorem{proposition}{Proposition}
+
+\newcommand{\method}{DDA}
+\newcommand{\thetaT}{\theta_t}
+\newcommand{\loss}{\mathcal{L}}
+\newcommand{\probe}{\mathcal{P}_t}
+\newcommand{\arms}{\mathcal{H}_t}
+\newcommand{\E}{\mathbb{E}}
+
+\title{Deliberately Diverse Aggregation for Distributed Optimization}
+
+% Authors are hidden by the TMLR style when the package is used without
+% accepted/preprint options.
+\author{\name Anonymous Authors \email anonymous@example.com \addr Anonymous Institution}
+
+\def\month{10}
+\def\year{2026}
+\def\openreview{\url{https://anonymous.4open.science/r/local_gp-9F83/}}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Hyperparameter optimization for distributed training is usually external to
+the training run: launch several jobs, select a winner, and discard the losing
+trajectories. Standard distributed aggregation makes the opposite assumption,
+treating worker updates as exchangeable estimates for one optimizer setting. We
+study deliberately diverse aggregation, where a distributed round creates a
+small set of optimizer or hyperparameter arms, cheap probes score the candidate
+next states, and the server selects or aggregates the scored candidates into
+one shared trajectory. This places exploration and exploitation inside the
+aggregation rule rather than outside the training run. We show that if workers
+and data are truly exchangeable, probe weights can only exploit finite-sample
+stochastic filtering; persistent HPO signal requires deliberate
+non-exchangeability. We then evaluate worker learning-rate arms, server-side
+outer-control arms, language-model domain-shift tuning, and synthetic
+multi-domain adaptive tuning. Across fixed-compute local-SGD ledgers, the
+method beats shuffled probes, default controls, and validation-selected
+external HPO; across adaptive shift audits it also beats external fixed-arm HPO
+with probe overhead as low as 8.33\%. An anonymized artifact is available at
+\url{https://anonymous.4open.science/r/local_gp-9F83/}.
+\end{abstract}
+
+\input{sections/01_intro}
+\input{sections/02_method}
+\input{sections/03_analysis}
+\input{sections/04_experiments}
+\input{sections/05_related_work}
+\input{sections/06_limitations_conclusion}
+
+\bibliography{references}
+\bibliographystyle{tmlr}
+
+\appendix
+\input{appendices/appendix}
+
+\end{document}

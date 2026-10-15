@@ -1,0 +1,30 @@
+\section{Limitations and Conclusion}
+\label{sec:limitations}
+
+The current evidence is strongest for controlled local-SGD ledgers and small
+adaptive shift settings. The language-model experiments are tiny, and the
+multi-domain suite is synthetic. These experiments are useful because they
+isolate the mechanism and its cost accounting, but they do not replace
+large-scale real-data runs. The paper should therefore claim a mechanism and a
+fixed-compute proof of concept, not a universal recipe for foundation-scale
+training.
+
+Probe design is also central. If the probe is too noisy, too expensive, or
+misaligned with the target, the controller can overfit the probe or lose to a
+simple external sweep. E096, E089, and E090 are included for exactly this
+reason. They mark regimes where probe labels are not enough, external HPO is
+too strong, or the stale-default comparator is too severe.
+
+Finally, deliberate diversity has to be real. Under exchangeable IID workers,
+the theory and null audit both say that arm labels cannot carry persistent
+hyperparameter information. The useful design space is the one where arms
+encode different optimizer moves and where the probe can cheaply identify
+which move is useful for the present shared trajectory.
+
+In summary, distributed optimization already exposes parallel candidate
+updates. Deliberately diverse aggregation turns those candidates into an
+explore-exploit mechanism: create meaningful optimizer-arm diversity, score
+candidate next states with cheap probes, and reinvest the result into one
+model. The fixed-compute outer-control experiments show that this can beat
+external HPO, and the adaptive shift experiments show the same idea working
+across language-model and multi-domain task families.

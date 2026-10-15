@@ -1,0 +1,37 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Distributed and local optimization.}
+Federated averaging and local SGD reduce communication by taking multiple
+local steps before synchronization \citep{mcmahan2017communication,
+stich2018local,li2020federated}. Subsequent work improves robustness and
+stability under heterogeneity or long synchronization intervals
+\citep{karimireddy2020scaffold,reddi2021adaptive,douillard2023diloco,
+naganuma2025pseudo}. \method is complementary: it changes what the server does
+with parallel candidate updates, using the round as an HPO opportunity rather
+than only as a variance-reduction or communication-saving device.
+
+\paragraph{Hyperparameter optimization.}
+Classical HPO methods allocate compute across independent configurations using
+random search, Bayesian optimization, or multi-fidelity bandit schedules
+\citep{bergstra2012random,snoek2012practical,li2017hyperband,
+falkner2018bohb}. Online HPO and optimizer selection study nonstationary or
+adaptive choices during training \citep{kang2023onlinehpo,
+naganuma2023optimizer}. Our setting differs in the aggregation target: the
+arms are scored inside a distributed round and their evidence updates one
+shared trajectory.
+
+\paragraph{Weight averaging and model merging.}
+Averaging model weights or checkpoints can improve generalization and combine
+solutions \citep{izmailov2018averaging,wortsman2022model,verma2024merging}.
+Population and parameter-averaging methods also use multiple trajectories or
+models as a source of diversity \citep{jolicoeur2023papa}. \method focuses on
+the online optimizer step rather than post-hoc merging: candidate states are
+created from the current round and immediately selected or aggregated.
+
+\paragraph{Validation probes and controls.}
+Validation losses are routinely used for early stopping, model selection, and
+HPO. The question here is whether validation-like probes are cheap enough and
+localized enough to guide same-round distributed aggregation. Our shuffled
+controls and exchangeability null are meant to distinguish genuine
+hyperparameter label content from probe noise and stochastic filtering.

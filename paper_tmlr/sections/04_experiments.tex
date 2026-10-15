@@ -1,0 +1,145 @@
+\section{Experiments}
+\label{sec:experiments}
+
+We organize the evidence around three questions.
+
+\begin{enumerate}
+\item Does a probe contain label content beyond exchangeable stochastic
+filtering?
+\item Under fixed worker compute, can deliberately diverse aggregation beat
+external HPO rather than only default baselines?
+\item Does the mechanism survive outside one local-SGD ledger?
+\end{enumerate}
+
+All margins are reported as internal controller minus comparator, so positive
+numbers favor \method. Intervals are standard-error-style uncertainty intervals
+from the experiment ledgers. The anonymized repository contains the scripts and
+run artifacts: \url{https://anonymous.4open.science/r/local_gp-9F83/}.
+
+\subsection{Null and label-content controls}
+
+Table~\ref{tab:null} separates stochastic filtering from HPO. E087 assigns
+exchangeable fake labels. The selector improves over uniform averaging, but
+the weights have high entropy and low label concentration; this is evidence
+that probes can filter realized stochastic updates, not that fake labels carry
+hyperparameter information. Shuffled-probe comparisons in later tables are the
+main label-content control.
+
+\begin{table}[t]
+\centering
+\small
+\caption{IID null/filtering audit. Positive margins favor the probe selector,
+but under exchangeable fake labels this is not persistent HPO signal.}
+\label{tab:null}
+\begin{tabular}{@{}p{0.14\linewidth}p{0.30\linewidth}p{0.17\linewidth}p{0.17\linewidth}p{0.12\linewidth}@{}}
+\toprule
+Exp. & Setting & vs uniform & vs shuffled & Diagnostics \\
+\midrule
+E087 & IID fake-label selector & $+0.621 \pm 0.320$ & $+0.476 \pm 0.222$ & entropy 0.991; weight L1 0.137; Spearman 0.406 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Fixed-compute external HPO}
+
+Table~\ref{tab:fixed-compute} is the main local-SGD evidence. E090B constructs
+server-side outer-control candidates from a common worker-update pool, probes
+them, and applies the chosen/weighted update. It beats the stale/default
+control, shuffled probes, validation-selected external HPO, and even the
+external oracle in the main pooled setting. E091 and E093 reproduce the result
+on fresh and 64-seed runs. E094 clears the longer-round setting. E095 extends
+the win to $K=16$, where margins are smaller and the oracle comparison is no
+longer positive.
+
+We also include the boundary rows. E089 shows that grouped learning-rate arms
+carry label content but do not beat validation-selected external HPO. E090
+shows that a stricter stale-default final-trajectory guard beats shuffled
+probes but does not clear the stale/default comparator. These rows prevent the
+paper from claiming that any probe-weighted aggregation is enough.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Fixed-compute HPO comparisons in local-SGD ledgers. Positive margins
+favor internal deliberately diverse aggregation.}
+\label{tab:fixed-compute}
+\begin{tabular}{@{}p{0.12\linewidth}p{0.30\linewidth}p{0.17\linewidth}p{0.17\linewidth}p{0.17\linewidth}@{}}
+\toprule
+Exp. & Setting & vs default & vs shuffled & vs external HPO \\
+\midrule
+E089 & grouped-LR boundary & n/a & $+0.004 \pm 0.002$ & $-0.006 \pm 0.003$ \\
+E090 & stale-LR final-trajectory boundary & $-0.008 \pm 0.002$ & $+6.117 \pm 1.841$ & n/a \\
+E090B & outer-control main & $+3.789 \pm 0.515$ & $+0.161 \pm 0.061$ & $+1.354 \pm 0.463$ \\
+E091 & outer-control fresh seeds & $+3.878 \pm 0.488$ & $+0.093 \pm 0.073$ & $+1.148 \pm 0.511$ \\
+E093 & outer-control 64 seeds & $+3.829 \pm 0.378$ & $+0.140 \pm 0.058$ & $+1.224 \pm 0.313$ \\
+E094 & rounds 16, 64 seeds & $+4.403 \pm 0.417$ & $+0.233 \pm 0.076$ & $+1.275 \pm 0.239$ \\
+E095 & $K=16$, rounds 16 & $+0.094 \pm 0.061$ & $+0.075 \pm 0.048$ & $+0.516 \pm 0.262$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Language-model tuning}
+
+The language-model experiments are deliberately small and are used as
+task-family plausibility, not as a claim about frontier-scale pretraining.
+E096 uses soft probe-weighted LR aggregation and is a boundary: it beats
+default and shuffled controls but loses to validation-selected external HPO.
+E097 switches to one-hot selection and ties the validation-selected external
+fixed-LR arm. E099 introduces a shifted text stream where same-round probe
+selection beats default, shuffled probes, and validation-selected external
+fixed-LR HPO.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Tiny causal-LM tuning audits. These rows test whether the mechanism
+survives in a model-training setting beyond the local-SGD ledger.}
+\label{tab:lm}
+\begin{tabular}{@{}p{0.12\linewidth}p{0.36\linewidth}p{0.16\linewidth}p{0.16\linewidth}p{0.14\linewidth}@{}}
+\toprule
+Exp. & Setting & vs default & vs shuffled & vs external HPO \\
+\midrule
+E096 & soft probe-weighted tiny-LM boundary & positive & positive & $-0.096 \pm 0.015$ \\
+E097 & one-hot tiny-LM tuning sanity & $+0.298 \pm 0.011$ & $+0.177 \pm 0.015$ & $-0.000 \pm 0.000$ \\
+E099 & domain-shift tiny-LM, 16.67\% overhead & $+0.452 \pm 0.022$ & $+0.466 \pm 0.029$ & $+0.043 \pm 0.026$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Multi-domain adaptive HPO}
+
+The broadest current evidence is the adaptive shift suite in
+Table~\ref{tab:multidomain}. E100 spans tabular classification, tabular
+regression, PFN-style tabular in-context classification, time-series
+forecasting, and synthetic 8-by-8 vision. E101 adds multiclass tabular,
+sparse text-like bags, pairwise ranking, graph/node summaries, sequence
+classification, and matrix-interaction regression. The E101 low-probe rerun
+keeps the win at 8.33\% overhead and all six added domains clear individually.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Adaptive HPO breadth. Positive margins favor same-round probe
+selection over fixed/default, shuffled-probe, and validation-selected external
+fixed-LR HPO comparators.}
+\label{tab:multidomain}
+\begin{tabular}{@{}p{0.12\linewidth}p{0.34\linewidth}p{0.16\linewidth}p{0.16\linewidth}p{0.14\linewidth}@{}}
+\toprule
+Exp. & Domains & vs default & vs shuffled & vs external HPO \\
+\midrule
+E100 & five-domain shift audit, 33.33\% overhead & $+0.194 \pm 0.026$ & $+0.206 \pm 0.029$ & $+0.112 \pm 0.020$ \\
+E101 & six added domains, 33.33\% overhead & $+0.125 \pm 0.024$ & $+0.137 \pm 0.026$ & $+0.085 \pm 0.016$ \\
+E101-low & six added domains, 8.33\% overhead & $+0.118 \pm 0.024$ & $+0.133 \pm 0.028$ & $+0.077 \pm 0.016$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+The empirical picture is consistent with the analysis. Exchangeable fake arms
+can be filtered, but they are not HPO. Deliberately diverse arms produce
+repeatable label-content gains over shuffled probes. The strongest evidence is
+the fixed-compute outer-control packet, where internal aggregation beats
+external HPO without giving itself extra worker compute. The adaptive LM and
+multi-domain experiments extend the mechanism to shifted settings where a
+fixed validation-selected arm is less able to track the current round.

@@ -1,0 +1,51 @@
+\section{Exchangeability and HPO Signal}
+\label{sec:analysis}
+
+The method should not be sold as a universal benefit from parallelism alone.
+If the workers are identical and the data are IID, then assigning arbitrary arm
+labels creates no persistent HPO signal. The point of \method is to create
+meaningful candidate diversity and then score it.
+
+\begin{proposition}[Exchangeable arms carry no label information]
+\label{prop:exchangeable}
+Assume that, conditional on $\theta_t$, candidate updates
+$U_t^{(1)},\ldots,U_t^{(G)}$ are exchangeable and the probe batch is drawn from
+the same distribution for all candidates. Let a scoring-and-weighting rule be
+permutation equivariant: permuting arm labels permutes the weights in the same
+way. Then all arm labels have equal expected weight and no label has a
+persistent expected advantage.
+\end{proposition}
+
+\begin{proof}
+For any permutation $\pi$ of the $G$ arm labels, exchangeability gives
+\[
+(U_t^{(1)},\ldots,U_t^{(G)},\probe)
+\overset{d}{=}
+(U_t^{(\pi(1))},\ldots,U_t^{(\pi(G))},\probe).
+\]
+Permutation equivariance of the scoring rule implies
+$w_t^{(\pi(j))}$ has the same distribution as the permuted weight assigned to
+arm $j$. Averaging over all permutations yields
+$\E[w_t^{(1)}]=\cdots=\E[w_t^{(G)}]$. Thus labels alone cannot identify a
+better hyperparameter. Any realized deviation comes from finite-sample update
+or probe noise, not persistent label content.
+\end{proof}
+
+This null does not make probes useless. A probe may still choose a candidate
+whose realized stochastic update happens to be better on the probe batch. In
+our IID null audit, this appears as stochastic filtering: the selector can beat
+a uniform average even when fake labels are exchangeable. But the gain is not
+evidence that a learning-rate arm, momentum arm, or schedule is better.
+
+Deliberate diversity breaks the symmetry. If different arms apply different
+update maps $A_t(\cdot,h)$, then $\theta_{t+1}^{(h)}$ need not be exchangeable
+across $h$. The probe score can contain information about which optimizer move
+is locally better. A shuffled-probe control tests this label content: it keeps
+the same candidates and score distribution but breaks the assignment between
+candidate identity and probe score. Beating shuffled probes is therefore a
+minimum requirement for claiming useful same-round information.
+
+External HPO is a second, stronger comparator. It asks whether the internal
+controller beats a validation-selected fixed arm or fixed trajectory under the
+same worker budget. This is the comparison that distinguishes deliberately
+diverse aggregation from merely running a hyperparameter sweep in parallel.

@@ -1,0 +1,62 @@
+\section{Introduction}
+\label{sec:intro}
+
+Distributed optimization creates parallel candidate updates every round. The
+usual aggregation rule treats those candidates as exchangeable gradient
+estimates and averages them. Hyperparameter optimization (HPO), in contrast,
+usually treats candidates as separate jobs: run several trajectories, choose
+one by validation performance, and throw away the others. These two practices
+leave a gap. Distributed training has already paid for parallel exploration,
+but standard aggregation does not use it as exploration; external HPO uses
+exploration, but only by spending separate trajectories.
+
+We ask whether HPO can be made an aggregation primitive. At each round, the
+system deliberately creates a small menu of update candidates: different local
+learning rates, outer optimizer controls, or other low-dimensional optimizer
+arms. A cheap probe batch evaluates the candidate next states. The server then
+selects or averages those candidates into a single shared model. We call this
+family \emph{deliberately diverse aggregation} (\method). The central idea is
+not merely to run HPO in parallel. It is to reinvest the evidence from parallel
+arms into the model being trained, rather than selecting a separate winning
+trajectory after the fact.
+
+This distinction matters most under a fixed-compute comparison. If a cluster
+is split into independent HPO trials, each parameter setting receives fewer
+workers or fewer total update opportunities. In \method, all candidates are
+scored during the same distributed round and the chosen or weighted update
+advances one trajectory. Some arms can be formed directly from a common worker
+update pool, which avoids splitting workers across arms altogether.
+
+There is also a sharp null case. If all workers are identical, data are IID,
+and arm labels are artificial, then the labels contain no persistent
+hyperparameter information. Probe weights may still move due to realized
+mini-batch noise, and this can sometimes filter stochastic updates, but it is
+not HPO in the usual sense. The useful regime is deliberate
+non-exchangeability: the system assigns meaningfully different optimizer arms,
+the probe observes which candidate state is better for the present round, and
+the aggregation rule turns that signal into a shared update.
+
+Our contributions are:
+
+\begin{enumerate}
+\item We formulate deliberately diverse aggregation as a way to place
+exploration and exploitation inside distributed optimization.
+\item We give an exchangeability null showing why identical IID workers cannot
+provide persistent HPO information from labels alone.
+\item We describe worker-arm and server-control mechanisms that score
+candidate next states with low-cost probes and then aggregate or select them.
+\item We give fixed-compute cost accounting for probe overhead, emphasizing
+when internal HPO is efficient rather than a disguised external search.
+\item We report controlled local-SGD, tiny language-model, and multi-domain
+synthetic audits. The main fixed-compute outer-control experiments beat
+validation-selected external HPO, and the adaptive shift experiments show HPO
+wins over external fixed-arm selection across language-model and multi-domain
+settings.
+\end{enumerate}
+
+The paper is intentionally scoped. It is not a claim that validation probes
+automatically improve every distributed run. We include negative and boundary
+cases where exchangeability, naive grouping, or stale defaults prevent a clear
+HPO win. The claim is narrower and, we think, more useful: when the distributed
+round is deliberately diversified and the probe is cheap enough, aggregation
+can become an efficient explore-exploit mechanism.

@@ -1,0 +1,93 @@
+\section{Mechanism}
+\label{sec:method}
+
+\subsection{Setting}
+
+Let $\theta_t$ denote the shared model at distributed round $t$. There are $N$
+workers and each worker performs $K$ local optimization steps before the server
+updates the shared state. Throughout this paper, $K$ is the number of local
+steps between aggregation events. A standard local-SGD-style update collects
+worker deltas $u_{t,i}$ and applies a mean or optimizer transform to obtain
+$\theta_{t+1}$.
+
+\method changes the round by introducing an arm set $\arms$. An arm can be a
+worker-side hyperparameter, such as a local learning-rate multiplier, or a
+server-side control, such as an outer learning rate and momentum pair applied
+to a common pool of worker updates. Each arm $h \in \arms$ induces a candidate
+next state
+\begin{equation}
+\theta_{t+1}^{(h)} = \theta_t + A_t(U_t, h),
+\end{equation}
+where $U_t$ is the set of worker updates available at the server and $A_t$ is
+the arm-specific update map. A probe batch $\probe$ estimates a loss
+$\ell_t(h)=\loss(\theta_{t+1}^{(h)}; \probe)$. The server converts these losses
+to weights or a one-hot selection and applies a single shared update.
+
+\subsection{Worker-arm aggregation}
+
+In the worker-arm version, workers or worker groups receive different local
+optimizer settings. For example, groups may share the same starting state
+$\theta_t$ but run $K$ local steps with learning-rate multipliers
+$h \in \{0.25,0.5,1,2,4\}$. The returned deltas are grouped by arm, scored by
+probing the resulting candidate next states, and then combined:
+\begin{equation}
+\theta_{t+1} = \theta_t + \sum_{h \in \arms} w_t(h)\,\bar{u}_t(h),
+\end{equation}
+where $\bar{u}_t(h)$ is the candidate update for arm $h$ and $w_t$ is derived
+from probe scores.
+
+Worker-arm aggregation is the most direct version of the idea, but it has a
+cost tradeoff: with a fixed number of workers, each arm receives fewer workers.
+This is why our experiments always compare to fixed-compute external HPO and
+to shuffled-probe controls. A positive result must come from useful arm
+information, not from giving the method more total update work.
+
+\subsection{Server-control aggregation}
+
+In the server-control version, workers can all produce a common update pool.
+The server then constructs several candidate outer updates from the same pool.
+For example, a candidate may use outer step size $\alpha$ and momentum
+$\beta$:
+\begin{equation}
+v_{t+1}^{(h)} = \beta_h v_t + \bar{u}_t,\qquad
+\theta_{t+1}^{(h)} = \theta_t + \alpha_h v_{t+1}^{(h)}.
+\end{equation}
+The probe scores $\theta_{t+1}^{(h)}$ for each $h=(\alpha_h,\beta_h)$ and the
+server applies the selected or weighted candidate. This version directly
+addresses the concern that internal HPO simply starves each parameter setting
+of workers: the arms can be generated after the worker updates have already
+been collected.
+
+\subsection{Probe-to-weight rules}
+
+The simplest rule is one-hot selection,
+\begin{equation}
+h_t^\star \in \arg\min_{h \in \arms} \ell_t(h),\qquad
+w_t(h)=\mathbf{1}\{h=h_t^\star\}.
+\end{equation}
+We also use conservative soft weights in some local-SGD ledgers:
+\begin{equation}
+q_t(h) \propto \exp\left(-\frac{\ell_t(h)-\bar{\ell}_t}{\tau_t}\right),
+\qquad
+w_t(h) = (1-\lambda)\pi_t(h) + \lambda q_t(h),
+\end{equation}
+where $\pi_t$ is a prior or default mixture, $\tau_t$ scales with the observed
+probe dispersion, and $\lambda$ shrinks the probe response. One-hot selection
+is the limiting case used in the adaptive HPO experiments when the probe is
+trusted to choose among a small fixed arm set.
+
+\subsection{Cost accounting}
+
+The probe must be cheap enough for internal HPO to be meaningful. If $G$
+candidate arms are evaluated on $S$ probe slices of size $B_p$, and the
+training round performs $N K$ local worker steps with training batch size $B$,
+the forward-pass probe overhead is approximately
+\begin{equation}
+\mathrm{overhead}
+  \approx
+  \frac{G S B_p}{3 N K B},
+\end{equation}
+where the factor $3$ is the standard rough forward/backward cost ratio used in
+our ledgers. In server-control arms, the worker-update cost is shared across
+candidates. In the adaptive shift audits, the reported overhead is the measured
+probe-forward ledger, with a low-probe rerun at 8.33\%.
